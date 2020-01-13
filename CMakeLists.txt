@@ -1,0 +1,29 @@
+project                     (Relate)
+cmake_minimum_required      (VERSION 3.1)
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
+endif()
+set (CMAKE_CXX_STANDARD 11)
+
+find_package( ZLIB REQUIRED )
+if ( ZLIB_FOUND )
+    include_directories( ${ZLIB_INCLUDE_DIRS} ) 
+endif( ZLIB_FOUND )
+
+
+# Set dir
+set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/aDNA)
+
+set(RELATE_LIBS librelateStatic.a libgzstreamShared.so libkastoreShared.so libtskitStatic.a)
+link_directories(${CMAKE_SOURCE_DIR}/../relate_lib/bin)
+
+# Add subdirectories
+include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src)
+include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/tskit)
+include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/gzstream)
+
+add_subdirectory(${ADNA_DIR})

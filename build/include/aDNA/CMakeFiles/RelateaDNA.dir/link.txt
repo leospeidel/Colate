@@ -1,0 +1,1 @@
+/bin/c++  -O3  -rdynamic CMakeFiles/RelateaDNA.dir/RelateaDNA.cpp.o  -o ../../../bin/RelateaDNA  -L/data/smew1/speidel/genomics/relate_aDNA/../relate_lib/bin -Wl,-rpath,/data/smew1/speidel/genomics/relate_aDNA/../relate_lib/bin -Wl,-Bstatic -lrelateStatic -Wl,-Bdynamic -lgzstreamShared -lkastoreShared -Wl,-Bstatic -ltskitStatic -Wl,-Bdynamic 
