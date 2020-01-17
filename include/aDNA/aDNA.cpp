@@ -37,6 +37,7 @@ aDNA(cxxopts::Options& options){
   Mutations mut;
   mut.Read(options["mut"].as<std::string>());
 
+  /////////////////////////////////
   //get TMRCA at each SNP
   std::vector<float> tmrca(mut.info.size(), 0.0);
   std::vector<float>::iterator it_tmrca = tmrca.begin();
@@ -61,6 +62,8 @@ aDNA(cxxopts::Options& options){
     }
 
   }
+
+  ////////////////////////////////////////
 
   //decide on epochs
   //TODO: custom epoch boundaries
@@ -87,83 +90,109 @@ aDNA(cxxopts::Options& options){
   //For now, assume both are haps/sample and span same positions
   //TODO: make this more flexible
 
-  double initial_coal_rate = 1.0/5000.0;
+  double initial_coal_rate = 1.0/30000.0;
 
   haps ref_N(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
   Data data(ref_N.GetN(), ref_N.GetL());
   std::vector<std::vector<double>> coal_rates(data.N), coal_rates_num(data.N), coal_rates_denom(data.N);
-  for(int i = 0; i < data.N; i++){
+  
+  std::ifstream is("./example_true.coal");
+  std::string line;
+  getline(is,line);
+  getline(is,line);
+
+  int i = 0;
+  double dummy;
+  coal_rates[i].resize(num_epochs);
+  coal_rates_num[i].resize(num_epochs);
+  coal_rates_denom[i].resize(num_epochs);
+  for(int i = 1; i < data.N; i++){
     coal_rates[i].resize(num_epochs);
     coal_rates_num[i].resize(num_epochs);
     coal_rates_denom[i].resize(num_epochs);
+    is >> dummy >> dummy;
+    for(int e = 0; e < num_epochs; e++){
+      is >> coal_rates[i][e];
+    }
     std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
   }
+ 
+  ////////////////////////////////////////  
 
-  for(int iter = 0; iter < 1; iter++){
-  haps ref(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
-  haps input((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
-  assert(data.L == input.GetL());
+  int N = 2;
+  for(int iter = 0; iter < 10; iter++){
 
-  int bp_ref, bp_input;
-  std::vector<char> sequence_ref(data.N), sequence_input(data.N);
-  std::vector<float> num(num_epochs, 0.0), denom(num_epochs, 0.0); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
-  int snp = 0; 
-  for(; snp < data.L; snp++){
+    std::cerr << iter << std::endl;
 
-    ref.ReadSNP(sequence_ref, bp_ref);
-    input.ReadSNP(sequence_input, bp_input);
-    assert(bp_ref == bp_input);          //TODO: relax this eventually
-    while(bp_ref > mut.info[snp].pos){
-      snp++;
+    haps ref(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
+    haps input((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
+    assert(data.L == input.GetL());
+
+    int bp_ref, bp_input;
+    std::vector<char> sequence_ref(data.N), sequence_input(data.N);
+    std::vector<float> num(num_epochs, 0.0), denom(num_epochs, 0.0); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
+    int snp = 0;
+ 
+    for(; snp < data.L; snp++){
+
+      ref.ReadSNP(sequence_ref, bp_ref);
+      input.ReadSNP(sequence_input, bp_input);
+      assert(bp_ref == bp_input);          //TODO: relax this eventually
+      while(bp_ref > mut.info[snp].pos){
+        snp++;
+        if(snp == data.L) break;
+      }
       if(snp == data.L) break;
-    }
-    if(snp == data.L) break;
-    assert(bp_ref == mut.info[snp].pos); //TODO: relax this eventually
+      assert(bp_ref == mut.info[snp].pos); //TODO: relax this eventually
 
-    //calculate contribution to MLE if shared and non-shared
-    for(int i = 1; i < data.N; i++){
-      if(mut.info[snp].age_end > 0){
-        if(sequence_ref[i] == '1'){
-        
-          if(sequence_input[0] == '1'){
-            //std::cerr << "shared " << i << " " << mut.info[snp].age_begin << " " << mut.info[snp].age_end << " " << tmrca[snp] << std::endl;
-            EM_shared(coal_rates[i], mut.info[snp].age_begin, mut.info[snp].age_end, tmrca[snp], epochs, num, denom);
-          }else{
-            //std::cerr << "not shared " << i << " " << mut.info[snp].age_begin << " " << mut.info[snp].age_end << " " << tmrca[snp] << std::endl;
-            EM_notshared(coal_rates[i], mut.info[snp].age_begin, mut.info[snp].age_end, tmrca[snp], epochs, num, denom);
+      //calculate contribution to MLE if shared and non-shared
+      for(int i = 1; i < N; i++){
+      //int i = 2;
+        if(mut.info[snp].age_end > 0){
+          if(sequence_ref[i] == '1'){
+          
+            if(sequence_input[0] == '1'){
+              //std::cerr << "shared " << i << " " << mut.info[snp].age_begin << " " << mut.info[snp].age_end << " " << tmrca[snp] << std::endl;
+              EM_shared(coal_rates[i], mut.info[snp].age_begin, mut.info[snp].age_end, tmrca[snp], epochs, num, denom);
+              assert(!std::isnan(denom[0]));
+            }else{
+              //std::cerr << "not shared " << i << " " << mut.info[snp].age_begin << " " << mut.info[snp].age_end << " " << tmrca[snp] << std::endl;
+              EM_notshared(coal_rates[i], mut.info[snp].age_begin, mut.info[snp].age_end, tmrca[snp], epochs, num, denom);
+              assert(!std::isnan(denom[0]));
+            }
+          
+            for(int e = 0; e < num_epochs; e++){
+              coal_rates_num[i][e]   += num[e];
+              coal_rates_denom[i][e] += denom[e];
+            }
+            //std::cerr << coal_rates_num[i][0] << " " << coal_rates_denom[i][0] << std::endl;
+              
           }
-        
-          for(int e = 0; e < num_epochs; e++){
-            coal_rates_num[i][e]   += num[e];
-            coal_rates_denom[i][e] += denom[e];
-          }
-            
         }
       }
+
     }
 
-  }
-
-  for(int i = 1; i < data.N; i++){
-    for(int e = 0; e < num_epochs; e++){
-      if(coal_rates_denom[i][e] == 0 && e > 0){
-        coal_rates[i][e] = coal_rates[i][e-1];
-      }else{
-        coal_rates[i][e] = coal_rates_num[i][e]/coal_rates_denom[i][e];
+    for(int i = 1; i < N; i++){
+      for(int e = 0; e < num_epochs; e++){
+        if(coal_rates_denom[i][e] == 0 && e > 0){
+          coal_rates[i][e] = coal_rates[i][e-1];
+        }else{
+          coal_rates[i][e] = coal_rates_num[i][e]/coal_rates_denom[i][e];
+        }
+        //std::cerr << coal_rates[i][e] << " ";
+        coal_rates_num[i][e] = 0.0;
+        coal_rates_denom[i][e] = 0.0;
       }
-      //std::cerr << coal_rates[i][e] << " ";
-      coal_rates_num[i][e] = 0.0;
-      coal_rates_denom[i][e] = 0.0;
+      //std::cerr << std::endl;
     }
     //std::cerr << std::endl;
-  }
-  //std::cerr << std::endl;
 
   }
 
   std::ofstream os(options["output"].as<std::string>());
 
-  for(int i = 0; i < data.N; i++){
+  for(int i = 0; i < N; i++){
     os << i << " ";
   }
   os << std::endl;
@@ -173,7 +202,7 @@ aDNA(cxxopts::Options& options){
   }
   os << std::endl;
 
-  for(int i = 1; i < data.N; i++){
+  for(int i = 1; i < N; i++){
     os << "0 " << i << " ";
     for(int e = 0; e < num_epochs; e++){
       os << coal_rates[i][e] << " ";

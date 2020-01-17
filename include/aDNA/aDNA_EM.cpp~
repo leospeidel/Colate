@@ -3,6 +3,21 @@
 double
 logsumexp(double loga, double logb){
 
+  if(std::isinf(loga) || std::isnan(loga)){
+    if(std::isinf(logb) || std::isnan(logb)){
+      return 0.0;
+    }else{
+      return logb;
+    }
+  }
+  if(std::isinf(logb) || std::isnan(logb)){
+    if(std::isinf(loga) || std::isnan(loga)){
+      return 0.0;
+    }else{
+      return loga;
+    }
+  }
+
   if(loga > logb){
     return(loga + log(1.0 + exp(logb - loga)));
   }else{
@@ -53,6 +68,21 @@ logsumexp(double loga, double logb, double logc){
 
 double
 logminusexp(double loga, double logb){
+
+  if(std::isinf(loga) || std::isnan(loga)){
+    if(std::isinf(logb) || std::isnan(logb)){
+      return 0.0;
+    }else{
+      return 0.0; //assuming small value
+    }
+  }
+  if(std::isinf(logb) || std::isnan(logb)){
+    if(std::isinf(loga) || std::isnan(loga)){
+      return 0.0;
+    }else{
+      return loga;
+    }
+  }
 
   //assert(loga > logb);
   if(loga <= logb){
@@ -114,7 +144,8 @@ get_tint(std::vector<float>& epochs, int num_epochs, float age_begin, float age_
 
 }
 
-void get_ABC(int num_epochs, std::vector<double>& coal_rates, std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B, std::vector<double>& C){
+void 
+get_ABC(int num_epochs, std::vector<double>& coal_rates, std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B, std::vector<double>& C){
 
   std::vector<double> cumsum_coal_rate(num_epochs+3, 0.0);
   for(int i = 1; i < num_epochs+3; i++){
@@ -156,7 +187,10 @@ void get_ABC(int num_epochs, std::vector<double>& coal_rates, std::vector<double
       C[i] = 0; //log0
 
     }
-    //std::cerr << A[i] << " " << B[i] << " " << C[i] << std::endl;
+
+    assert(!std::isnan(A[i]));
+    assert(!std::isnan(B[i]));
+    assert(!std::isnan(C[i]));
 
   }
   i = num_epochs+2;
@@ -165,6 +199,10 @@ void get_ABC(int num_epochs, std::vector<double>& coal_rates, std::vector<double
   A[i] = -cumsum_coal_rate[i];
   B[i] = log(t_begin) - cumsum_coal_rate[i] + A[i] - log(coal_rate_e);
   C[i] = 2.0*log(t_begin) - cumsum_coal_rate[i] + log(2) - log(coal_rate_e) + B[i];
+
+  assert(!std::isnan(A[i]));
+  assert(!std::isnan(B[i]));
+  assert(!std::isnan(C[i]));
 
 }
 
@@ -220,7 +258,7 @@ EM_shared(std::vector<double>& coal_rates, float age_begin, float age_end, float
           if(age_begin == 0){
             tmp = C[i];          
           }else{
-            tmp   = logminusexp(C[i], log(age_begin) + B[i]);
+            tmp = logminusexp(C[i], log(age_begin) + B[i]);
           }
         }else{
           assert(age_begin > 0);
@@ -260,11 +298,7 @@ EM_shared(std::vector<double>& coal_rates, float age_begin, float age_end, float
     if(normalising_constant == 0.0){
       normalising_constant = f[e];
     }else{
-      if(normalising_constant < f[e]){
-        normalising_constant = f[e] + log(1.0 + exp(normalising_constant-f[e]));
-      }else{
-        normalising_constant = normalising_constant + log(1.0 + exp(f[e]-normalising_constant));
-      }
+      normalising_constant = logsumexp(normalising_constant, f[e]);
     }
 
   }
@@ -275,9 +309,7 @@ EM_shared(std::vector<double>& coal_rates, float age_begin, float age_end, float
     tf[e] -= normalising_constant;
     f[e]   = exp(f[e]);
     tf[e]  = exp(tf[e]);
-    //std::cerr << epochs[e] << " " << f[e] << std::endl;
   }
-  //std::cerr << std::endl;
 
   //calculate num and denom
   std::fill(num.begin(), num.end(), 0.0);
@@ -288,8 +320,10 @@ EM_shared(std::vector<double>& coal_rates, float age_begin, float age_end, float
     for(int e2 = e+1; e2 < num_epochs; e2++){
       denom[e] += (epochs[e+1] - epochs[e]) * f[e2];
     }
+    //std::cerr << epochs[e] << " " << num[e] << " " << denom[e] << std::endl;
   }
-
+  //std::cerr << std::endl;
+  
   return 0;
 
 }
@@ -330,6 +364,7 @@ EM_notshared(std::vector<double>& coal_rates, float age_begin, float age_end, fl
       //in P(D=1|t,coal) linear regime
 
       f[e]  = logminusexp(log(age_end) + A[i], B[i]) - log(age_end - age_begin);
+      //std::cerr << i << " " << t_int[i] << " " << t_int[i+1] << " " << epochs[e] << " " << A[i] << " " << log(age_end) + A[i] << " " << B[i] << std::endl;
       if(epochs[e] == 0){
         tf[e] = logminusexp( log(age_end) + B[i], C[i] ) - log(age_end - age_begin);
       }else{
@@ -371,11 +406,7 @@ EM_notshared(std::vector<double>& coal_rates, float age_begin, float age_end, fl
     if(normalising_constant == 0.0){
       normalising_constant = f[e];
     }else{
-      if(normalising_constant < f[e]){
-        normalising_constant = f[e] + log(1.0 + exp(normalising_constant-f[e]));
-      }else{
-        normalising_constant = normalising_constant + log(1.0 + exp(f[e]-normalising_constant));
-      }
+      normalising_constant = logsumexp(normalising_constant, f[e]);
     }
 
     if(e == ep_index[i_tmrca]) assert(i == i_tmrca);
@@ -385,11 +416,11 @@ EM_notshared(std::vector<double>& coal_rates, float age_begin, float age_end, fl
   double tmp1 = 0, tmp2 = 0, tmp3 = 0;
   //normalise density
   for(e = ep_index[i_begin]; e < ep_index[i_tmrca]+1; e++){
+    //std::cerr << epochs[e] << " " << f[e] << " " << tf[e] << std::endl;
     f[e]  -= normalising_constant;
     tf[e] -= normalising_constant;
     f[e]   = exp(f[e]);
     tf[e]  = exp(tf[e]);
-
   }
   
   for(e = 0; e < num_epochs; e++){
@@ -406,9 +437,7 @@ EM_notshared(std::vector<double>& coal_rates, float age_begin, float age_end, fl
 
   }
 
-
   //std::cerr << std::endl;
-
   //std::cerr << tmp1 << " " << tmp2 << std::endl;
 
   //calculate num and denom
