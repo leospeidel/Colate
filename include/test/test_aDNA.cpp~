@@ -57,10 +57,12 @@ TEST_CASE("test EM expectation step"){
   REQUIRE(EM_shared(coal_rates[i], epochs[3], epochs[5], 10000, epochs, num, denom) == 0);
   REQUIRE(EM_notshared(coal_rates[i], epochs[3], epochs[5], 10000, epochs, num, denom) == 0);
 
+  std::cerr << "deb1" << std::endl;
   for(int i = 0; i < data.N; i++){
     coal_rates[i][10] = 0;
   }
   REQUIRE(EM_shared(coal_rates[i], 10, 100, 10000, epochs, num, denom) == 0);
+  std::cerr << "deb2" << std::endl;
   REQUIRE(EM_notshared(coal_rates[i], 10, 100, 10000, epochs, num, denom) == 0);
 
 

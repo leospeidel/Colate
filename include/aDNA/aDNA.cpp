@@ -22,7 +22,7 @@ aDNA(cxxopts::Options& options){
   bool help = false;
   if(!options.count("anc") || !options.count("mut") || !options.count("haps") || !options.count("sample") || !options.count("input") || !options.count("output")){
     std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: anc, mut, haps, sample, input, output." << std::endl;
+    std::cout << "Needed: anc, mut, haps, sample, input, output. Optional: num_bins, coal" << std::endl;
     help = true;
   }
   if(options.count("help") || help){
@@ -66,26 +66,51 @@ aDNA(cxxopts::Options& options){
   ////////////////////////////////////////
 
   //decide on epochs
-  //TODO: custom epoch boundaries
-  float years_per_gen = 28.0;
-  if(options.count("years_per_gen")){
-    years_per_gen = options["years_per_gen"].as<float>();
-  }
+  int num_epochs; 
+  std::vector<float> epochs;
+  
+  std::ifstream is;
+  std::string line;
+  if(options.count("coal") > 0){
+    is.open(options["coal"].as<std::string>());
+    getline(is, line);
+    getline(is, line);
+    std::string tmp;
+    for(int i = 0; i < line.size(); i++){
+      if(line[i] == ' ' || line[i] == '\t'){
+        epochs.push_back(stof(tmp));
+        tmp = "";
+        num_epochs++;
+      }else{
+        tmp += line[i];
+      }
+    }
+  
+    assert(epochs[0] == 0);
+    for(int e = 1; e < num_epochs; e++){
+      assert(epochs[e] > epochs[e-1]);
+    }
 
-  int num_epochs = 30;
-  if(options.count("num_bins") > 0){
-    num_epochs = options["num_bins"].as<int>();
-  }
-  num_epochs++;
-  std::vector<float> epochs(num_epochs);
-  epochs[0] = 0.0;
-  epochs[1] = 1e3/years_per_gen;
-  float log_10 = std::log(10);
-  for(int e = 2; e < num_epochs-1; e++){
-    epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
-  }
-  epochs[num_epochs-1] = 1e8/years_per_gen;
+  }else{
+    num_epochs = 30;
+    if(options.count("num_bins") > 0){
+      num_epochs = options["num_bins"].as<int>();
+    }
+    float years_per_gen = 28.0;
+    if(options.count("years_per_gen")){
+      years_per_gen = options["years_per_gen"].as<float>();
+    }
+    num_epochs++; 
+    epochs.resize(num_epochs);
 
+    epochs[0] = 0.0;
+    epochs[1] = 1e3/years_per_gen;
+    float log_10 = std::log(10);
+    for(int e = 2; e < num_epochs-1; e++){
+      epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
+    }
+    epochs[num_epochs-1] = 1e8/years_per_gen;
+  }
   //read input sequence (file format? haps/sample? vcf?) and reference sequences (haps/sample? vcf?)
   //For now, assume both are haps/sample and span same positions
   //TODO: make this more flexible
@@ -96,31 +121,44 @@ aDNA(cxxopts::Options& options){
   Data data(ref_N.GetN(), ref_N.GetL());
   std::vector<std::vector<double>> coal_rates(data.N), coal_rates_num(data.N), coal_rates_denom(data.N);
   
-  std::ifstream is("./example_true.coal");
-  std::string line;
-  getline(is,line);
-  getline(is,line);
-
   int i = 0;
-  double dummy;
-  coal_rates[i].resize(num_epochs);
-  coal_rates_num[i].resize(num_epochs);
-  coal_rates_denom[i].resize(num_epochs);
-  for(int i = 1; i < data.N; i++){
+  if(options.count("coal") > 0){
+    double dummy;
     coal_rates[i].resize(num_epochs);
     coal_rates_num[i].resize(num_epochs);
     coal_rates_denom[i].resize(num_epochs);
     is >> dummy >> dummy;
     for(int e = 0; e < num_epochs; e++){
       is >> coal_rates[i][e];
+      std::cerr << coal_rates[i][e] << " "; 
     }
-    std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
+    std::cerr << std::endl;
+
+    for(int i = 1; i < data.N; i++){
+      coal_rates[i].resize(num_epochs);
+      coal_rates_num[i].resize(num_epochs);
+      coal_rates_denom[i].resize(num_epochs);
+      is >> dummy >> dummy;
+      for(int e = 0; e < num_epochs; e++){
+        coal_rates[i][e] = coal_rates[0][e]; 
+      }
+    }
+  }else{
+    coal_rates[i].resize(num_epochs);
+    coal_rates_num[i].resize(num_epochs);
+    coal_rates_denom[i].resize(num_epochs);
+    for(int i = 1; i < data.N; i++){
+      coal_rates[i].resize(num_epochs);
+      coal_rates_num[i].resize(num_epochs);
+      coal_rates_denom[i].resize(num_epochs);
+      std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
+    }
   }
  
   ////////////////////////////////////////  
 
   int N = 2;
-  for(int iter = 0; iter < 10; iter++){
+  for(int iter = 0; iter < 1000; iter++){
 
     std::cerr << iter << std::endl;
 
@@ -175,11 +213,20 @@ aDNA(cxxopts::Options& options){
 
     for(int i = 1; i < N; i++){
       for(int e = 0; e < num_epochs; e++){
-        if(coal_rates_denom[i][e] == 0 && e > 0){
-          coal_rates[i][e] = coal_rates[i][e-1];
+        //if(coal_rates_denom[i][e] == 0 && e > 0){
+        //  coal_rates[i][e] = coal_rates[i][e-1];
+        //}else{
+        //  coal_rates[i][e] = coal_rates_num[i][e]/coal_rates_denom[i][e];
+        //}
+        if(coal_rates_num[i][e] == 0){
+          coal_rates[i][e] = 0;
+        }else if(coal_rates_denom[i][e] == 0){
+          //std::cerr << "denom == 0: " << coal_rates_num[i][e] << " " << coal_rates_denom[i][e] << std::endl;
+          //exit(1);
         }else{
           coal_rates[i][e] = coal_rates_num[i][e]/coal_rates_denom[i][e];
         }
+
         //std::cerr << coal_rates[i][e] << " ";
         coal_rates_num[i][e] = 0.0;
         coal_rates_denom[i][e] = 0.0;
