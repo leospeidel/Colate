@@ -6,5 +6,5 @@ CXX_FLAGS = -O3   -std=gnu++11
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/data/smew1/speidel/genomics/relate_aDNA -I/data/smew1/speidel/genomics/relate_aDNA/../relate_lib/include/src -I/data/smew1/speidel/genomics/relate_aDNA/../relate_lib/include/src/tskit -I/data/smew1/speidel/genomics/relate_aDNA/../relate_lib/include/src/gzstream 
+CXX_INCLUDES = -I/data/smew1/speidel/genomics/relate_aDNA -I/data/smew1/speidel/genomics/relate_aDNA/../relate_lib/include/src -I/data/smew1/speidel/genomics/relate_aDNA/../relate_lib/include/src/tskit -I/data/smew1/speidel/genomics/relate_aDNA/../relate_lib/include/src/gzstream -I/data/smew1/speidel/genomics/relate_aDNA/include/aDNA 
 

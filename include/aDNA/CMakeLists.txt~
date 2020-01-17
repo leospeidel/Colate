@@ -1,3 +1,0 @@
-add_executable(RelateaDNA RelateaDNA.cpp)
-target_link_libraries(RelateaDNA ${PROJECT_LINK_LIBS})
-

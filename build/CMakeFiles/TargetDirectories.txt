@@ -1,5 +1,8 @@
 /data/smew1/speidel/genomics/relate_aDNA/build/CMakeFiles/rebuild_cache.dir
 /data/smew1/speidel/genomics/relate_aDNA/build/CMakeFiles/edit_cache.dir
+/data/smew1/speidel/genomics/relate_aDNA/build/CMakeFiles/Tests.dir
+/data/smew1/speidel/genomics/relate_aDNA/build/CMakeFiles/test.dir
+/data/smew1/speidel/genomics/relate_aDNA/build/include/aDNA/CMakeFiles/edit_cache.dir
 /data/smew1/speidel/genomics/relate_aDNA/build/include/aDNA/CMakeFiles/rebuild_cache.dir
 /data/smew1/speidel/genomics/relate_aDNA/build/include/aDNA/CMakeFiles/RelateaDNA.dir
-/data/smew1/speidel/genomics/relate_aDNA/build/include/aDNA/CMakeFiles/edit_cache.dir
+/data/smew1/speidel/genomics/relate_aDNA/build/include/aDNA/CMakeFiles/test.dir

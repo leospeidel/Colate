@@ -16,6 +16,7 @@ endif( ZLIB_FOUND )
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/aDNA)
+set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
 set(RELATE_LIBS librelateStatic.a libgzstreamShared.so libkastoreShared.so libtskitStatic.a)
 link_directories(${CMAKE_SOURCE_DIR}/../relate_lib/bin)
@@ -25,5 +26,15 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/tskit)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/gzstream)
+include_directories(${PROJECT_SOURCE_DIR}/include/aDNA)
 
 add_subdirectory(${ADNA_DIR})
+
+
+# tests
+add_executable(Tests ${TEST_DIR}/Tests.cpp ${ADNA_DIR}/aDNA_EM.hpp ${ADNA_DIR}/aDNA_EM.cpp)
+target_link_libraries(Tests ${RELATE_LIBS} UnitTest)
+
+enable_testing()
+add_test(UnitTest ${CMAKE_BINARY_DIR}/Tests)
+add_custom_command(TARGET Tests COMMENT "Run tests" POST_BUILD WORKING_DIRECTORY ${CMAKE_BINARY_DIR} COMMAND Tests)

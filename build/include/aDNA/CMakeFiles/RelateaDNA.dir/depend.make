@@ -10,4 +10,14 @@ include/aDNA/CMakeFiles/RelateaDNA.dir/RelateaDNA.cpp.o: ../../relate_lib/includ
 include/aDNA/CMakeFiles/RelateaDNA.dir/RelateaDNA.cpp.o: ../../relate_lib/include/src/sample.hpp
 include/aDNA/CMakeFiles/RelateaDNA.dir/RelateaDNA.cpp.o: ../include/aDNA/RelateaDNA.cpp
 include/aDNA/CMakeFiles/RelateaDNA.dir/RelateaDNA.cpp.o: ../include/aDNA/aDNA.cpp
+include/aDNA/CMakeFiles/RelateaDNA.dir/RelateaDNA.cpp.o: ../include/aDNA/aDNA_EM.hpp
+
+include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o: ../../relate_lib/include/src/anc.hpp
+include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o: ../../relate_lib/include/src/collapsed_matrix.hpp
+include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o: ../../relate_lib/include/src/data.hpp
+include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o: ../../relate_lib/include/src/gzstream/gzstream.hpp
+include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o: ../../relate_lib/include/src/mutations.hpp
+include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o: ../../relate_lib/include/src/sample.hpp
+include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o: ../include/aDNA/aDNA_EM.cpp
+include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o: ../include/aDNA/aDNA_EM.hpp
 

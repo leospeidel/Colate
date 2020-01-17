@@ -1,0 +1,4 @@
+project (unit_test)
+
+add_library(UnitTest catch.hpp aDNA_EM.hpp UnitTest.cpp test_aDNA.cpp)
+

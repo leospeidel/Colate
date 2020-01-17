@@ -56,6 +56,17 @@ CMAKE_BINARY_DIR = /data/smew1/speidel/genomics/relate_aDNA/build
 #=============================================================================
 # Targets provided globally by CMake.
 
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/usr/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
+
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
@@ -67,16 +78,16 @@ rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/usr/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : edit_cache
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
+	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
 
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
+# Special rule for the target test
+test/fast: test
 
-.PHONY : edit_cache/fast
+.PHONY : test/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -152,18 +163,49 @@ RelateaDNA.cpp.s:
 	cd /data/smew1/speidel/genomics/relate_aDNA/build && $(MAKE) -f include/aDNA/CMakeFiles/RelateaDNA.dir/build.make include/aDNA/CMakeFiles/RelateaDNA.dir/RelateaDNA.cpp.s
 .PHONY : RelateaDNA.cpp.s
 
+aDNA_EM.o: aDNA_EM.cpp.o
+
+.PHONY : aDNA_EM.o
+
+# target to build an object file
+aDNA_EM.cpp.o:
+	cd /data/smew1/speidel/genomics/relate_aDNA/build && $(MAKE) -f include/aDNA/CMakeFiles/RelateaDNA.dir/build.make include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.o
+.PHONY : aDNA_EM.cpp.o
+
+aDNA_EM.i: aDNA_EM.cpp.i
+
+.PHONY : aDNA_EM.i
+
+# target to preprocess a source file
+aDNA_EM.cpp.i:
+	cd /data/smew1/speidel/genomics/relate_aDNA/build && $(MAKE) -f include/aDNA/CMakeFiles/RelateaDNA.dir/build.make include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.i
+.PHONY : aDNA_EM.cpp.i
+
+aDNA_EM.s: aDNA_EM.cpp.s
+
+.PHONY : aDNA_EM.s
+
+# target to generate assembly for a file
+aDNA_EM.cpp.s:
+	cd /data/smew1/speidel/genomics/relate_aDNA/build && $(MAKE) -f include/aDNA/CMakeFiles/RelateaDNA.dir/build.make include/aDNA/CMakeFiles/RelateaDNA.dir/aDNA_EM.cpp.s
+.PHONY : aDNA_EM.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
+	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... RelateaDNA"
-	@echo "... edit_cache"
+	@echo "... test"
 	@echo "... RelateaDNA.o"
 	@echo "... RelateaDNA.i"
 	@echo "... RelateaDNA.s"
+	@echo "... aDNA_EM.o"
+	@echo "... aDNA_EM.i"
+	@echo "... aDNA_EM.s"
 .PHONY : help
 
 

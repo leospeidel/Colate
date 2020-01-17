@@ -78,6 +78,17 @@ edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
 
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
+	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+
+.PHONY : test/fast
+
 # The main all target
 all: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /data/smew1/speidel/genomics/relate_aDNA/build/CMakeFiles /data/smew1/speidel/genomics/relate_aDNA/build/CMakeFiles/progress.marks
@@ -111,6 +122,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named Tests
+
+# Build rule for target.
+Tests: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 Tests
+.PHONY : Tests
+
+# fast build rule for target.
+Tests/fast:
+	$(MAKE) -f CMakeFiles/Tests.dir/build.make CMakeFiles/Tests.dir/build
+.PHONY : Tests/fast
+
+#=============================================================================
 # Target rules for targets named RelateaDNA
 
 # Build rule for target.
@@ -123,6 +147,60 @@ RelateaDNA/fast:
 	$(MAKE) -f include/aDNA/CMakeFiles/RelateaDNA.dir/build.make include/aDNA/CMakeFiles/RelateaDNA.dir/build
 .PHONY : RelateaDNA/fast
 
+include/aDNA/aDNA_EM.o: include/aDNA/aDNA_EM.cpp.o
+
+.PHONY : include/aDNA/aDNA_EM.o
+
+# target to build an object file
+include/aDNA/aDNA_EM.cpp.o:
+	$(MAKE) -f CMakeFiles/Tests.dir/build.make CMakeFiles/Tests.dir/include/aDNA/aDNA_EM.cpp.o
+.PHONY : include/aDNA/aDNA_EM.cpp.o
+
+include/aDNA/aDNA_EM.i: include/aDNA/aDNA_EM.cpp.i
+
+.PHONY : include/aDNA/aDNA_EM.i
+
+# target to preprocess a source file
+include/aDNA/aDNA_EM.cpp.i:
+	$(MAKE) -f CMakeFiles/Tests.dir/build.make CMakeFiles/Tests.dir/include/aDNA/aDNA_EM.cpp.i
+.PHONY : include/aDNA/aDNA_EM.cpp.i
+
+include/aDNA/aDNA_EM.s: include/aDNA/aDNA_EM.cpp.s
+
+.PHONY : include/aDNA/aDNA_EM.s
+
+# target to generate assembly for a file
+include/aDNA/aDNA_EM.cpp.s:
+	$(MAKE) -f CMakeFiles/Tests.dir/build.make CMakeFiles/Tests.dir/include/aDNA/aDNA_EM.cpp.s
+.PHONY : include/aDNA/aDNA_EM.cpp.s
+
+include/test/Tests.o: include/test/Tests.cpp.o
+
+.PHONY : include/test/Tests.o
+
+# target to build an object file
+include/test/Tests.cpp.o:
+	$(MAKE) -f CMakeFiles/Tests.dir/build.make CMakeFiles/Tests.dir/include/test/Tests.cpp.o
+.PHONY : include/test/Tests.cpp.o
+
+include/test/Tests.i: include/test/Tests.cpp.i
+
+.PHONY : include/test/Tests.i
+
+# target to preprocess a source file
+include/test/Tests.cpp.i:
+	$(MAKE) -f CMakeFiles/Tests.dir/build.make CMakeFiles/Tests.dir/include/test/Tests.cpp.i
+.PHONY : include/test/Tests.cpp.i
+
+include/test/Tests.s: include/test/Tests.cpp.s
+
+.PHONY : include/test/Tests.s
+
+# target to generate assembly for a file
+include/test/Tests.cpp.s:
+	$(MAKE) -f CMakeFiles/Tests.dir/build.make CMakeFiles/Tests.dir/include/test/Tests.cpp.s
+.PHONY : include/test/Tests.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -131,7 +209,15 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... Tests"
+	@echo "... test"
 	@echo "... RelateaDNA"
+	@echo "... include/aDNA/aDNA_EM.o"
+	@echo "... include/aDNA/aDNA_EM.i"
+	@echo "... include/aDNA/aDNA_EM.s"
+	@echo "... include/test/Tests.o"
+	@echo "... include/test/Tests.i"
+	@echo "... include/test/Tests.s"
 .PHONY : help
 
 

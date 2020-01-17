@@ -12,8 +12,9 @@ int main(int argc, char* argv[]){
     ("mode", "Choose which part of the algorithm to run.", cxxopts::value<std::string>())
     ("anc", "Filename of file containing trees.", cxxopts::value<std::string>())
     ("mut", "Filename of file containing mut.", cxxopts::value<std::string>())
-    ("dist", "Optional but recommended. Distance in BP between SNPs. Can be generated using RelateFileFormats. If unspecified, distances in haps are used.", cxxopts::value<std::string>())
-    ("poplabels", "Filename of file containing population labels.", cxxopts::value<std::string>())
+    ("haps", "Filename of haps file (Output file format of Shapeit).", cxxopts::value<std::string>())
+    ("sample", "Filename of sample file (Output file format of Shapeit).", cxxopts::value<std::string>())
+    ("i,input", "Filename of input.", cxxopts::value<std::string>())
     ("o,output", "Filename of output.", cxxopts::value<std::string>());
 
   options.parse(argc, argv);
