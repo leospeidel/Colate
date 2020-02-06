@@ -41,11 +41,14 @@ aDNA(cxxopts::Options& options){
   //get TMRCA at each SNP
   std::vector<float> tmrca(mut.info.size(), 1e8/28.0);
   std::vector<float>::iterator it_tmrca = tmrca.begin();
+	std::vector<double> age_begin(mut.info.size(), 0.0), age_end(mut.info.size(), 0.0);
 
   if(0){
     MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
     Muts::iterator it_mut; //iterator for mut file
     AncMutIterators ancmut(options["anc"].as<std::string>(), options["mut"].as<std::string>());
+		std::vector<double>::iterator it_age_begin = age_begin.begin(), it_age_end = age_end.begin();
+
     float num_bases_tree_persists = 0.0;
     int root = 2 * ancmut.NumTips() - 2;
     std::vector<float> coords(2*ancmut.NumTips() - 1);
@@ -57,6 +60,14 @@ aDNA(cxxopts::Options& options){
         int tree_index = (*it_mut).tree;
         while((*it_mut).tree == tree_index){
           *it_tmrca = coords[root];
+					if((*it_mut).branch.size() == 1 && (*it_mut).flipped == 0){
+            *it_age_begin = coords[*(*it_mut).branch.begin()];
+						*it_age_end   = coords[(*mtr.tree.nodes[*(*it_mut).branch.begin()].parent).label];
+					}
+
+					it_age_begin++;
+					it_age_end++;
+
           it_tmrca++;
           it_mut++;
         }
@@ -187,9 +198,9 @@ aDNA(cxxopts::Options& options){
 
   ////////////////////////////////////////  
 
-  int N = 5;
+  int N = 2;
   int L = mut.info.size();
-  int max_iter = 1;
+  int max_iter = 1000;
   int perc = -1;
   for(int iter = 0; iter < max_iter; iter++){
 
@@ -212,10 +223,16 @@ aDNA(cxxopts::Options& options){
     std::vector<float> num(num_epochs, 0.0), denom(num_epochs, 0.0); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
     int snp = 0, snp_input = 0, snp_ref = 0;;
     //iterating over snps in reference
-    for(; snp_ref < ref.GetL(); snp_ref++){
+    for(; snp_ref < ref.GetL();){
 
+			//for(int k = 0; k < 1000; k++){
       ref.ReadSNP(sequence_ref, bp_ref);
-      while((bp_input == -1 || bp_input < bp_ref) && snp_input < input.GetL()){
+			snp_ref++;
+			//if(snp_ref == ref.GetL()) break;
+			//}
+			//if(snp_ref == ref.GetL()) break;
+
+			while((bp_input == -1 || bp_input < bp_ref) && snp_input < input.GetL()){
         input.ReadSNP(sequence_input, bp_input);
         snp_input++;
         if(snp_input == input.GetL()) break;
@@ -234,20 +251,22 @@ aDNA(cxxopts::Options& options){
           if(mut.info[snp].age_end > 0){
             if(sequence_ref[i] == '1'){
 
-              int ep = 0;
-              while(epochs[ep] < mut.info[snp].age_end){
-                ep++;
-                if(ep == epochs.size()) break;
-              }
+              //int ep = 0;
+              //while(epochs[ep] < mut.info[snp].age_end){
+              //  ep++;
+              //  if(ep == epochs.size()) break;
+              //}
 
               //if(ep+1 < epochs.size()){
                 //if(tmrca2[snp] > epochs[ep+1]){
 
                   if(bp_ref == bp_input && sequence_input[0] == '1'){
                     EM[i].EM_shared(mut.info[snp].age_begin, mut.info[snp].age_end, tmrca[snp], num, denom);
+										//EM[i].EM_shared(age_begin[snp], age_end[snp], tmrca[snp], num, denom);
                     assert(!std::isnan(denom[0]));
                   }else{
                     EM[i].EM_notshared(mut.info[snp].age_begin, mut.info[snp].age_end, tmrca[snp], num, denom);
+										//EM[i].EM_notshared(age_begin[snp], age_end[snp], tmrca[snp], num, denom);
                     assert(!std::isnan(denom[0]));
                   }
 
