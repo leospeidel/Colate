@@ -195,8 +195,8 @@ aDNA_EM::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::ve
   t_begin = t_int[i];
   coal_rate_e = coal_rates[ep_index[i]];
   A[i] = -cumsum_coal_rate[i];
-  B[i] = log(t_begin) - cumsum_coal_rate[i] + A[i] - log(coal_rate_e);
-  C[i] = 2.0*log(t_begin) - cumsum_coal_rate[i] + log(2) - log(coal_rate_e) + B[i];
+  B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
+  C[i] = logsumexp(2.0*log(t_begin) - cumsum_coal_rate[i], log(2) - log(coal_rate_e) + B[i]);
 
   assert(!std::isnan(A[i]));
   assert(!std::isnan(B[i]));
@@ -333,8 +333,8 @@ aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, st
     t_begin = t_int[i];
     coal_rate_e = coal_rates[ep_index[i]];
     A[i] = -cumsum_coal_rate[i];
-    B[i] = log(t_begin) - cumsum_coal_rate[i] + A[i] - log(coal_rate_e);
-    C[i] = 2.0*log(t_begin) - cumsum_coal_rate[i] + log(2) - log(coal_rate_e) + B[i];
+    B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
+    C[i] = logsumexp(2.0*log(t_begin) - cumsum_coal_rate[i], log(2) - log(coal_rate_e) + B[i]);
 
   }else{
     A[i] = A_ep[num_epochs-1];

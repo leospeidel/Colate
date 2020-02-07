@@ -1,4 +1,7 @@
 #include <iostream>
+#include <omp.h>
+#include <unistd.h>
+#define THREAD_NUM 20
 
 #include "gzstream.hpp"
 #include "data.hpp"
@@ -81,7 +84,7 @@ aDNA(cxxopts::Options& options){
     os_tmrca.close();
   }
 
-  if(0){
+  if(1){
     std::ifstream is_tmrca(options["input"].as<std::string>() + ".tmrca");
     for(it_tmrca = tmrca.begin(); it_tmrca != tmrca.end(); it_tmrca++){
       is_tmrca >> *it_tmrca;
@@ -91,7 +94,7 @@ aDNA(cxxopts::Options& options){
 
   std::vector<float> tmrca2(mut.info.size(), 1e8/28.0);
   std::vector<float>::iterator it_tmrca2 = tmrca2.begin();
-  if(0){
+  if(1){
     std::ifstream is_tmrca2(options["input"].as<std::string>() + ".tmrca");
     for(it_tmrca2 = tmrca2.begin(); it_tmrca2 != tmrca2.end(); it_tmrca2++){
       is_tmrca2 >> *it_tmrca2;
@@ -130,7 +133,7 @@ aDNA(cxxopts::Options& options){
     }
 
   }else{
-    num_epochs = 5;
+    num_epochs = 20;
     if(options.count("num_bins") > 0){
       num_epochs = options["num_bins"].as<int>();
     }
@@ -142,9 +145,9 @@ aDNA(cxxopts::Options& options){
     epochs.resize(num_epochs);
 
     epochs[0] = 0.0;
-    //epochs[1] = 1e3/years_per_gen;
+    epochs[1] = 1e3/years_per_gen;
     float log_10 = std::log(10);
-    for(int e = 1; e < num_epochs-1; e++){
+    for(int e = 2; e < num_epochs-1; e++){
       epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
     }
     epochs[num_epochs-1] = 1e8/years_per_gen;
@@ -198,7 +201,7 @@ aDNA(cxxopts::Options& options){
 
   ////////////////////////////////////////  
 
-  int N = 2;
+  int N = std::min(10, data.N);
   int L = mut.info.size();
   int max_iter = 1000;
   int perc = -1;
@@ -248,17 +251,18 @@ aDNA(cxxopts::Options& options){
 
         //calculate contribution to MLE if shared and non-shared
         for(int i = 0; i < N; i++){
+          assert(i < N);
           if(mut.info[snp].age_end > 0){
             if(sequence_ref[i] == '1'){
 
-              //int ep = 0;
-              //while(epochs[ep] < mut.info[snp].age_end){
-              //  ep++;
-              //  if(ep == epochs.size()) break;
-              //}
+              int ep = 0;
+              while(epochs[ep] < mut.info[snp].age_end){
+                ep++;
+                if(ep == epochs.size()) break;
+              }
 
-              //if(ep+1 < epochs.size()){
-                //if(tmrca2[snp] > epochs[ep+1]){
+              if(ep+1 < epochs.size()){
+                if(tmrca2[snp] > epochs[ep+1]){
 
                   if(bp_ref == bp_input && sequence_input[0] == '1'){
                     EM[i].EM_shared(mut.info[snp].age_begin, mut.info[snp].age_end, tmrca[snp], num, denom);
@@ -275,8 +279,8 @@ aDNA(cxxopts::Options& options){
                     coal_rates_denom[i][e] += denom[e];
                   }
 
-                //}
-              //}
+                }
+              }
 
             }
           }

@@ -11,6 +11,10 @@ if ( ZLIB_FOUND )
     include_directories( ${ZLIB_INCLUDE_DIRS} ) 
 endif( ZLIB_FOUND )
 
+find_package( OpenMP REQUIRED )
+if ( OpenMP_FOUND )
+  include_directories( ${OpenMP_INCLUDE_DIRS} ) 
+endif( OpenMP_FOUND )
 
 # Set dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)

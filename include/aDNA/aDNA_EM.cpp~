@@ -145,6 +145,17 @@ aDNA_EM::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::ve
         B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
       }
 
+			//to deal with numerical inaccuracies:
+			if(t_begin > 0){
+				if(B[i] > log(t_end)+A[i] || B[i] < log(t_begin)*A[i]){
+					B[i] = 0.5 * (log(t_end) + A[i] + log(t_begin) + A[i]);
+				}
+			}else if(B[i] > log(t_end)+A[i]){
+				if(B[i] > log(t_end)+A[i]){
+					B[i] = log(t_end) + A[i];
+				}
+			}
+
       if(coal_rate_e == 0){
         C[i] = log(t_end*t_end-t_begin*t_begin) - cumsum_coal_rate[i];
         if(t_begin > 0){
@@ -159,6 +170,14 @@ aDNA_EM::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::ve
         }
         C[i] = logminusexp(C[i], 2.0 * log(t_end) - cumsum_coal_rate[i+1]);
       }
+			//to deal with numerical inaccuracies:
+			if(t_begin > 0){
+				if(C[i] > log(t_end)+B[i] || C[i] < log(t_begin)*B[i]){
+					C[i] = 0.5 * (log(t_end)+B[i] + log(t_begin)+B[i]);
+				}
+			}else if(C[i] > log(t_end)+B[i]){
+				C[i] = log(t_end) + B[i];
+			}
     }else{
 
       A[i] = log(0.0); 
@@ -200,6 +219,8 @@ aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, st
   int current_e = -1;
   for(i = 0; i < t_int.size()-1; i++){
 
+		//std::cerr << "--- " << i << std::endl;
+
     int e = ep_index[i];
     if(e == ep_index[i+1]-1 && e == current_e+1){
 
@@ -214,10 +235,13 @@ aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, st
       t_end       = t_int[i+1];
       coal_rate_e = coal_rates[ep_index[i]];
 
-      if(e == 1) std::cerr << "debug: " << i << " " << t_begin << " " << t_end << std::endl;
+			//std::cerr << "t: " << t_begin << " " << t_end << std::endl;
+
       assert(t_end >= t_begin);
       if(t_end != 0 && t_end - t_begin > 0){
         A[i] = logminusexp(-cumsum_coal_rate[i], -cumsum_coal_rate[i+1]);
+
+				//std::cerr << "d1: " << logminusexp(-coal_rate_e*t_begin, -coal_rate_e*t_end) << " " << A[i] << std::endl;
 
         if(coal_rate_e == 0){ 
           B[i] = log(t_end - t_begin) - cumsum_coal_rate[i];
@@ -231,8 +255,22 @@ aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, st
           }else{
             B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
           }
-          B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
+					//std::cerr << t_begin << " " << t_end << std::endl;
+					//std::cerr << "d2: " <<  t_begin*exp(-coal_rate_e*t_begin) << " " << exp(A[i])/coal_rate_e << " " << t_end*exp(-coal_rate_e*t_end) << " " << log(t_begin*exp(-coal_rate_e*t_begin) + exp(A[i])/coal_rate_e) << " " << B[i] << std::endl;
+					B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
+					//std::cerr << log(t_begin*exp(-coal_rate_e*t_begin) + exp(A[i])/coal_rate_e - t_end*exp(-coal_rate_e*t_end)) << " " << B[i] << std::endl;  
         }
+
+				//to deal with numerical inaccuracies:
+				if(t_begin > 0){
+					if(B[i] > log(t_end)+A[i] || B[i] < log(t_begin)*A[i]){
+						B[i] = 0.5 * (log(t_end) + A[i] + log(t_begin) + A[i]);
+					}
+				}else if(B[i] > log(t_end)+A[i]){
+					if(B[i] > log(t_end)+A[i]){
+						B[i] = log(t_end) + A[i];
+					}
+				}
 
         if(coal_rate_e == 0){
           C[i] = log(t_end*t_end-t_begin*t_begin) - cumsum_coal_rate[i];
@@ -244,10 +282,33 @@ aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, st
           if(t_begin == 0){
             C[i] = log(2.0) - log(coal_rate_e) + B[i];
           }else{
-            C[i] = logsumexp(2.0 * log(t_begin) - cumsum_coal_rate[i], log(2.0) - log(coal_rate_e) + B[i]);   
+            C[i] = logsumexp(2.0 * log(t_begin) - cumsum_coal_rate[i], log(2.0) - log(coal_rate_e) + B[i]);
           }
+					//std::cerr << "d3: " << (t_begin*t_begin)*exp(-coal_rate_e*t_begin) << " " << 2.0/coal_rate_e * exp(B[i]) << " " <<  (t_begin*t_begin)*exp(-coal_rate_e*t_begin) +  2.0/coal_rate_e * exp(B[i]) << " " << exp(C[i]) << std::endl;
           C[i] = logminusexp(C[i], 2.0 * log(t_end) - cumsum_coal_rate[i+1]);
-        }
+					//std::cerr << (t_begin*t_begin)*exp(-coal_rate_e*t_begin) +  2.0/coal_rate_e * exp(B[i]) - t_end * t_end * exp(-coal_rate_e*t_end) << " " << exp(C[i]) << std::endl;
+				}
+				//to deal with numerical inaccuracies:
+				if(t_begin > 0){
+					if(C[i] > log(t_end)+B[i] || C[i] < log(t_begin)*B[i]){
+						C[i] = 0.5 * (log(t_end)+B[i] + log(t_begin)+B[i]);
+					}
+				}else if(C[i] > log(t_end)+B[i]){
+          C[i] = log(t_end) + B[i];
+				}
+
+				if(0){
+				std::cerr << "check:" << std::endl;
+			  std::cerr << log(t_begin) + A[i] << " " << B[i] << " " << log(t_end) + A[i] << std::endl;
+				std::cerr << log(t_begin) + B[i] << " " << C[i] << " " << log(t_end) + B[i] << std::endl;
+				std::cerr << 2.0*log(t_begin)+A[i] << " " << C[i] << " " << 2.0*log(t_end) + A[i] << std::endl;
+				assert(B[i] <= log(t_end)   + A[i]);
+				assert(B[i] >= log(t_begin) + A[i]);
+				assert(C[i] <= log(t_end)   + B[i]);
+				assert(C[i] >= log(t_begin) + B[i]);
+
+				std::cerr << "------------" << std::endl; 
+				}
 
       }else{
 
@@ -272,8 +333,8 @@ aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, st
     t_begin = t_int[i];
     coal_rate_e = coal_rates[ep_index[i]];
     A[i] = -cumsum_coal_rate[i];
-    B[i] = log(t_begin) - cumsum_coal_rate[i] + A[i] - log(coal_rate_e);
-    C[i] = 2.0*log(t_begin) - cumsum_coal_rate[i] + log(2) - log(coal_rate_e) + B[i];
+    B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
+    C[i] = logsumexp(2.0*log(t_begin) - cumsum_coal_rate[i], log(2) - log(coal_rate_e) + B[i]);
 
   }else{
     A[i] = A_ep[num_epochs-1];
@@ -286,7 +347,6 @@ aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, st
   assert(!std::isnan(C[i]));
 
   if(std::isnan(A[0]))  std::cerr << A[0] << std::endl;
-
 
 }
 
@@ -321,7 +381,6 @@ aDNA_EM::EM_shared(float age_begin, float age_end, float tmrca, std::vector<floa
   for(; e < ep_index[i_end]+1; e++){
 
     assert(ep_index[i] == e);
-
     if(i < i_begin){
       //in P(D=1|t,coal) = 1 regime
       if(ep_index[i_begin] == e){
@@ -338,6 +397,7 @@ aDNA_EM::EM_shared(float age_begin, float age_end, float tmrca, std::vector<floa
 
         double tmp = 0;
         tmp   = logminusexp(log(age_end + epochs[e]) + B[i], C[i]);
+
         if(epochs[e] > 0){
           tmp   = logminusexp(tmp, log(age_end) + log(epochs[e]) + A[i]);
         }
@@ -376,6 +436,8 @@ aDNA_EM::EM_shared(float age_begin, float age_end, float tmrca, std::vector<floa
 
   }
 
+	//std::cerr << normalising_constant << std::endl;
+
   float exp_t = 0.0;
   //normalise density
   for(e = 0; e < ep_index[i_end]+1; e++){
@@ -385,7 +447,14 @@ aDNA_EM::EM_shared(float age_begin, float age_end, float tmrca, std::vector<floa
     assert(!std::isnan(tf[e]));
     f[e]   = exp(f[e]);
     tf[e]  = exp(tf[e]);
-    
+
+		//if((epochs[e+1] - epochs[e])*f[e] < tf[e]){
+		//	std::cerr << e << " " << age_begin << " " << age_end << " " << (epochs[e+1] - epochs[e])*f[e] << " " << tf[e] << std::endl;
+		//	tf[e] = (epochs[e+1] - epochs[e])*f[e];
+		//}
+		//assert((epochs[e+1] - epochs[e])*f[e] >= tf[e]);
+		assert(f[e] <= 1.0);
+
     //exp_t += tf[e] + epochs[e]*f[e];
     //std::cerr << epochs[e] << " " << f[e] << " " << tf[e] << std::endl;
   }
@@ -396,7 +465,12 @@ aDNA_EM::EM_shared(float age_begin, float age_end, float tmrca, std::vector<floa
   std::fill(num.begin(), num.end(), 0.0);
   std::fill(denom.begin(), denom.end(), 0.0);
   double integ = 1.0;
-  for(e = 0; e < ep_index[i_end]+1; e++){
+  //for(e = 0; e < ep_index[i_end]+1; e++){
+  for(e = 0; e < num_epochs; e++){
+		if(e > ep_index[i_end]){
+      assert(f[e] == 0.0);
+			assert(tf[e] == 0.0);
+	  }
     num[e]   = f[e];
     integ   -= f[e];
     if(integ < 0) integ = 0.0;
@@ -509,6 +583,13 @@ aDNA_EM::EM_notshared(float age_begin, float age_end, float tmrca, std::vector<f
     f[e]   = exp(f[e]);
     tf[e]  = exp(tf[e]);
 
+		//if((epochs[e+1] - epochs[e])*f[e] < tf[e]){
+		//	std::cerr << e << " " << age_begin << " " << age_end << " " << (epochs[e+1] - epochs[e])*f[e] << " " << tf[e] << std::endl;
+		//	tf[e] = (epochs[e+1] - epochs[e])*f[e];
+		//}
+
+			//assert((epochs[e+1] - epochs[e])*f[e] >= tf[e]);
+		assert(f[e] <= 1.0);
     //exp_t += tf[e] + epochs[e]*f[e];
     //std::cerr << epochs[e] << " " << f[e] << " " << tf[e] << std::endl;
   }
@@ -519,7 +600,12 @@ aDNA_EM::EM_notshared(float age_begin, float age_end, float tmrca, std::vector<f
   std::fill(num.begin(), num.end(), 0.0);
   std::fill(denom.begin(), denom.end(), 0.0);
   double integ = 1.0;
-  for(e = 0; e < ep_index[i_tmrca]+1; e++){
+  //for(e = ep_index[i_begin]; e < ep_index[i_tmrca]+1; e++){
+	for(e = 0; e < num_epochs; e++){
+		if(e > ep_index[i_tmrca] || e < ep_index[i_begin]){
+			assert(f[e] == 0.0);
+			assert(tf[e] == 0.0);
+		}
     num[e]   = f[e];
     integ   -= f[e];
     if(integ < 0) integ = 0.0;
