@@ -113,12 +113,62 @@ TEST_CASE("test EM expectation step"){
 
   double x = 0, y = 1, lambda = 1/30000.0;
   int e = 20;
-  x = 1; 
+  x = 0; 
   y = 1;
   for(int i = 0; i < 6; i++){
   
     y *= 10;
-    //x = std::max(0.0, epochs[i]-100);
+    //y = std::max(10.0, epochs[i]-100);
+    for(int e = num_epochs-2; e >= 0; e--){
+      double ep1 = epochs[e], ep2 = epochs[e+1];
+      double A = std::min(std::max(ep1, x), y), B = std::max(std::min(y, ep2), x), C = std::min(y, std::max(ep2,x));
+      double norm     = logminusexp(-lambda*x, -lambda*y);
+      double th_num   = logminusexp(-lambda*A, -lambda*B)-norm;
+      
+      double th_denom = logsumexp(log(A)-lambda*A,-log(lambda)-lambda*A);
+      th_denom = logminusexp(th_denom, log(B)-lambda*B);
+      th_denom = logminusexp(th_denom, -log(lambda)-lambda*B);
+      th_denom = logminusexp(th_denom, log(ep1)+logminusexp(-lambda*A,-lambda*B));
+      th_denom = logsumexp(th_denom, log(ep2-ep1)+logminusexp(-lambda*C,-lambda*y));
+			th_denom -= norm;
+
+      EM.EM_shared(    y, 1.0001*y, 1e9, num, denom);
+
+			if(0){
+      std::cerr << e << " " << x << " " << y << std::endl;
+      std::cerr << A << " " << B << " " << C << " " << x << " " << y << std::endl;
+			std::cerr << norm << std::endl;
+      std::cerr << num[e] << " " << denom[e] << " " << denom[e]/num[e] << std::endl;
+      std::cerr << exp(th_num) << " " << exp(th_denom) << " " << exp(th_denom-th_num) << std::endl;
+			}
+
+			th_num = exp(th_num);
+			th_denom = exp(th_denom);
+
+      if(!std::isnan(num[e]) && !std::isnan(th_num)){
+        if(th_num != 0 && num[e] != 0){
+          REQUIRE(std::fabs(num[e] - th_num)/th_num <= 0.01);
+        }else{
+          REQUIRE(std::fabs(num[e]) <= 0.01);
+        }
+      }
+      if(!std::isnan(denom[e]) && !std::isnan(th_denom)){
+        if(th_denom != 0 && denom[e] != 0){
+          REQUIRE(std::fabs(denom[e] - th_denom)/th_denom <= 0.01);
+        }else{
+          REQUIRE(std::fabs(denom[e]) <= 0.01);
+        }
+      }
+
+    }
+  }
+
+  y = 1e9;
+  x = 1; 
+  for(int i = 0; i < 6; i++){
+  
+    x *= 10;
+    //x = std::max(10.0, epochs[i]-100);
     for(int e = num_epochs-2; e >= 0; e--){
       double ep1 = epochs[e], ep2 = epochs[e+1];
       double A = std::min(std::max(ep1, x), y), B = std::max(std::min(y, ep2), x), C = std::min(y, std::max(ep2,x));
@@ -134,13 +184,12 @@ TEST_CASE("test EM expectation step"){
       th_denom = logsumexp(th_denom, log(ep2-ep1)+logminusexp(-lambda*C,-lambda*y));
 			th_denom -= norm;
 
-      EM.EM_shared(    y, 1.0001*y, 1e9, num, denom);
-      //EM.EM_notshared(    x, x+1, 1e9, num, denom);
+      EM.EM_notshared(    x, 1.0001*x, 1e9, num, denom);
 
 			if(0){
       std::cerr << e << " " << x << " " << y << std::endl;
       std::cerr << A << " " << B << " " << C << " " << x << " " << y << std::endl;
-			std::cerr << norm << std::endl;
+			std::cerr << "n " << norm << std::endl;
       std::cerr << num[e] << " " << denom[e] << " " << denom[e]/num[e] << std::endl;
       std::cerr << exp(th_num) << " " << exp(th_denom) << " " << exp(th_denom-th_num) << std::endl;
 			}
@@ -150,23 +199,23 @@ TEST_CASE("test EM expectation step"){
 
       if(!std::isnan(num[e]) && !std::isnan(th_num)){
         if(th_num != 0 && num[e] != 0){
-          //REQUIRE(std::fabs(num[e] - th_num)/th_num <= 0.1);
+          REQUIRE(std::fabs(num[e] - th_num)/th_num <= 0.01);
         }else{
-          //REQUIRE(std::fabs(num[e]) <= 0.1);
+          REQUIRE(std::fabs(num[e]) <= 0.01);
         }
       }
       if(!std::isnan(denom[e]) && !std::isnan(th_denom)){
         if(th_denom != 0 && denom[e] != 0){
-          //REQUIRE(std::fabs(denom[e] - th_denom)/th_denom <= 0.1);
+          REQUIRE(std::fabs(denom[e] - th_denom)/th_denom <= 0.01);
         }else{
-          //REQUIRE(std::fabs(denom[e]) <= 0.1);
+          REQUIRE(std::fabs(denom[e]) <= 0.01);
         }
       }
 
     }
   }
 
-  if(0){
+  if(1){
   //need to work out some theoretical results here
   REQUIRE(EM.EM_shared(10, 100, 100, num, denom) == 0);
   REQUIRE(EM.EM_notshared(10, 100, 100, num, denom) == 0);

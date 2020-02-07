@@ -188,14 +188,13 @@ aDNA(cxxopts::Options& options){
     }
   }else{
     double initial_coal_rate = 1.0/40000.0;
-    coal_rates[i].resize(num_epochs);
-    coal_rates_num[i].resize(num_epochs);
-    coal_rates_denom[i].resize(num_epochs);
     for(int i = 0; i < data.N; i++){
       coal_rates[i].resize(num_epochs);
       coal_rates_num[i].resize(num_epochs);
       coal_rates_denom[i].resize(num_epochs);
       std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
+      std::fill(coal_rates_num[i].begin(), coal_rates_num[i].end(), 0.0);
+      std::fill(coal_rates_denom[i].begin(), coal_rates_denom[i].end(), 0.0);
     }
   }
 
