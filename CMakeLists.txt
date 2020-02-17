@@ -11,10 +11,10 @@ if ( ZLIB_FOUND )
     include_directories( ${ZLIB_INCLUDE_DIRS} ) 
 endif( ZLIB_FOUND )
 
-find_package( OpenMP REQUIRED )
-if ( OpenMP_FOUND )
-  include_directories( ${OpenMP_INCLUDE_DIRS} ) 
-endif( OpenMP_FOUND )
+#find_package( OpenMP REQUIRED )
+#if ( OpenMP_FOUND )
+#  include_directories( ${OpenMP_INCLUDE_DIRS} ) 
+#endif( OpenMP_FOUND )
 
 # Set dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
@@ -22,7 +22,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/aDNA)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
-set(RELATE_LIBS librelateStatic.a libgzstreamShared.so libkastoreShared.so libtskitStatic.a)
+set(RELATE_LIBS librelateShared.dylib libgzstreamShared.dylib libkastoreShared.dylib libtskitShared.dylib)
 link_directories(${CMAKE_SOURCE_DIR}/../relate_lib/bin)
 
 # Add subdirectories

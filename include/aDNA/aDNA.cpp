@@ -1,7 +1,4 @@
 #include <iostream>
-#include <omp.h>
-#include <unistd.h>
-#define THREAD_NUM 20
 
 #include "gzstream.hpp"
 #include "data.hpp"
