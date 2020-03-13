@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <string>
+#include <random>
 
 class aDNA_EM{
 
@@ -30,8 +31,6 @@ class aDNA_EM{
 
     aDNA_EM(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
       num_epochs = epochs.size();
-      
-      std::cerr << num_epochs << std::endl;
       A_ep.resize(num_epochs);
       B_ep.resize(num_epochs);
       C_ep.resize(num_epochs);
@@ -44,8 +43,45 @@ class aDNA_EM{
       get_ABC(epochs, ep_index, A_ep, B_ep, C_ep);
     }
 
-    int EM_shared(float age_begin, float age_end, float tmrca, std::vector<float>& num, std::vector<float>& denom);
-    int EM_notshared(float age_begin, float age_end, float tmrca, std::vector<float>& num, std::vector<float>& denom); 
+    double EM_shared(float age_begin, float age_end, float tmrca, std::vector<float>& num, std::vector<float>& denom);
+    double EM_notshared(float age_begin, float age_end, float tmrca, std::vector<float>& num, std::vector<float>& denom); 
+
+};
+
+class aDNA_EM_simplified{
+
+  private:
+
+    std::vector<double> coal_rates;
+    std::vector<double> epochs;
+    int num_epochs;
+
+    std::vector<double> A_ep, B_ep, C_ep;
+
+    double logsumexp(double loga, double logb);
+    double logminusexp(double loga, double logb);
+
+    void get_tint(float age, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin);
+    void get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B);
+    void get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B);
+
+  public:
+
+    aDNA_EM_simplified(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
+      num_epochs = epochs.size();
+      A_ep.resize(num_epochs);
+      B_ep.resize(num_epochs);
+      std::vector<int> ep_index(num_epochs);
+      int i = 0;
+      for(std::vector<int>::iterator it_ep_index = ep_index.begin(); it_ep_index != ep_index.end(); it_ep_index++){
+        *it_ep_index = i;
+        i++;  
+      }
+      get_ABC(epochs, ep_index, A_ep, B_ep);
+    }
+
+    double EM_shared(float age, std::vector<float>& num, std::vector<float>& denom);
+    double EM_notshared(float age, std::vector<float>& num, std::vector<float>& denom); 
 
 };
 
