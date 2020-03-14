@@ -251,3 +251,164 @@ TEST_CASE("test EM expectation step"){
 
 }
 
+TEST_CASE("test simplified EM expectation step"){
+
+	//decide on epochs
+	float years_per_gen = 28.0;
+	int num_epochs = 30;
+	num_epochs++;
+	std::vector<double> epochs(num_epochs);
+	epochs[0] = 0.0;
+	epochs[1] = 1e3/years_per_gen;
+	float log_10 = std::log(10);
+	for(int e = 2; e < num_epochs-1; e++){
+		epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
+	}
+	epochs[num_epochs-1] = 1e8/years_per_gen;
+
+	double initial_coal_rate = 1.0/5000.0;
+	Data data(1, 1);
+	std::vector<std::vector<double>> coal_rates(data.N), coal_rates_num(data.N), coal_rates_denom(data.N);
+	for(int i = 0; i < data.N; i++){
+		coal_rates[i].resize(num_epochs);
+		coal_rates_num[i].resize(num_epochs);
+		coal_rates_denom[i].resize(num_epochs);
+		std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
+	}
+
+	aDNA_EM_simplified EM(epochs, coal_rates[0]);
+
+	int i = 0;
+	std::vector<double> num(num_epochs), denom(num_epochs); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
+
+	double C = 1e3;
+	int num_age_bins = ((int) (log(1e8) * C));
+	std::cerr << num_age_bins << std::endl;
+	std::vector<int> age_shared_count(num_age_bins, 0), age_notshared_count(num_age_bins, 0);
+	std::vector<double> age_bin(num_age_bins, 0.0);
+	int bin = 0;
+	for(std::vector<double>::iterator it_age_bin = age_bin.begin(); it_age_bin != age_bin.end(); it_age_bin++){
+		*it_age_bin = exp(bin/C)/10.0;
+		bin++;
+	}
+
+	/*
+	std::cerr << 28*epochs[0] << " " << 28*epochs[1] << " " << 28*epochs[2] << " " << 28*epochs[3] << " " << 28*epochs[4] << std::endl;
+	std::fill(num.begin(), num.end(), 0.0);
+	std::fill(denom.begin(), denom.end(), 0.0);
+	double logl = EM.EM_shared(2000/28, num, denom);
+  std::cerr << num[0] << " " << num[1] << " " << num[2] << " " << num[3] << " " << denom[0] << " " << denom[1] << " " << denom[2] << " " << denom[3] << std::endl;
+	std::fill(num.begin(), num.end(), 0.0);
+	std::fill(denom.begin(), denom.end(), 0.0);
+	logl = EM.EM_notshared(2000/28, num, denom);
+  std::cerr << num[0] << " " << num[1] << " " << num[2] << " " << num[3] << " " << denom[0] << " " << denom[1] << " " << denom[2] << " " << denom[3] << std::endl;
+  */
+
+	double lambda = initial_coal_rate;
+	for(int bin = 0; bin < num_age_bins; bin++){
+
+		std::fill(num.begin(), num.end(), 0.0);
+		std::fill(denom.begin(), denom.end(), 0.0);
+		double logl = EM.EM_shared(age_bin[bin], num, denom);
+
+		for(int e = 0; e < num_epochs-1; e++){
+
+			double ep1 = epochs[e], ep2 = epochs[e+1];
+
+			double A = std::min(ep1, age_bin[bin]), B = std::min(age_bin[bin], ep2);
+			double norm     = logminusexp(0.0, -lambda*age_bin[bin]);
+			double th_num   = logminusexp(-lambda*A, -lambda*B);
+
+			double th_denom = logsumexp(log(A)-lambda*A, th_num - log(lambda));
+			th_denom = logminusexp(th_denom, log(B) - lambda*B);
+      th_denom = logminusexp(th_denom, log(ep1) + th_num);
+     
+      double rest = logminusexp(-lambda*B, -lambda*age_bin[bin]);
+			th_denom = logsumexp(th_denom, log(ep2 - ep1) + rest);
+
+			th_num   -= norm;
+			th_denom -= norm;
+
+			th_num = exp(th_num);
+			th_denom = exp(th_denom);
+
+			if(1){
+			
+				/*
+				std::cerr << std::endl;
+				std::cerr << bin << " " << age_bin[bin] << " " << ep1 << " " << ep2 << std::endl;
+				std::cerr << logl << " " << norm << std::endl;
+				std::cerr << num[e] << " " << th_num << std::endl;
+				std::cerr << denom[e] << " " << th_denom << std::endl;
+				*/
+				REQUIRE(std::fabs(logl - norm) < 1e-3);
+				if(th_num > 0){
+			  	REQUIRE(std::fabs(num[e] - th_num) <= 1e-5);
+				}else{
+					REQUIRE(num[e] == 0.0);
+				}
+				if(th_denom > 0){
+			  	REQUIRE(std::fabs(denom[e] - th_denom) <= 1e-5);
+				}else{
+					REQUIRE(denom[e] == 0.0);
+				}
+			}
+
+		}
+	}
+
+	for(int bin = 0; bin < num_age_bins; bin++){
+
+		std::fill(num.begin(), num.end(), 0.0);
+		std::fill(denom.begin(), denom.end(), 0.0);
+		double logl = EM.EM_notshared(age_bin[bin], num, denom);
+
+		for(int e = 0; e < num_epochs-1; e++){
+
+			double ep1 = epochs[e], ep2 = epochs[e+1];
+
+			double A = std::max(ep1, age_bin[bin]), B = std::max(age_bin[bin], ep2);
+			double norm     = -lambda*age_bin[bin];
+			double th_num   = logminusexp(-lambda*A, -lambda*B);
+
+			double th_denom = logsumexp(log(A)-lambda*A, th_num - log(lambda));
+			th_denom = logminusexp(th_denom, log(B) - lambda*B);
+			th_denom = logminusexp(th_denom, log(ep1) + th_num);
+
+			double rest = -lambda*B;
+			th_denom = logsumexp(th_denom, log(ep2 - ep1) + rest);
+
+			th_num   -= norm;
+			th_denom -= norm;
+
+			th_num = exp(th_num);
+			th_denom = exp(th_denom);
+
+			if(1){
+
+				/*
+				std::cerr << std::endl;
+				std::cerr << bin << " " << age_bin[bin] << " " << ep1 << " " << ep2 << std::endl;
+				std::cerr << logl << " " << norm << std::endl;
+				std::cerr << num[e] << " " << th_num << std::endl;
+				std::cerr << denom[e] << " " << th_denom << std::endl;
+				*/
+				REQUIRE(std::fabs(logl - norm) < 1e-3);
+				if(th_num > 0){
+					REQUIRE(std::fabs(num[e] - th_num) <= 1e-5);
+				}else{
+					REQUIRE(num[e] == 0.0);
+				}
+				if(th_denom > 0){
+					REQUIRE(std::fabs(denom[e] - th_denom) <= 1e-5);
+				}else{
+					REQUIRE(denom[e] == 0.0);
+				}
+			}
+
+		}
+	}
+
+
+}
+

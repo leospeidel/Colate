@@ -9,6 +9,8 @@
 #include <iostream>
 #include <string>
 #include <random>
+#include <iterator>
+
 
 class aDNA_EM{
 
@@ -61,7 +63,7 @@ class aDNA_EM_simplified{
     double logsumexp(double loga, double logb);
     double logminusexp(double loga, double logb);
 
-    void get_tint(float age, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin);
+    void get_tint(double age, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin);
     void get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B);
     void get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B);
 

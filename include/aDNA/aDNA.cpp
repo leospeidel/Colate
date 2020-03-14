@@ -831,8 +831,8 @@ aDNA_fast_simplified(cxxopts::Options& options){
   std::mt19937 rng;
   std::vector<double> age(mut.info.size(), 0.0);
   std::vector<double>::iterator it_age = age.begin();
-  //int seed = 1;
-  //rng.seed(seed);
+  int seed = 2;
+  rng.seed(seed);
   for(Muts::iterator it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++ ){
     *it_age = dist_unif(rng) * ((*it_mut).age_end - (*it_mut).age_begin) + (*it_mut).age_begin;
     it_age++;
@@ -917,7 +917,7 @@ aDNA_fast_simplified(cxxopts::Options& options){
     }
 
   }else{
-    num_epochs = 20;
+    num_epochs = 30;
     if(options.count("num_bins") > 0){
       num_epochs = options["num_bins"].as<int>();
     }
@@ -943,12 +943,11 @@ aDNA_fast_simplified(cxxopts::Options& options){
   //read input sequence (file format? haps/sample? vcf?) and reference sequences (haps/sample? vcf?)
   //For now, assume both are haps/sample and span same positions
 
-  //haps ref_N(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
-  //Data data(ref_N.GetN(), 1);
-  //ref_N.CloseFile();
-  Data data(1,1);
+  haps ref_N(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
+  Data data(ref_N.GetN(), 1);
+  ref_N.CloseFile();
+  //Data data(1,1);
   std::vector<std::vector<double>> coal_rates(data.N), coal_rates_num(data.N), coal_rates_denom(data.N);
-
 
   if(options.count("coal") > 0){
     int i = 0;
@@ -972,7 +971,7 @@ aDNA_fast_simplified(cxxopts::Options& options){
     }
     is.close();
   }else{
-    double initial_coal_rate = 1.0/40000.0;
+    double initial_coal_rate = 1.0/10000.0;
     for(int i = 0; i < data.N; i++){
       coal_rates[i].resize(num_epochs);
       coal_rates_num[i].resize(num_epochs);
@@ -995,8 +994,7 @@ aDNA_fast_simplified(cxxopts::Options& options){
   //formula for converting age to int: log(age)*C, Ne = haploid population size
   double C = 1e2;
   int num_age_bins = ((int) (log(1e8) * C));
-  std::cerr << num_age_bins << std::endl;
-  std::vector<int> age_shared_count(num_age_bins, 0), age_notshared_count(num_age_bins, 0);
+  //std::cerr << num_age_bins << std::endl;
   std::vector<double> age_bin(num_age_bins, 0.0);
   int bin = 0;
   for(std::vector<double>::iterator it_age_bin = age_bin.begin(); it_age_bin != age_bin.end(); it_age_bin++){
@@ -1004,7 +1002,17 @@ aDNA_fast_simplified(cxxopts::Options& options){
     bin++;
   }
 
+	std::vector<std::vector<int>> age_shared_count(data.N), age_notshared_count(data.N);
+	for(int i = 0; i < data.N; i++){
+		age_shared_count[i].resize(num_age_bins);
+		age_notshared_count[i].resize(num_age_bins);
+		std::fill(age_shared_count[i].begin(), age_shared_count[i].end(), 0);
+		std::fill(age_notshared_count[i].begin(), age_notshared_count[i].end(), 0);
+	}
+
   ///////////
+
+	std::cerr << "Parsing input files" << std::endl;
 
   haps ref(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
   haps input((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
@@ -1013,9 +1021,12 @@ aDNA_fast_simplified(cxxopts::Options& options){
   int snp = 0, snp_input = 0, snp_ref = 0;
   std::vector<char> sequence_ref(ref.GetN()), sequence_input(input.GetN());
   //iterating over snps in reference
+	int num_used_snps = 0;
   for(; snp_ref < ref.GetL();){
-
+	//for(;snp < 217443;){
+  //for(;snp < 300000;){
     ref.ReadSNP(sequence_ref, bp_ref);
+		//std::cerr << bp_ref << std::endl;
     snp_ref++;
     while((bp_input == -1 || bp_input < bp_ref) && snp_input < input.GetL()){
       input.ReadSNP(sequence_input, bp_input);
@@ -1030,84 +1041,62 @@ aDNA_fast_simplified(cxxopts::Options& options){
 
     if(bp_ref == mut.info[snp].pos){
 
-      int bin_index = std::max(0, (int)(log(10*age[snp])*C));
+			assert(bp_ref == bp_input);
+      int bin_index = std::max(0, (int)std::round(log(10*age[snp])*C));
       assert(bin_index < num_age_bins);
+			bool used = false;
       //calculate contribution to MLE if shared and non-shared
-      for(int i = 0; i < input.GetN(); i++){
+      //for(int i = 0; i < input.GetN(); i++){
+			int i = 0;
         for(int j = 0; j < ref.GetN(); j++){
-          if(mut.info[snp].age_end > 0 && age[snp] > 0 && mut.info[snp].age_end < tmrca[snp]){
+			//int i = 0, j = 15;
+			  if(mut.info[snp].age_end > 0 && age[snp] > 0 && age[snp] > 0 && mut.info[snp].age_end < tmrca[snp]){
             if(sequence_ref[j] == '1'){
 
+							if(!used){
+                used = true;
+								num_used_snps++;
+							}
               if(bp_ref == bp_input && sequence_input[i] == '1'){
-                age_shared_count[bin_index]++;
+                age_shared_count[j][bin_index]++;
               }else{
-                age_notshared_count[bin_index]++;
+                age_notshared_count[j][bin_index]++;
               }
 
             }
           }
         }
-      }
+      //}
 
-    }
+    }else{
+      //assert(1);
+		}
   }
   ref.CloseFile();
   input.CloseFile();
 
-  int bin_max = log(10*1e3/28)*C;
-  for(int bin = 0; bin < bin_max; bin++){
-    std::cerr << age_shared_count[bin] << " ";
-  }
-  std::cerr << std::endl;
-  for(int bin = 0; bin < bin_max; bin++){
-    std::cerr << age_notshared_count[bin] << " ";
-  }
-  std::cerr << std::endl;
+	//std::cerr << num_used_snps << " " << bp_ref << std::endl;
 
   //////////////////
 
-  int max_iter = 10000;
+  int max_iter = 1000;
   int perc = -1;
   double log_likelihood = log(0.0), prev_log_likelihood = log(0.0);
   for(int iter = 0; iter < max_iter; iter++){
 
     if( (int) (((double)iter)/max_iter * 100.0) > perc ){
       perc = (int) (((double)iter)/max_iter * 100.0);
-      std::cerr << "[" << perc << "%]\r";
-
-      /*
-      //output
-      std::ofstream os(options["output"].as<std::string>() + ".coal");
-      for(int i = 0; i < data.N; i++){
-        os << i << " ";
-      }
-      os << std::endl;
-
-      for(int e = 0; e < num_epochs; e++){
-        os << epochs[e] << " ";
-      }
-      os << std::endl;
-
-      for(int i = 0; i < data.N; i++){
-        os << "0 " << i << " ";
-        for(int e = 0; e < num_epochs; e++){
-          os << coal_rates[i][e] << " ";
-        }
-        os << std::endl;
-      }
-
-      os.close();
-      */
+      std::cerr << "[" << perc << "%]\r"; 
     }
 
     //double start_time = time(NULL);
     //clock_t begin = clock();
-    aDNA_EM_simplified EM(epochs, coal_rates[0]);
-    //std::vector<aDNA_EM_simplified> EM;
-    //EM.reserve(data.N);
-    //for(int i = 0; i < data.N; i++){
-    //  EM.push_back(aDNA_EM_simplified(epochs, coal_rates[i]));
-    //}
+    //aDNA_EM_simplified EM(epochs, coal_rates[0]);
+    std::vector<aDNA_EM_simplified> EM;
+    EM.reserve(data.N);
+    for(int i = 0; i < data.N; i++){
+      EM.push_back(aDNA_EM_simplified(epochs, coal_rates[i]));
+    }
 
     //clock_t end = clock();
     //double end_time = time(NULL);
@@ -1122,78 +1111,37 @@ aDNA_fast_simplified(cxxopts::Options& options){
     std::vector<double> num(num_epochs,0.0), denom(num_epochs,0.0);
     
     for(int bin = 0; bin < num_age_bins; bin++){
-      if(age_shared_count[bin] > 0){ 
-        count = age_shared_count[bin];
-        std::fill(num.begin(), num.end(), 0.0);
-        std::fill(denom.begin(), denom.end(), 0.0);
-        //std::cerr << "shared " << bin << " " << count << " " << age_bin[bin] << std::endl;
-        log_likelihood += count * EM.EM_shared(age_bin[bin], num, denom);
-        for(int e = 0; e < num_epochs-1; e++){
-          coal_rates_num[0][e]   += count * num[e];
-          coal_rates_denom[0][e] += count * denom[e];
-        }
-      }
-      if(age_notshared_count[bin] > 0){ 
-        count = age_notshared_count[bin];
-        std::fill(num.begin(), num.end(), 0.0);
-        std::fill(denom.begin(), denom.end(), 0.0);
-        //std::cerr << "not shared " << bin << " " << count << " " << age_bin[bin] << std::endl;
-        log_likelihood += count * EM.EM_notshared(age_bin[bin], num, denom);
-        for(int e = 0; e < num_epochs-1; e++){
-          coal_rates_num[0][e]   += count * num[e];
-          coal_rates_denom[0][e] += count * denom[e];
-        }
-      }
+      for(int j = 0; j < data.N; j++){
+				if(age_shared_count[j][bin] > 0){ 
+					count = age_shared_count[j][bin];
+					std::fill(num.begin(), num.end(), 0.0);
+					std::fill(denom.begin(), denom.end(), 0.0);
+					double logl = EM[j].EM_shared(age_bin[bin], num, denom);
+					assert(logl <= 0.0);
+					log_likelihood += count * logl;
+					for(int e = 0; e < num_epochs-1; e++){
+						coal_rates_num[j][e]   += count * num[e];
+						coal_rates_denom[j][e] += count * denom[e];
+					}
+				}
+				if(age_notshared_count[j][bin] > 0){ 
+					count = age_notshared_count[j][bin];
+					std::fill(num.begin(), num.end(), 0.0);
+					std::fill(denom.begin(), denom.end(), 0.0);
+					double logl = EM[j].EM_notshared(age_bin[bin], num, denom);
+					assert(logl <= 0.0);
+					log_likelihood += count * logl;
+					for(int e = 0; e < num_epochs-1; e++){
+						coal_rates_num[j][e]   += count * num[e];
+						coal_rates_denom[j][e] += count * denom[e];
+					}
+				}
+			}
     }
     //end = clock();
     //end_time = time(NULL);
     //double elapsed_secs2 = double(end - begin) / CLOCKS_PER_SEC;
     //std::cerr << elapsed_secs1 << " " << elapsed_secs2 << std::endl;
-    /*
-       for(int i = 0; i < N; i++){
-       for(int e = 0; e < num_epochs; e++){
-       if(coal_rates_num[i][e] == 0){
-       coal_rates[i][e] = 0;
-       }else if(coal_rates_denom[i][e] == 0){
-       }else{
-       coal_rates[i][e] = coal_rates_num[i][e]/coal_rates_denom[i][e];
-       }
-       }
-       }
-       */
-
-   if( 0 ){ 
-    int bin = 200;
-    std::cerr << age_bin[bin] << std::endl;
-
-    std::fill(num.begin(), num.end(), 0.0);
-    std::fill(denom.begin(), denom.end(), 0.0);
-    EM.EM_shared(age_bin[bin], num, denom);
-    for(int e = 0; e < num_epochs-1; e++){
-      std::cerr << num[e] << " ";
-    }
-    std::cerr << std::endl;
-    for(int e = 0; e < num_epochs-1; e++){
-      std::cerr << denom[e] << " ";
-    }
-    std::cerr << std::endl;
-
-    std::fill(num.begin(), num.end(), 0.0);
-    std::fill(denom.begin(), denom.end(), 0.0);
-
-    EM.EM_notshared(age_bin[bin], num, denom);
-    for(int e = 0; e < num_epochs-1; e++){
-      std::cerr << num[e] << " ";
-    }
-    std::cerr << std::endl;
-    for(int e = 0; e < num_epochs-1; e++){
-      std::cerr << denom[e] << " ";
-    }
-    std::cerr << std::endl;
-
-    std::cerr << coal_rates_num[0][0] << " " << coal_rates_denom[0][0] << std::endl;
-    }
-
 
     for(int i = 0; i < data.N; i++){
       for(int e = 0; e < num_epochs; e++){
@@ -1201,6 +1149,7 @@ aDNA_fast_simplified(cxxopts::Options& options){
           if(e > 0){
             coal_rates[i][e] = coal_rates[i][e-1];
           }else{
+						assert(1);
             coal_rates[i][e] = 0;
           }
         }else if(coal_rates_denom[i][e] == 0){
@@ -1211,9 +1160,10 @@ aDNA_fast_simplified(cxxopts::Options& options){
       }
     }
 
+		//std::cerr << std::endl;
     os_log << log_likelihood << " " << log_likelihood - prev_log_likelihood << "\n";
 
-    if(log_likelihood - prev_log_likelihood < 0.0) break;
+    //if(log_likelihood - prev_log_likelihood < 0.0) break;
 
     for(int i = 0; i < data.N; i++){
       std::fill(coal_rates_num[i].begin(), coal_rates_num[i].end(), 0.0);
