@@ -809,7 +809,6 @@ aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& e
 
     }else{
 
-
       t_begin     = t_int[i];
       t_end       = t_int[i+1];
       coal_rate_e = coal_rates[ep_index[i]];
@@ -894,6 +893,7 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
   std::vector<int> ep_index(num_epochs + 1, 0);
   int i_begin = -1; 
   get_tint(age, t_int, ep_index, i_begin);
+  assert(i_begin > 0);
 
   //calculate A, B, C
   std::vector<double> A(num_epochs+1, 0.0), B(num_epochs+1, 0.0), f(num_epochs, 0.0), tf(num_epochs, 0.0);
@@ -923,6 +923,7 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
     if(normalising_constant == 1.0){
       normalising_constant = f[e];
     }else{
+      assert(normalising_constant <= 0.0);
       normalising_constant = logsumexp(normalising_constant, f[e]);
     }
 
@@ -948,12 +949,15 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
       assert(f[e] == 0.0);
 			assert(tf[e] == 0.0);
 	  }
-    num[e]   += f[e];
+    num[e]  += f[e];
     integ   -= f[e];
     if(integ < 0) integ = 0.0;
     assert(integ >= 0.0);
     denom[e] += tf[e] + (epochs[e+1] - epochs[e]) * integ;
   }
+  e = num_epochs - 1;
+  num[e] += f[e];
+  denom[e] += tf[e];
 
   return normalising_constant;
 
@@ -970,6 +974,7 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
   std::vector<int> ep_index(num_epochs + 1, 0);
   int i_begin = -1; 
   get_tint(age, t_int, ep_index, i_begin);
+  assert(i_begin > 0);
 
   //calculate A, B, C
   std::vector<double> A(num_epochs+1, 0.0), B(num_epochs+1, 0.0), f(num_epochs, 0.0), tf(num_epochs, 0.0);
@@ -995,6 +1000,7 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
     if(normalising_constant == 1.0){
       normalising_constant = f[e];
     }else{
+      assert(normalising_constant <= 0.0);
       normalising_constant = logsumexp(normalising_constant, f[e]);
     }
 
@@ -1006,9 +1012,7 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
 
   float exp_t = 0.0;
   //normalise density
-  double tmp;
   for(e = ep_index[i_begin]; e < num_epochs; e++){
-    tmp = f[e];
     f[e]  -= normalising_constant;
     tf[e] -= normalising_constant;
     f[e]   = exp(f[e]);
@@ -1029,6 +1033,9 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
     assert(integ >= 0.0);
     denom[e] += tf[e] + (epochs[e+1] - epochs[e]) * integ;
   }
+  e = num_epochs - 1;
+  num[e] += f[e];
+  denom[e] += tf[e];
 
   return normalising_constant;
 

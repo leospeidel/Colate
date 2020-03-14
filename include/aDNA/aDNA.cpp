@@ -831,8 +831,8 @@ aDNA_fast_simplified(cxxopts::Options& options){
   std::mt19937 rng;
   std::vector<double> age(mut.info.size(), 0.0);
   std::vector<double>::iterator it_age = age.begin();
-  int seed = 1;
-  rng.seed(seed);
+  //int seed = 1;
+  //rng.seed(seed);
   for(Muts::iterator it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++ ){
     *it_age = dist_unif(rng) * ((*it_mut).age_end - (*it_mut).age_begin) + (*it_mut).age_begin;
     it_age++;
@@ -917,7 +917,7 @@ aDNA_fast_simplified(cxxopts::Options& options){
     }
 
   }else{
-    num_epochs = 30;
+    num_epochs = 20;
     if(options.count("num_bins") > 0){
       num_epochs = options["num_bins"].as<int>();
     }
@@ -1030,7 +1030,6 @@ aDNA_fast_simplified(cxxopts::Options& options){
 
     if(bp_ref == mut.info[snp].pos){
 
-
       int bin_index = std::max(0, (int)(log(10*age[snp])*C));
       assert(bin_index < num_age_bins);
       //calculate contribution to MLE if shared and non-shared
@@ -1055,9 +1054,19 @@ aDNA_fast_simplified(cxxopts::Options& options){
   ref.CloseFile();
   input.CloseFile();
 
+  int bin_max = log(10*1e3/28)*C;
+  for(int bin = 0; bin < bin_max; bin++){
+    std::cerr << age_shared_count[bin] << " ";
+  }
+  std::cerr << std::endl;
+  for(int bin = 0; bin < bin_max; bin++){
+    std::cerr << age_notshared_count[bin] << " ";
+  }
+  std::cerr << std::endl;
+
   //////////////////
 
-  int max_iter = 1000;
+  int max_iter = 10000;
   int perc = -1;
   double log_likelihood = log(0.0), prev_log_likelihood = log(0.0);
   for(int iter = 0; iter < max_iter; iter++){
@@ -1109,9 +1118,9 @@ aDNA_fast_simplified(cxxopts::Options& options){
 
     //start_time = time(NULL);
     //begin = clock(); 
-    int count = 0;
-    std::vector<double> num(num_epochs), denom(num_epochs);
-
+    int count = 0;  
+    std::vector<double> num(num_epochs,0.0), denom(num_epochs,0.0);
+    
     for(int bin = 0; bin < num_age_bins; bin++){
       if(age_shared_count[bin] > 0){ 
         count = age_shared_count[bin];
@@ -1152,6 +1161,39 @@ aDNA_fast_simplified(cxxopts::Options& options){
        }
        }
        */
+
+   if( 0 ){ 
+    int bin = 200;
+    std::cerr << age_bin[bin] << std::endl;
+
+    std::fill(num.begin(), num.end(), 0.0);
+    std::fill(denom.begin(), denom.end(), 0.0);
+    EM.EM_shared(age_bin[bin], num, denom);
+    for(int e = 0; e < num_epochs-1; e++){
+      std::cerr << num[e] << " ";
+    }
+    std::cerr << std::endl;
+    for(int e = 0; e < num_epochs-1; e++){
+      std::cerr << denom[e] << " ";
+    }
+    std::cerr << std::endl;
+
+    std::fill(num.begin(), num.end(), 0.0);
+    std::fill(denom.begin(), denom.end(), 0.0);
+
+    EM.EM_notshared(age_bin[bin], num, denom);
+    for(int e = 0; e < num_epochs-1; e++){
+      std::cerr << num[e] << " ";
+    }
+    std::cerr << std::endl;
+    for(int e = 0; e < num_epochs-1; e++){
+      std::cerr << denom[e] << " ";
+    }
+    std::cerr << std::endl;
+
+    std::cerr << coal_rates_num[0][0] << " " << coal_rates_denom[0][0] << std::endl;
+    }
+
 
     for(int i = 0; i < data.N; i++){
       for(int e = 0; e < num_epochs; e++){

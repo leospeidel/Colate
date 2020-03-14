@@ -20,9 +20,10 @@ endif( ZLIB_FOUND )
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/aDNA)
+set(FTREE_DIR ${CMAKE_SOURCE_DIR}/include/ftree)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
-set(RELATE_LIBS librelateShared.dylib libgzstreamShared.dylib libkastoreShared.dylib libtskitShared.dylib)
+set(RELATE_LIBS librelateShared.so libgzstreamShared.so libkastoreShared.so libtskitShared.so)
 link_directories(${CMAKE_SOURCE_DIR}/../relate_lib/bin)
 
 # Add subdirectories
@@ -31,9 +32,10 @@ include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/tskit)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/gzstream)
 include_directories(${PROJECT_SOURCE_DIR}/include/aDNA)
+include_directories(${PROJECT_SOURCE_DIR}/include/ftree)
 
 add_subdirectory(${ADNA_DIR})
-
+add_subdirectory(${FTREE_DIR})
 
 # tests
 add_executable(Tests ${TEST_DIR}/Tests.cpp ${ADNA_DIR}/aDNA_EM.hpp ${ADNA_DIR}/aDNA_EM.cpp)
