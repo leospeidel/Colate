@@ -319,10 +319,14 @@ TEST_CASE("test simplified EM expectation step"){
 			double norm     = logminusexp(0.0, -lambda*age_bin[bin]);
 			double th_num   = logminusexp(-lambda*A, -lambda*B);
 
+			/*
 			double th_denom = logsumexp(log(A)-lambda*A, th_num - log(lambda));
 			th_denom = logminusexp(th_denom, log(B) - lambda*B);
       th_denom = logminusexp(th_denom, log(ep1) + th_num);
-     
+			*/
+  
+			double th_denom = log(A*exp(-lambda*A) + exp(th_num)/lambda - B*exp(-lambda*B) - ep1*exp(th_num));
+
       double rest = logminusexp(-lambda*B, -lambda*age_bin[bin]);
 			th_denom = logsumexp(th_denom, log(ep2 - ep1) + rest);
 
@@ -334,13 +338,14 @@ TEST_CASE("test simplified EM expectation step"){
 
 			if(1){
 			
-				/*
+			  if(0){	
 				std::cerr << std::endl;
-				std::cerr << bin << " " << age_bin[bin] << " " << ep1 << " " << ep2 << std::endl;
-				std::cerr << logl << " " << norm << std::endl;
-				std::cerr << num[e] << " " << th_num << std::endl;
-				std::cerr << denom[e] << " " << th_denom << std::endl;
-				*/
+				std::cerr << e << " " << bin << " " << age_bin[bin] << " " << ep1 << " " << ep2 << std::endl;
+				//std::cerr << logl << " " << norm << std::endl;
+				//std::cerr << num[e] << " " << th_num << " " << num[e] - th_num << std::endl;
+				std::cerr << denom[e] << " " << th_denom << " " << denom[e] - th_denom << std::endl;
+				}
+
 				REQUIRE(std::fabs(logl - norm) < 1e-3);
 				if(th_num > 0){
 			  	REQUIRE(std::fabs(num[e] - th_num) <= 1e-5);
@@ -371,9 +376,12 @@ TEST_CASE("test simplified EM expectation step"){
 			double norm     = -lambda*age_bin[bin];
 			double th_num   = logminusexp(-lambda*A, -lambda*B);
 
+			/*
 			double th_denom = logsumexp(log(A)-lambda*A, th_num - log(lambda));
 			th_denom = logminusexp(th_denom, log(B) - lambda*B);
 			th_denom = logminusexp(th_denom, log(ep1) + th_num);
+      */
+      double th_denom = log(A*exp(-lambda*A) + exp(th_num)/lambda - B*exp(-lambda*B) - ep1*exp(th_num));
 
 			double rest = -lambda*B;
 			th_denom = logsumexp(th_denom, log(ep2 - ep1) + rest);
@@ -385,14 +393,7 @@ TEST_CASE("test simplified EM expectation step"){
 			th_denom = exp(th_denom);
 
 			if(1){
-
-				/*
-				std::cerr << std::endl;
-				std::cerr << bin << " " << age_bin[bin] << " " << ep1 << " " << ep2 << std::endl;
-				std::cerr << logl << " " << norm << std::endl;
-				std::cerr << num[e] << " " << th_num << std::endl;
-				std::cerr << denom[e] << " " << th_denom << std::endl;
-				*/
+				
 				REQUIRE(std::fabs(logl - norm) < 1e-3);
 				if(th_num > 0){
 					REQUIRE(std::fabs(num[e] - th_num) <= 1e-5);

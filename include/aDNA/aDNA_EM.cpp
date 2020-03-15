@@ -654,12 +654,12 @@ aDNA_EM_simplified::logsumexp(double iloga, double ilogb){
 
   if(loga > logb){
 		long double res = loga + log1p(exp(logb - loga));
-		if(res > 0.0 && loga < 0.0 && logb < 0.0) return loga;
+		//if(res > 0.0 && loga < 0.0 && logb < 0.0) return loga;
 		return(res);
 		//return(loga);
   }else{
 		long double res = logb + log1p(exp(loga - logb));
-		if(res > 0.0 && loga < 0.0 && logb < 0.0) return logb;
+		//if(res > 0.0 && loga < 0.0 && logb < 0.0) return logb;
 		return(res);
 		//return(logb);
   }
@@ -754,14 +754,15 @@ aDNA_EM_simplified::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_ind
         B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
       }else{
         if(t_begin == 0){
-					if(0){
-          B[i] = A[i] - log(coal_rate_e);
-					B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
+					if(1){
+						assert(cumsum_coal_rate[i] == 0);
+            B[i] = A[i] - log(coal_rate_e);
+				  	B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
 					}else{
-						B[i] = log(exp(A[i])/coal_rate_e - t_end * exp(-cumsum_coal_rate[i+1]));
+						B[i] = log(exp(A[i] + cumsum_coal_rate[i+1])/coal_rate_e - t_end) - cumsum_coal_rate[i+1];
 					}
         }else{
-					if(0){
+					if(1){
 						if(log(t_begin)-cumsum_coal_rate[i] > log(t_end)-cumsum_coal_rate[i+1]){
 							B[i] = logminusexp(log(t_begin)-cumsum_coal_rate[i], log(t_end)-cumsum_coal_rate[i+1]);
 							B[i] = logsumexp(B[i], A[i] - log(coal_rate_e));
@@ -770,7 +771,7 @@ aDNA_EM_simplified::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_ind
 							B[i] = logminusexp(A[i] - log(coal_rate_e), B[i]);
 						}
 					}else{
-						B[i] = log(t_begin * exp(-cumsum_coal_rate[i]) - t_end * exp(-cumsum_coal_rate[i+1]) + exp(A[i])/coal_rate_e);
+						B[i] = log(t_begin * exp(-cumsum_coal_rate[i] + cumsum_coal_rate[i+1]) - t_end + exp(A[i] + cumsum_coal_rate[i+1])/coal_rate_e) - cumsum_coal_rate[i+1];
 						//B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
 						//B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
 					}
@@ -806,22 +807,27 @@ aDNA_EM_simplified::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_ind
   coal_rate_e = coal_rates[ep_index[i]];
   if(coal_rate_e > 0){
     A[i] = -cumsum_coal_rate[i];
-    B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
+    //B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
+		B[i] = log(t_begin * exp(cumsum_coal_rate[i]) + exp(A[i])/coal_rate_e);
   }else{
     A[i] = log(0.0); 
     B[i] = log(0.0);
   }
+
+	if(std::isnan(B[i])){
+		std::cerr << A[i] << " " << B[i] << " " << std::endl;
+	}
   assert(!std::isnan(A[i]));
   assert(!std::isnan(B[i]));
 
 }
 
 void 
-aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B){
+aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, int i_begin, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B){
 
   std::vector<long double> cumsum_coal_rate(t_int.size(), 0.0);
   for(int i = 1; i < t_int.size(); i++){
-		cumsum_coal_rate[i] = cumsum_coal_rate[i-1] + (coal_rates[ep_index[i-1]] * t_int[i] - coal_rates[ep_index[i-1]] * t_int[i-1]);
+		cumsum_coal_rate[i] = cumsum_coal_rate[i-1] + coal_rates[ep_index[i-1]] * (t_int[i] - t_int[i-1]);
   }
 
   double t_begin, t_end, coal_rate_e;
@@ -830,9 +836,10 @@ aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& e
   for(i = 0; i < t_int.size()-1; i++){
 
     int e = ep_index[i];
-    
+
     //current_e is epoch of i-1
-    if(e == ep_index[i+1]-1 && e == current_e+1){
+    //if(e == ep_index[i+1]-1 && e == current_e+1){
+    if(i != i_begin && i != i_begin - 1){
 
       A[i] = A_ep[e];
       B[i] = B_ep[e];
@@ -858,16 +865,17 @@ aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& e
           B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
         }else{
           if(t_begin == 0){
-						if(0){
+						if(1){
             B[i] = A[i] - log(coal_rate_e);
 						B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
 						}else{
-            B[i] = log(exp(A[i])/coal_rate_e - t_end * exp(-cumsum_coal_rate[i+1]));
+            //B[i] = log(exp(A[i])/coal_rate_e - t_end * exp(-cumsum_coal_rate[i+1]));
+						B[i] = log(exp(A[i]+cumsum_coal_rate[i+1])/coal_rate_e - t_end) - cumsum_coal_rate[i+1];
 						}
           }else{
             //B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
 						//B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
-						if(0){
+						if(1){
 						if(log(t_begin)-cumsum_coal_rate[i] > log(t_end)-cumsum_coal_rate[i+1]){
 							B[i] = logminusexp(log(t_begin)-cumsum_coal_rate[i], log(t_end)-cumsum_coal_rate[i+1]);
 							B[i] = logsumexp(B[i], A[i] - log(coal_rate_e));
@@ -876,16 +884,8 @@ aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& e
 							B[i] = logminusexp(A[i] - log(coal_rate_e), B[i]);
 						}
 						}else{
-							/*
-							std::cerr << "debug1 " << log(t_begin) - cumsum_coal_rate[i] << " " << A[i] - log(coal_rate_e) << " " << log(t_end) - cumsum_coal_rate[i+1] << std::endl;
-							std::cerr << log(t_begin) - t_begin/10000.0 << " " << t_int[i-1] << std::endl;
-							std::cerr << t_begin/10000.0 - cumsum_coal_rate[i] << " " << coal_rates[ep_index[i]] << std::endl;
-							std::cerr << A[i] << " " << -cumsum_coal_rate[i] << " " << cumsum_coal_rate[i+1] << std::endl;
-							std::cerr << t_begin << " " << t_end << std::endl;
-
-							std::cerr << log(t_begin * exp(-cumsum_coal_rate[i]) - t_end * exp(-cumsum_coal_rate[i+1]) + exp(A[i])/coal_rate_e) << std::endl;
-              */
-							B[i] = log(t_begin * exp(-cumsum_coal_rate[i]) - t_end * exp(-cumsum_coal_rate[i+1]) + exp(A[i])/coal_rate_e);
+							//B[i] = log(t_begin * exp(-cumsum_coal_rate[i]) - t_end * exp(-cumsum_coal_rate[i+1]) + exp(A[i])/coal_rate_e);
+							B[i] = log(t_begin * exp(-cumsum_coal_rate[i]+cumsum_coal_rate[i+1]) - t_end + exp(A[i]+cumsum_coal_rate[i+1])/coal_rate_e) - cumsum_coal_rate[i+1];
 
 					   	//B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
 						  //B[i] = logminusexp(B[i], log(t_end) - cumsum_coal_rate[i+1]); 
@@ -918,6 +918,9 @@ aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& e
 
     }
 
+		if(std::isnan(B[i])){
+      std::cerr << A[i] << " " << B[i] << " " << std::endl;
+		}
     assert(!std::isnan(A[i]));
     assert(!std::isnan(B[i]));
     current_e = ep_index[i];
@@ -931,7 +934,8 @@ aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& e
     coal_rate_e = coal_rates[ep_index[i]];
     if(coal_rate_e > 0){
       A[i] = -cumsum_coal_rate[i];
-      B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
+      //B[i] = logsumexp(log(t_begin) - cumsum_coal_rate[i], A[i] - log(coal_rate_e));
+			B[i] = log(t_begin * exp(cumsum_coal_rate[i]) + exp(A[i])/coal_rate_e);
     }else{
       A[i] = log(0.0); 
       B[i] = log(0.0);
@@ -964,7 +968,7 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
   //calculate A, B, C
   std::vector<double> A(num_epochs+1, 0.0), B(num_epochs+1, 0.0), f(num_epochs, 0.0), tf(num_epochs, 0.0);
   //get_ABC(t_int, ep_index, A, B);
-  get_ABC_lazy(t_int, ep_index, A, B);
+  get_ABC_lazy(t_int, i_begin, ep_index, A, B);
 
   //now given A, B, C, I can calculate num and denom for each epoch
   int e = 0;
@@ -976,17 +980,21 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
     if(i < i_begin){
 
       f[e]  = A[i];
-      if(epochs[e] == 0){
-        tf[e] = B[i];
-      }else{
-				tf[e] = logminusexp(B[i], log(epochs[e]) + A[i]);
-      }
-      i++;
+			if(epochs[e] == 0){
+				tf[e] = B[i];
+			}else{
+				//tf[e] = logminusexp(B[i], log(epochs[e]) + A[i]);
+				tf[e] = log(exp(B[i]-A[i]) - epochs[e]) + A[i];
+			}
+
+			i++;
 
     }
 
+		if(0){
+    
 		assert(f[e] <= 0.0);
-    if(normalising_constant == 1.0){
+		if(normalising_constant == 1.0){
       normalising_constant = f[e];
 			assert(normalising_constant <= 0.0);
     }else{
@@ -997,8 +1005,17 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
 			if(!(normalising_constant <= 0.0)) std::cerr << "const: " << normalising_constant << " " << tmp << " " << f[e] << std::endl;
 			assert(normalising_constant <= 0.0);
     }
+		}
+
+		if(i == i_begin) break;
 
   }
+
+	normalising_constant = 0.0;
+	for(e = 0; e < ep_index[i_begin]+1; e++){
+    normalising_constant += exp(f[e]);
+	}
+	normalising_constant = log(normalising_constant);
 
   //normalise density
   for(e = 0; e < ep_index[i_begin]+1; e++){
@@ -1026,11 +1043,12 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
     if(integ < 0 || e == ep_index[i_begin]) integ = 0.0;
     assert(integ >= 0.0);
     denom[e] += tf[e] + (epochs[e+1] - epochs[e]) * integ;
+
 		assert(denom[e] <= (epochs[e+1] - epochs[e]));
   }
-  e = num_epochs - 1;
-  num[e] += f[e];
-  denom[e] += tf[e];
+  //e = num_epochs - 1;
+  //num[e] += f[e];
+  //denom[e] += tf[e];
 
   return normalising_constant;
 
@@ -1052,7 +1070,7 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
   //calculate A, B, C
   std::vector<double> A(num_epochs+1, 0.0), B(num_epochs+1, 0.0), f(num_epochs, 0.0), tf(num_epochs, 0.0);
   //get_ABC(t_int, ep_index, A, B);
-  get_ABC_lazy(t_int, ep_index, A, B);
+  get_ABC_lazy(t_int, i_begin, ep_index, A, B);
 
   //now given A, B, I can calculate num and denom for each epoch
   int e = ep_index[i_begin];
@@ -1066,7 +1084,8 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
     if(epochs[e] == 0){
       tf[e] = B[i];
     }else{
-      tf[e] = logminusexp(B[i], log(epochs[e]) + A[i]);
+      //tf[e] = logminusexp(B[i], log(epochs[e]) + A[i]);
+			tf[e] = log(exp(B[i] - A[i]) - epochs[e]) + A[i];
     }
     i++;
 
@@ -1086,14 +1105,17 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
   assert(!std::isnan(normalising_constant));
 
   //normalise density
+	double sum = 0.0;
   for(e = ep_index[i_begin]; e < num_epochs; e++){
     f[e]  -= normalising_constant;
     tf[e] -= normalising_constant;
     f[e]   = exp(f[e]);
     tf[e]  = exp(tf[e]);
+		sum += f[e];
 		if(!(f[e] <= 1)) std::cerr << f[e] << " " << normalising_constant << std::endl;
 		assert(f[e] <= 1.0);
   }
+	//assert(std::fabs(sum - 1.0) < 1e-5);
   
   //calculate num and denom
   double integ = 1.0;
@@ -1113,6 +1135,87 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
   denom[e] += tf[e];
 
   return normalising_constant;
+
+}
+
+double
+aDNA_EM_simplified::EM_shared_exact(double age, std::vector<double>& num, std::vector<double>& denom){
+
+  double lambda = 1/40000.0;	
+	double norm     = logminusexp(0.0, -lambda*age);
+	for(int e = 0; e < num_epochs-1; e++){
+		double ep1 = epochs[e], ep2 = epochs[e+1];
+
+		double A = std::min(ep1, age), B = std::min(age, ep2);
+		double th_num   = logminusexp(-lambda*A, -lambda*B);
+
+		/*
+		double th_denom = logsumexp(log(A)-lambda*A, th_num - log(lambda));
+		th_denom = logminusexp(th_denom, log(B) - lambda*B);
+		th_denom = logminusexp(th_denom, log(ep1) + th_num);
+		*/
+
+		double th_denom = log(A*exp(-lambda*A) + exp(th_num)/lambda - B*exp(-lambda*B) - ep1*exp(th_num));
+
+		double rest = logminusexp(-lambda*B, -lambda*age);
+		th_denom = logsumexp(th_denom, log(ep2 - ep1) + rest);
+
+		th_num   -= norm;
+		th_denom -= norm;
+
+		th_num = exp(th_num);
+		th_denom = exp(th_denom);
+		num[e] = th_num;
+		denom[e] = th_denom;
+	}
+
+	return(norm);
+
+}
+
+double
+aDNA_EM_simplified::EM_notshared_exact(double age, std::vector<double>& num, std::vector<double>& denom){
+
+	double lambda = 1/40000.0;	
+	double norm     = -lambda*age;
+	for(int e = 0; e < num_epochs-1; e++){
+
+		double ep1 = epochs[e], ep2 = epochs[e+1];
+		double A = std::max(ep1, age), B = std::max(age, ep2);
+		double th_num   = logminusexp(-lambda*A, -lambda*B);
+
+		/*
+		double th_denom = logsumexp(log(A)-lambda*A, th_num - log(lambda));
+		th_denom = logminusexp(th_denom, log(B) - lambda*B);
+		th_denom = logminusexp(th_denom, log(ep1) + th_num);
+    */
+
+		double th_denom = log(A*exp(-lambda*A) + exp(th_num)/lambda - B*exp(-lambda*B) - ep1*exp(th_num));
+
+		double rest = -lambda*B;
+		th_denom = logsumexp(th_denom, log(ep2 - ep1) + rest);
+
+		th_num   -= norm;
+		th_denom -= norm;
+
+		th_num = exp(th_num);
+		th_denom = exp(th_denom);
+ 
+		num[e] = th_num;
+		denom[e] = th_denom;
+
+	}
+	int e = num_epochs-1;
+	double ep1 = epochs[e];
+	double A = std::max(ep1, age);
+  double th_num = -lambda*A;
+	double th_denom = log(A*exp(-lambda*A) + exp(th_num)/lambda - ep1*exp(th_num));
+	th_num   -= norm;
+	th_denom -= norm;
+	num[e] = th_num;
+	denom[e] = th_denom;
+
+	return norm;
 
 }
 

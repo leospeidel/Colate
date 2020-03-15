@@ -65,7 +65,7 @@ class aDNA_EM_simplified{
 
     void get_tint(double age, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin);
     void get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B);
-    void get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B);
+    void get_ABC_lazy(std::vector<double>& t_int, int i_begin, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B);
 
   public:
 
@@ -84,6 +84,9 @@ class aDNA_EM_simplified{
 
     double EM_shared(double age, std::vector<double>& num, std::vector<double>& denom);
     double EM_notshared(double age, std::vector<double>& num, std::vector<double>& denom); 
+
+		double EM_shared_exact(double age, std::vector<double>& num, std::vector<double>& denom);
+		double EM_notshared_exact(double age, std::vector<double>& num, std::vector<double>& denom); 
 
 };
 
