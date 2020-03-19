@@ -983,8 +983,8 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
 			if(epochs[e] == 0){
 				tf[e] = B[i];
 			}else{
-				//tf[e] = logminusexp(B[i], log(epochs[e]) + A[i]);
-				tf[e] = log(exp(B[i]-A[i]) - epochs[e]) + A[i];
+				tf[e] = logminusexp(B[i], log(epochs[e]) + A[i]);
+				//tf[e] = log(exp(B[i]-A[i]) - epochs[e]) + A[i];
 			}
 
 			i++;
@@ -1084,8 +1084,8 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
     if(epochs[e] == 0){
       tf[e] = B[i];
     }else{
-      //tf[e] = logminusexp(B[i], log(epochs[e]) + A[i]);
-			tf[e] = log(exp(B[i] - A[i]) - epochs[e]) + A[i];
+      tf[e] = logminusexp(B[i], log(epochs[e]) + A[i]);
+			//tf[e] = log(exp(B[i] - A[i]) - epochs[e]) + A[i];
     }
     i++;
 

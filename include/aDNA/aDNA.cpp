@@ -1231,23 +1231,7 @@ aDNA_fast_simplified_all(cxxopts::Options& options){
 	std::cerr << "---------------------------------------------------------" << std::endl;
 	std::cerr << "Calculating coalescence rates for (ancient) sample.." << std::endl;
 
-	/////////////////////////
-
-	Mutations mut;
-	mut.Read(options["mut"].as<std::string>());
-
-	//assign an actual date to each SNP
-	std::uniform_real_distribution<double> dist_unif(0,1);   
-	std::mt19937 rng;
-	std::vector<double> age(mut.info.size(), 0.0);
-	std::vector<double>::iterator it_age = age.begin();
-	int seed = 2;
-	rng.seed(seed);
-	for(Muts::iterator it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++ ){
-		*it_age = dist_unif(rng) * ((*it_mut).age_end - (*it_mut).age_begin) + (*it_mut).age_begin;
-		it_age++;
-	}
-
+  /*
 	if(0){
 		//recalculate ages
 		MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
@@ -1331,6 +1315,7 @@ aDNA_fast_simplified_all(cxxopts::Options& options){
 		}
 		is_tmrca.close();
 	}
+  */
 
 	////////////////////////////////////////
 
@@ -1458,8 +1443,27 @@ aDNA_fast_simplified_all(cxxopts::Options& options){
 
 	std::cerr << "Parsing input files" << std::endl;
 
-	haps ref(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
-	haps input((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
+	/////////////////////////
+
+	Mutations mut;
+
+  for(int chr = 1; chr <= 30; chr++){
+	mut.Read("./chr_" + std::to_string(chr) + "/" + options["mut"].as<std::string>());
+	haps ref(("./chr_" + std::to_string(chr) + "/" +options["haps"].as<std::string>()).c_str(), ("./chr_" + std::to_string(chr) + "/" + options["sample"].as<std::string>()).c_str());
+	haps input(("./chr_" + std::to_string(chr) + "/" + options["input"].as<std::string>() + ".haps.gz").c_str(), ("./chr_" + std::to_string(chr) + "/" + options["input"].as<std::string>() + ".sample.gz").c_str());
+
+
+	//assign an actual date to each SNP
+	std::uniform_real_distribution<double> dist_unif(0,1);   
+	std::mt19937 rng;
+	std::vector<double> age(mut.info.size(), 0.0);
+	std::vector<double>::iterator it_age = age.begin();
+	int seed = 2;
+	rng.seed(seed);
+	for(Muts::iterator it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++ ){
+		*it_age = dist_unif(rng) * ((*it_mut).age_end - (*it_mut).age_begin) + (*it_mut).age_begin;
+		it_age++;
+	}
 
 	int bp_ref, bp_input = -1;
 	int snp = 0, snp_input = 0, snp_ref = 0;
@@ -1499,7 +1503,7 @@ aDNA_fast_simplified_all(cxxopts::Options& options){
 			//int j = 0;
 				//int i = 0, j = 15;
 				//if(mut.info[snp].age_end > 0 && age[snp] > epochs[0] && age[snp] < epochs[1] && mut.info[snp].age_end < tmrca[snp]){
-				if(mut.info[snp].age_end > 0 && mut.info[snp].age_end < tmrca[snp]){
+				if(mut.info[snp].age_end > 0){
 					if(sequence_ref[j] == '1'){
 
 						if(!used){
@@ -1523,6 +1527,7 @@ aDNA_fast_simplified_all(cxxopts::Options& options){
 	}
 	ref.CloseFile();
 	input.CloseFile();
+  }
 
 	//std::cerr << num_used_snps << " " << bp_ref << std::endl;
 
