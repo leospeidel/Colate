@@ -66,9 +66,11 @@ logminusexp(double loga, double logb){
 
 TEST_CASE("test EM expectation step"){
 
+	double p = 1e-1;
+
 	//decide on epochs
 	float years_per_gen = 28.0;
-	int num_epochs = 30;
+	int num_epochs = 20;
 	num_epochs++;
 	std::vector<double> epochs(num_epochs);
 	epochs[0] = 0.0;
@@ -79,89 +81,126 @@ TEST_CASE("test EM expectation step"){
 	}
 	epochs[num_epochs-1] = 1e8/years_per_gen;
 
-	double initial_coal_rate = 1.0/5000.0;
-	Data data(1, 1);
-	std::vector<std::vector<double>> coal_rates(data.N), coal_rates_num(data.N), coal_rates_denom(data.N);
-	for(int i = 0; i < data.N; i++){
-		coal_rates[i].resize(num_epochs);
-		coal_rates_num[i].resize(num_epochs);
-		coal_rates_denom[i].resize(num_epochs);
-		std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
-	}
+	double coal_rate = 1e-7;
 
-	aDNA_EM EM(epochs, coal_rates[0]);
-	aDNA_EM_simplified EM2(epochs, coal_rates[0]);
+	for(int f = 1; f <= 7; f++){
 
-	int i = 0;
-	std::vector<double> num(num_epochs), denom(num_epochs); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
-	std::vector<double> num2(num_epochs), denom2(num_epochs); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
+		double initial_coal_rate = coal_rate * exp(log(10) * (f-1));
+    std::cerr << initial_coal_rate << std::endl;
 
-	double C = 1e3;
-	int num_age_bins = ((int) (log(1e8) * C));
-	std::cerr << num_age_bins << std::endl;
-	std::vector<int> age_shared_count(num_age_bins, 0), age_notshared_count(num_age_bins, 0);
-	std::vector<double> age_bin(num_age_bins, 0.0);
-	int bin = 0;
-	for(std::vector<double>::iterator it_age_bin = age_bin.begin(); it_age_bin != age_bin.end(); it_age_bin++){
-		*it_age_bin = exp(bin/C)/10.0;
-		bin++;
-	}
-
-	//shared
-	double lambda = initial_coal_rate;
-	for(int bin1 = 0; bin1 < num_age_bins; bin1++){
-		int bin2 = bin1;
-		std::fill(num.begin(), num.end(), 0.0);
-		std::fill(denom.begin(), denom.end(), 0.0);
-		double logl = EM.EM_shared(age_bin[bin1], age_bin[bin2], num, denom);
-
-		std::fill(num2.begin(), num2.end(), 0.0);
-		std::fill(denom2.begin(), denom2.end(), 0.0);
-		double logl2 = EM2.EM_shared(age_bin[bin1], num2, denom2);
-
-		REQUIRE(std::fabs(logl - logl2) < 1e-3);
-
-		for(int e = 0; e < num_epochs; e++){
-			if(1){	
-				if(num[e] > 0){
-					REQUIRE(std::fabs(num[e] - num2[e]) <= 1e-5);
-				}else{
-					REQUIRE(num[e] == 0.0);
-				}
-				if(denom[e] > 0){
-					REQUIRE(std::fabs(denom[e] - denom2[e]) <= 1e-5);
-				}else{
-					REQUIRE(denom[e] == 0.0);
-				}
-			}
+		Data data(1, 1);
+		std::vector<std::vector<double>> coal_rates(data.N), coal_rates_num(data.N), coal_rates_denom(data.N);
+		for(int i = 0; i < data.N; i++){
+			coal_rates[i].resize(num_epochs);
+			coal_rates_num[i].resize(num_epochs);
+			coal_rates_denom[i].resize(num_epochs);
+			std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
 		}
 
+		aDNA_EM2 EM(epochs, coal_rates[0]);
+		aDNA_EM_simplified EM2(epochs, coal_rates[0]);
 
-	}
+		int i = 0;
+		std::vector<double> num(num_epochs), denom(num_epochs); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
+		std::vector<double> num2(num_epochs), denom2(num_epochs); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
 
-	for(int bin1 = 0; bin1 < num_age_bins; bin1++){
-		int bin2 = bin1;
-		std::fill(num.begin(), num.end(), 0.0);
-		std::fill(denom.begin(), denom.end(), 0.0);
-		double logl = EM.EM_notshared(age_bin[bin1], age_bin[bin2], num, denom);
+		double C = 5;
+		int num_age_bins = ((int) (log(1e8) * C));
+		std::vector<int> age_shared_count(num_age_bins, 0), age_notshared_count(num_age_bins, 0);
+		std::vector<double> age_bin(num_age_bins, 0.0);
+		int bin = 0;
+		for(std::vector<double>::iterator it_age_bin = age_bin.begin(); it_age_bin != age_bin.end(); it_age_bin++){
+			*it_age_bin = exp(bin/C)/10.0;
+			bin++;
+		}
 
-		std::fill(num2.begin(), num2.end(), 0.0);
-		std::fill(denom2.begin(), denom2.end(), 0.0);
-		double logl2 = EM2.EM_notshared(age_bin[bin1], num2, denom2);
+		//shared
+		double lambda = initial_coal_rate;
+		for(int bin1 = 0; bin1 < num_age_bins; bin1++){
+			int bin2 = bin1;
+			std::fill(num.begin(), num.end(), 0.0);
+			std::fill(denom.begin(), denom.end(), 0.0);
+			double logl = EM.EM_shared(age_bin[bin1], age_bin[bin2], num, denom);
 
-		REQUIRE(std::fabs(logl - logl2) < 1e-3);
+			std::fill(num2.begin(), num2.end(), 0.0);
+			std::fill(denom2.begin(), denom2.end(), 0.0);
+			//double logl2 = EM2.EM_shared_exact(age_bin[bin1], num2, denom2, initial_coal_rate);
+			double logl2 = EM2.EM_shared(age_bin[bin1], num2, denom2);
 
-		for(int e = 0; e < num_epochs; e++){
-			if(1){	
-				if(num[e] > 0){
-					REQUIRE(std::fabs(num[e] - num2[e]) <= 1e-5);
-				}else{
-					REQUIRE(num[e] == 0.0);
+			REQUIRE(std::fabs(logl - logl2) < 1e-3);
+			//std::cerr << "logl " << logl << " " << logl2 << std::endl;
+			for(int e = 0; e < num_epochs-1; e++){
+				if(1){	
+					//std::cerr << e << " " << num[e] << " " << denom[e] << std::endl;
+					//std::cerr << e << " " << num2[e] << " " << denom2[e] << std::endl;
+					//std::cerr << e << " " << num[e] - num2[e] << " " << denom[e] - denom2[e] << std::endl << std::endl;
+					if(num2[e] > 0){
+						REQUIRE( (std::fabs(num[e] - num2[e]) <= p || std::fabs(num[e] - num2[e])/num2[e] <= p) );
+					}else{
+						REQUIRE(std::fabs(num[e]) < p);
+					}
+					if(denom2[e] > 0){
+						REQUIRE( (std::fabs(denom[e] - denom2[e]) <= p || std::fabs(denom[e] - denom2[e])/denom2[e] <= p) );
+					}else{
+						REQUIRE(std::fabs(denom[e]) < p);
+					}
 				}
-				if(denom[e] > 0){
-					REQUIRE(std::fabs(denom[e] - denom2[e]) <= 1e-5);
-				}else{
-					REQUIRE(denom[e] == 0.0);
+			}
+
+		}
+
+		for(int bin1 = 0; bin1 < num_age_bins; bin1++){
+			int bin2 = bin1;
+			std::fill(num.begin(), num.end(), 0.0);
+			std::fill(denom.begin(), denom.end(), 0.0);
+			double logl = EM.EM_notshared(age_bin[bin1], age_bin[bin2], num, denom);
+
+			std::fill(num2.begin(), num2.end(), 0.0);
+			std::fill(denom2.begin(), denom2.end(), 0.0);
+			//double logl2 = EM2.EM_notshared_exact(age_bin[bin1], num2, denom2, initial_coal_rate);
+			double logl2 = EM2.EM_notshared(age_bin[bin1], num2, denom2);
+
+			REQUIRE(std::fabs(logl - logl2) < p);
+
+			for(int e = 0; e < num_epochs-1; e++){
+				if(1){	
+					//std::cerr << e << " " << num[e] << " " << denom[e] << std::endl;
+					//std::cerr << e << " " << num2[e] << " " << denom2[e] << std::endl;
+					//std::cerr << e << " " << num[e] - num2[e] << " " << denom[e] - denom2[e] << std::endl << std::endl;
+					if(num2[e] > 0){
+						REQUIRE( (std::fabs(num[e] - num2[e]) <= p || std::fabs(num[e] - num2[e])/num2[e] <= p) );
+					}else{
+						REQUIRE(std::fabs(num[e]) < p);
+					}
+					if(denom2[e] > 0){
+						REQUIRE( (std::fabs(denom[e] - denom2[e]) <= p || std::fabs(denom[e] - denom2[e])/denom2[e] <= p) );
+					}else{
+						REQUIRE(std::fabs(denom[e]) < p);
+					}
+				}
+			}
+
+		}
+
+		for(int bin1 = 0; bin1 < num_age_bins; bin1++){
+			for(int bin2 = bin1; bin2 < num_age_bins; bin2++){
+				std::fill(num.begin(), num.end(), 0.0);
+				std::fill(denom.begin(), denom.end(), 0.0);
+				EM.EM_shared(age_bin[bin1], age_bin[bin2], num, denom);
+				for(int e = 0; e < num_epochs; e++){
+					REQUIRE(!std::isnan(num[e]));
+					REQUIRE(!std::isnan(denom[e]));
+					REQUIRE(num[e] >= 0.0);
+					REQUIRE(denom[e] >= 0.0);
+				}
+				std::fill(num.begin(), num.end(), 0.0);
+				std::fill(denom.begin(), denom.end(), 0.0);
+				EM.EM_notshared(age_bin[bin1], age_bin[bin2], num, denom);
+				for(int e = 0; e < num_epochs; e++){
+					REQUIRE(!std::isnan(num[e]));
+					REQUIRE(!std::isnan(denom[e]));
+					REQUIRE(num[e] >= 0.0);
+					REQUIRE(denom[e] >= 0.0);
 				}
 			}
 		}
@@ -200,7 +239,7 @@ TEST_CASE("test simplified EM expectation step"){
 	int i = 0;
 	std::vector<double> num(num_epochs), denom(num_epochs); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
 
-	double C = 1e3;
+	double C = 5;
 	int num_age_bins = ((int) (log(1e8) * C));
 	std::cerr << num_age_bins << std::endl;
 	std::vector<int> age_shared_count(num_age_bins, 0), age_notshared_count(num_age_bins, 0);

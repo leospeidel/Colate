@@ -73,7 +73,7 @@ aDNA(cxxopts::Options& options){
 		}
 
 	}else{
-		num_epochs = 20;
+		num_epochs = 15;
 		if(options.count("num_bins") > 0){
 			num_epochs = options["num_bins"].as<int>();
 		}
@@ -165,16 +165,14 @@ aDNA(cxxopts::Options& options){
 
 	std::cerr << "Parsing input files" << std::endl;
 
-	haps ref(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
-	haps input((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
 	Mutations mut;
 	mut.Read(options["mut"].as<std::string>());
 
 	double outgroup_tmrca = 10e6/28;
 	std::vector<float> tmrca(mut.info.size(), 1e8/28.0);
-	std::vector<float>::iterator it_tmrca = tmrca.begin();
+	//std::vector<float> num_mapping(mut.info.size(), 0);
+	//std::vector<float>::iterator it_tmrca = tmrca.begin(), it_num_mapping = num_mapping.begin();
 	if(correct > 0){
-	//if(0){
 		MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
 		Muts::iterator it_mut; //iterator for mut file
 		AncMutIterators ancmut(options["anc"].as<std::string>(), options["mut"].as<std::string>());
@@ -187,22 +185,36 @@ aDNA(cxxopts::Options& options){
 			num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
 			if(num_bases_tree_persists >= 0.0 && (*it_mut).tree == tree_count){
 				mtr.tree.GetCoordinates(coords);
+				//float tr_num_mapping = 0;
+        //for(std::vector<Node>::iterator it_node = mtr.tree.nodes.begin(); it_node != mtr.tree.nodes.end(); it_node++){
+        //  tr_num_mapping += (*it_node).num_events;
+				//}
 				int tree_index = (*it_mut).tree;
 				while((*it_mut).tree == tree_index){
 					*it_tmrca = coords[root];
+					//*it_num_mapping = tr_num_mapping;
+					//it_num_mapping++;
 					it_tmrca++;
 					it_mut++;
-					if(it_mut == mut.info.end()) break;
+					if(it_mut == ancmut.mut_end()) break;
 				}
 			}
 			tree_count++;
-		}
+			if(it_mut == ancmut.mut_end()) break;
+		} 
 		ancmut.CloseFiles();
 		std::ofstream os_tmrca(options["input"].as<std::string>() + ".tmrca");
 		for(it_tmrca = tmrca.begin(); it_tmrca != tmrca.end(); it_tmrca++){
 			os_tmrca << *it_tmrca << "\n";
 		}
 		os_tmrca.close();
+		/*
+		std::ofstream os_num_mapping(options["input"].as<std::string>() + ".num_mapping");
+		for(it_num_mapping = num_mapping.begin(); it_num_mapping != num_mapping.end(); it_num_mapping++){
+			os_num_mapping << *it_num_mapping << "\n";
+		}
+		os_num_mapping.close();
+		*/
 	}
 
 	if(correct > 0){
@@ -225,6 +237,10 @@ aDNA(cxxopts::Options& options){
 		is_tmrca.close();
 	}
 
+	haps ref(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
+	haps input((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
+
+	int DAF;
 	int bp_ref, bp_input = -1;
 	int snp = 0, snp_input = 0, snp_ref = 0;
 	double age_begin, age_end;
@@ -245,26 +261,33 @@ aDNA(cxxopts::Options& options){
 		if(snp == mut.info.size()) break;
 
 		bool use_SNP = false;
-		if(bp_ref != mut.info[snp].pos){
-			if(correct == 1){
-				int DAF = 0;
-				for(std::vector<char>::iterator it_seq = sequence_ref.begin(); it_seq != sequence_ref.end(); it_seq++){
-					if(*it_seq == '1') DAF++;
-				}
-				if(DAF == sequence_ref.size()){
-					if(snp > 0){
-						age_begin = tmrca[snp-1];
-					}else{
-						age_begin = tmrca[snp];
-					}	
-					age_end   = outgroup_tmrca;
-					if(age_end >= age_begin) use_SNP   = true;
-				}
+		DAF = 0;
+		if(correct == 1){
+			for(std::vector<char>::iterator it_seq = sequence_ref.begin(); it_seq != sequence_ref.end(); it_seq++){
+				if(*it_seq == '1') DAF++;
 			}
-		}else{
+		}
+
+		//if(bp_ref == mut.info[snp].pos && (correct != 1 || DAF < sequence_ref.size())){
+		if(bp_ref == mut.info[snp].pos && (correct == 0 || (correct == 1 && DAF < sequence_ref.size()))){
+			//either correct == 0, or correct == 1 and DAF < N
 			age_begin = mut.info[snp].age_begin;
 			age_end   = mut.info[snp].age_end;
-			use_SNP   = true;
+			if(mut.info[snp].flipped == 0 && mut.info[snp].branch.size() == 1){
+				//if(correct == 1){
+				//	if(num_mapping[snp] > sequence_ref.size()) use_SNP = true;
+				//}else{
+				  use_SNP   = true;
+				//}
+			}
+		}else if(correct == 1 && DAF == sequence_ref.size()){
+			if(snp > 0){
+				age_begin = tmrca[snp-1];
+			}else{
+				age_begin = tmrca[snp];
+			}	
+			age_end   = outgroup_tmrca;
+			if(age_end >= age_begin) use_SNP   = true;
 		}
 		if(correct == 2){
 		  if(age_end == tmrca[snp]) use_SNP = false;
@@ -311,7 +334,7 @@ aDNA(cxxopts::Options& options){
 
 	std::ofstream os_log(options["output"].as<std::string>() + ".log");
 
-	int max_iter = 10000;
+	int max_iter = 100000;
 	int perc = -1;
 	double log_likelihood = log(0.0), prev_log_likelihood = log(0.0);
 	for(int iter = 0; iter < max_iter; iter++){
@@ -319,12 +342,35 @@ aDNA(cxxopts::Options& options){
 		if( (int) (((double)iter)/max_iter * 100.0) > perc ){
 			perc = (int) (((double)iter)/max_iter * 100.0);
 			std::cerr << "[" << perc << "%]\r";
+
+			std::ofstream os(options["output"].as<std::string>() + ".coal");
+
+			for(int i = 0; i < data.N; i++){
+				os << i << " ";
+			}
+			os << std::endl;
+
+			for(int e = 0; e < num_epochs; e++){
+				os << epochs[e] << " ";
+			}
+			os << std::endl;
+
+			for(int i = 0; i < data.N; i++){
+				os << "0 " << i << " ";
+				for(int e = 0; e < num_epochs; e++){
+					os << coal_rates[i][e] << " ";
+				}
+				os << std::endl;
+			}
+
+			os.close();
+
 		}
 
-		std::vector<aDNA_EM> EM;
+		std::vector<aDNA_EM2> EM;
 		EM.reserve(data.N);
 		for(int i = 0; i < data.N; i++){
-			EM.push_back(aDNA_EM(epochs, coal_rates[i]));
+			EM.push_back(aDNA_EM2(epochs, coal_rates[i]));
 		}
 
 		prev_log_likelihood = log_likelihood;
@@ -339,26 +385,26 @@ aDNA(cxxopts::Options& options){
 				for(int j = 0; j < data.N; j++){
 					if(age_shared_count[j][bin] > 0){ 
 						count = age_shared_count[j][bin];
-						std::fill(num.begin(), num.end(), 0.0);
-						std::fill(denom.begin(), denom.end(), 0.0);
 						double logl = EM[j].EM_shared(age_bin[bin1], age_bin[bin2], num, denom);
 						log_likelihood += count * logl;
-						for(int e = 0; e < num_epochs-1; e++){
+						for(int e = 0; e < num_epochs; e++){
 							assert(!std::isnan(num[e]));
 							assert(!std::isnan(denom[e]));
+							assert(num[e] >= 0.0);
+							assert(denom[e] >= 0.0);
 							coal_rates_num[j][e]   += count * num[e];
 							coal_rates_denom[j][e] += count * denom[e];
 						}
 					}
 					if(age_notshared_count[j][bin] > 0){ 
 						count = age_notshared_count[j][bin];
-						std::fill(num.begin(), num.end(), 0.0);
-						std::fill(denom.begin(), denom.end(), 0.0);
 						double logl = EM[j].EM_notshared(age_bin[bin1], age_bin[bin2], num, denom);
 						log_likelihood += count * logl;
-						for(int e = 0; e < num_epochs-1; e++){
+						for(int e = 0; e < num_epochs; e++){
 							assert(!std::isnan(num[e]));
 							assert(!std::isnan(denom[e]));
+							assert(num[e] >= 0.0);
+							assert(denom[e] >= 0.0);
 							coal_rates_num[j][e]   += count * num[e];
 							coal_rates_denom[j][e] += count * denom[e];
 						}
@@ -371,10 +417,16 @@ aDNA(cxxopts::Options& options){
 		for(int i = 0; i < data.N; i++){
 			for(int e = 0; e < num_epochs; e++){
 				if(coal_rates_num[i][e] == 0){
-					coal_rates[i][e] = 0;
+					if(e > 0){
+				  	coal_rates[i][e] = coal_rates[i][e-1];
+					}else{
+            coal_rates[i][e] = 0;
+					}
 				}else if(coal_rates_denom[i][e] == 0){
 				}else{
 					coal_rates[i][e] = coal_rates_num[i][e]/coal_rates_denom[i][e];
+					if(coal_rates[i][e] < 1e-7) coal_rates[i][e] = 1e-7;
+					assert(coal_rates[i][e] >= 0.0);
 				}
 			}
 		}
@@ -492,7 +544,7 @@ aDNA_fast_simplified(cxxopts::Options& options){
 					*it_tmrca = coords[root];
 					it_tmrca++;
 					it_mut++;
-					if(it_mut == mut.info.end()) break;
+					if(it_mut == ancmut.mut_end()) break;
 				}
 			}
 			tree_count++;
@@ -1107,14 +1159,10 @@ aDNA_fast_simplified_all(cxxopts::Options& options){
 					std::fill(num.begin(), num.end(), 0.0);
 					std::fill(denom.begin(), denom.end(), 0.0);
 					double logl;
-					std::vector<double> num2(num_epochs,0.0), denom2(num_epochs,0.0);
-					logl = EM[j].EM_shared_exact(age_bin[bin], num2, denom2);
-					logl_diff += logl - EM[j].EM_shared(age_bin[bin], num, denom);
+					logl = EM[j].EM_shared(age_bin[bin], num, denom);
 					assert(logl <= 0.0);
 					log_likelihood += count * logl;
 					for(int e = 0; e < num_epochs-1; e++){
-						num_diff[e]   += count * (num[e]-num2[e]);
-						denom_diff[e] += count * (denom[e]-denom2[e]);
 						coal_rates_num[j][e]   += count * num[e];
 						coal_rates_denom[j][e] += count * denom[e];
 					}
@@ -1124,8 +1172,6 @@ aDNA_fast_simplified_all(cxxopts::Options& options){
 					std::fill(num.begin(), num.end(), 0.0);
 					std::fill(denom.begin(), denom.end(), 0.0);
 					double logl;
-					std::vector<double> num2(num_epochs,0.0), denom2(num_epochs,0.0);
-					logl = EM[j].EM_notshared_exact(age_bin[bin], num2, denom2);
 					logl = EM[j].EM_notshared(age_bin[bin], num, denom);
 					assert(logl <= 0.0);
 					log_likelihood += count * logl;
