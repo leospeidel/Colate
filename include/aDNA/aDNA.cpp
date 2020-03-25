@@ -171,7 +171,8 @@ aDNA(cxxopts::Options& options){
 	double outgroup_tmrca = 10e6/28;
 	std::vector<float> tmrca(mut.info.size(), 1e8/28.0);
 	//std::vector<float> num_mapping(mut.info.size(), 0);
-	//std::vector<float>::iterator it_tmrca = tmrca.begin(), it_num_mapping = num_mapping.begin();
+	std::vector<float>::iterator it_tmrca = tmrca.begin();
+	//std::vector<float>::iterator it_num_mapping = num_mapping.begin();
 	if(correct > 0){
 		MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
 		Muts::iterator it_mut; //iterator for mut file
