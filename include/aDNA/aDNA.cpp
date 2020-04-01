@@ -20,7 +20,7 @@ aDNA(cxxopts::Options& options){
 	//Program options
 
 	bool help = false;
-	if(!options.count("anc") || !options.count("mut") || !options.count("haps") || !options.count("sample") || !options.count("input") || !options.count("output")){
+	if(!options.count("mut") || !options.count("haps") || !options.count("sample") || !options.count("input") || !options.count("output")){
 		std::cout << "Not enough arguments supplied." << std::endl;
 		std::cout << "Needed: anc, mut, haps, sample, input, output. Optional: num_bins, coal" << std::endl;
 		help = true;
@@ -73,7 +73,7 @@ aDNA(cxxopts::Options& options){
 		}
 
 	}else{
-		num_epochs = 15;
+		num_epochs = 3;
 		if(options.count("num_bins") > 0){
 			num_epochs = options["num_bins"].as<int>();
 		}
@@ -85,7 +85,10 @@ aDNA(cxxopts::Options& options){
 		epochs.resize(num_epochs);
 
 		epochs[0] = 0.0;
-		epochs[1] = 1e3/years_per_gen;
+    epochs[1] = 1e5/28;
+		epochs[2] = 1e7/28;
+		epochs[3] = 5e7/28;
+		//epochs[1] = 1e3/years_per_gen;
 		float log_10 = std::log(10);
 		for(int e = 2; e < num_epochs-1; e++){
 			epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
@@ -294,7 +297,7 @@ aDNA(cxxopts::Options& options){
 		  if(age_end == tmrca[snp]) use_SNP = false;
 		}
 
-		if(use_SNP && age_end > 0){
+		if(use_SNP && age_end > 0 && age_end < 1e6/28){
 
 			assert(age_begin <= age_end);
 			int bin_index1 = std::max(0, (int)std::round(log(10*age_begin)*C));
@@ -335,7 +338,7 @@ aDNA(cxxopts::Options& options){
 
 	std::ofstream os_log(options["output"].as<std::string>() + ".log");
 
-	int max_iter = 100000;
+	int max_iter = 100;
 	int perc = -1;
 	double log_likelihood = log(0.0), prev_log_likelihood = log(0.0);
 	for(int iter = 0; iter < max_iter; iter++){
