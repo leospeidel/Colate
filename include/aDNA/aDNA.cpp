@@ -484,6 +484,473 @@ aDNA(cxxopts::Options& options){
 }
 
 void
+aDNA_tree(cxxopts::Options& options){
+
+	//Program options
+
+	bool help = false;
+	if(!options.count("mut") || !options.count("haps") || !options.count("sample") || !options.count("input") || !options.count("output")){
+		std::cout << "Not enough arguments supplied." << std::endl;
+		std::cout << "Needed: anc, mut, haps, sample, input, output. Optional: num_bins, coal" << std::endl;
+		help = true;
+	}
+	if(options.count("help") || help){
+		std::cout << options.help({""}) << std::endl;
+		std::cout << "Calculate coalescence rates for sample." << std::endl;
+		exit(0);
+	}  
+
+	std::cerr << "---------------------------------------------------------" << std::endl;
+	std::cerr << "Calculating coalescence rates for (ancient) sample.." << std::endl;
+
+	/////////////////////////////////
+	//get TMRCA at each SNP
+
+	int correct = 0;
+	if(options.count("correction") > 0){ 
+		correct = options["correction"].as<int>();
+	}
+
+	////////////////////////////////////////
+
+	//decide on epochs
+	int num_epochs = 0; 
+	std::vector<double> epochs;
+
+	std::ifstream is;
+	std::string line;
+	if(options.count("coal") > 0){
+		is.open(options["coal"].as<std::string>());
+		getline(is, line);
+		getline(is, line);
+		std::string tmp;
+		for(int i = 0; i < line.size(); i++){
+			if(line[i] == ' ' || line[i] == '\t'){
+				epochs.push_back(stof(tmp));
+				tmp = "";
+				num_epochs++;
+			}else{
+				tmp += line[i];
+			}
+		}
+		if(tmp != "") epochs.push_back(stof(tmp));
+
+		assert(epochs[0] == 0);
+		for(int e = 1; e < num_epochs; e++){
+			std::cerr << epochs[e] << " ";
+			assert(epochs[e] > epochs[e-1]);
+		}
+
+	}else{
+		num_epochs = 30;
+		if(options.count("num_bins") > 0){
+			num_epochs = options["num_bins"].as<int>();
+		}
+		float years_per_gen = 28.0;
+		if(options.count("years_per_gen")){
+			years_per_gen = options["years_per_gen"].as<float>();
+		}
+		num_epochs++; 
+		epochs.resize(num_epochs);
+
+		epochs[0] = 0.0;
+		epochs[1] = 1e3/years_per_gen;
+		float log_10 = std::log(10);
+		for(int e = 2; e < num_epochs-1; e++){
+			epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
+		}
+		epochs[num_epochs-1] = 1e8/years_per_gen;
+
+	}
+
+	////////////////////////
+	//read input sequence (file format? haps/sample? vcf?) and reference sequences (haps/sample? vcf?)
+
+	Data data(1,1);
+	std::vector<std::vector<double>> coal_rates(data.N), coal_rates_num(data.N), coal_rates_denom(data.N);
+
+	if(options.count("coal") > 0){
+		int i = 0;
+		double dummy;
+		coal_rates[i].resize(num_epochs);
+		coal_rates_num[i].resize(num_epochs);
+		coal_rates_denom[i].resize(num_epochs);
+		is >> dummy >> dummy;
+		for(int e = 0; e < num_epochs; e++){
+			is >> coal_rates[i][e];
+			std::cerr << coal_rates[i][e] << " "; 
+		}
+		std::cerr << std::endl;
+
+		for(int i = 0; i < data.N; i++){
+			coal_rates[i].resize(num_epochs);
+			coal_rates_num[i].resize(num_epochs);
+			coal_rates_denom[i].resize(num_epochs);
+			is >> dummy >> dummy;
+			for(int e = 0; e < num_epochs; e++){
+				coal_rates[i][e] = coal_rates[0][e]; 
+			}
+		}
+	}else{
+		double initial_coal_rate = 1.0/10000.0;
+		for(int i = 0; i < data.N; i++){
+			coal_rates[i].resize(num_epochs);
+			coal_rates_num[i].resize(num_epochs);
+			coal_rates_denom[i].resize(num_epochs);
+			std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
+			std::fill(coal_rates_num[i].begin(), coal_rates_num[i].end(), 0.0);
+			std::fill(coal_rates_denom[i].begin(), coal_rates_denom[i].end(), 0.0);
+		}
+	}
+
+	//formula for converting age to int: log(age)*C, Ne = haploid population size
+	double C = 5;
+	int num_age_bins = ((int) (log(1e8) * C)) + 1;
+	std::vector<double> age_bin(num_age_bins, 0.0);
+	std::vector<double>::iterator it_age_bin = age_bin.begin();
+	int bin = 0;
+	*it_age_bin = 0;
+	it_age_bin++;
+	for(bin = 1; bin < num_age_bins; bin++){
+		*it_age_bin =  exp((bin-1.0)/C)/10.0;
+		it_age_bin++;
+	}
+	
+	///////////
+
+	std::cerr << "Parsing input files" << std::endl;
+
+	MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
+	Muts::iterator it_mut; //iterator for mut file
+	AncMutIterators ancmut(options["anc"].as<std::string>(), options["mut"].as<std::string>());
+	haps input((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
+
+	double outgroup_tmrca = 10e6/28;
+	int N = ancmut.NumTips();
+	int root = 2 * N - 2;
+	std::vector<float> coords(root+1), coords_mut(root+1);
+  std::vector<int> sorted_indices(root+1);
+
+	std::vector<std::vector<float>> num_lin(ancmut.NumSnps());
+	std::vector<std::vector<float>> DAF(ancmut.NumSnps());	
+	std::vector<float> tmrca(ancmut.NumSnps(), 1e8/28.0);
+	std::vector<double> age_begin(ancmut.NumSnps());
+	std::vector<double> age_end(ancmut.NumSnps());
+	std::vector<int> tree_index(ancmut.NumSnps());
+
+	std::vector<std::vector<float>>::iterator it_num_lin = num_lin.begin();
+	std::vector<std::vector<float>>::iterator it_DAF = DAF.begin();
+  for(it_num_lin = num_lin.begin(); it_num_lin != num_lin.end(); it_num_lin++){
+    (*it_num_lin).resize(num_age_bins);
+	}
+	for(it_DAF = DAF.begin(); it_DAF != DAF.end(); it_DAF++){
+		(*it_DAF).resize(num_age_bins);
+	}
+
+	std::vector<char> sequence_input(input.GetN());
+	std::vector<std::vector<int>> shared(ancmut.NumSnps());
+	int N_input  = input.GetN();
+	int bp_input = -1, snp_input = 0;
+
+	//get first SNP (Only necessary when using NextSNP, for NextTree I don't need to call this)
+	float num_bases_SNP_persists = ancmut.FirstSNP(mtr, it_mut);
+  int tree_count = (*it_mut).tree, snp = 0;
+	mtr.tree.GetCoordinates(coords);
+
+	std::size_t m1(0);
+	std::generate(std::begin(sorted_indices), std::end(sorted_indices), [&]{ return m1++; });
+	std::sort(std::begin(sorted_indices), std::end(sorted_indices), [&](int i1, int i2) {
+			return std::tie(coords[i1],i1) < std::tie(coords[i2],i2); } );
+
+	int lins = 0;
+	double age = coords[*sorted_indices.begin()];
+	int i = 0;
+	std::vector<int>::iterator it_sorted_indices;
+	for(it_sorted_indices = sorted_indices.begin(); it_sorted_indices != sorted_indices.end(); it_sorted_indices++){
+		if(coords[*it_sorted_indices] > age){
+			age = coords[*it_sorted_indices];
+			while(age_bin[i] < age){
+        num_lin[snp][i] = lins;
+        i++;
+				if(i == num_age_bins-1) break;
+			}
+		}
+		if(*it_sorted_indices < N){
+			lins++;
+		}else{
+			lins--;
+		}
+		assert(lins >= 1);
+		if(i == num_age_bins-1) break;
+	}
+  for(; i < num_age_bins; i++){
+    num_lin[snp][i] = 1;
+	}
+
+	//iterate through whole file
+	while(num_bases_SNP_persists >= 0.0){
+
+		if(snp == 100000) break;
+
+		if((*it_mut).age_begin < (*it_mut).age_end && (*it_mut).age_end > 0 && (*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
+
+			if(tree_count < (*it_mut).tree){
+
+				tree_count = (*it_mut).tree;
+				mtr.tree.GetCoordinates(coords);
+
+				std::size_t m1(0);
+				std::generate(std::begin(sorted_indices), std::end(sorted_indices), [&]{ return m1++; });
+				std::sort(std::begin(sorted_indices), std::end(sorted_indices), [&](int i1, int i2) {
+						return std::tie(coords[i1],i1) < std::tie(coords[i2],i2); } );
+
+				lins = 0;
+				age = coords[*sorted_indices.begin()];
+				i = 0;
+				for(it_sorted_indices = sorted_indices.begin(); it_sorted_indices != sorted_indices.end(); it_sorted_indices++){
+					if(coords[*it_sorted_indices] > age){
+						age = coords[*it_sorted_indices];
+						while(age_bin[i] < age){
+							num_lin[snp][i] = lins;
+							i++;
+							if(i == num_age_bins-1) break;
+						}
+					}
+					if(*it_sorted_indices < N){
+						lins++;
+					}else{
+						lins--;
+					}
+					assert(lins >= 1);
+					if(i == num_age_bins-1) break;
+				}
+				for(; i < num_age_bins; i++){
+					num_lin[snp][i] = 1;
+				}
+			
+			}else{
+				if(snp > 0) num_lin[snp]   = num_lin[snp-1];
+			}
+
+			while((bp_input == -1 || bp_input < (*it_mut).pos) && snp_input < input.GetL()){
+				input.ReadSNP(sequence_input, bp_input);
+				snp_input++;
+				if(snp_input == input.GetL()) break;
+			}
+
+			shared[snp].resize(input.GetN());
+			std::fill(shared[snp].begin(), shared[snp].end(), 0);
+			if(bp_input == (*it_mut).pos){
+        for(int j = 0; j < input.GetN(); j++){
+          shared[snp][j] = (sequence_input[j] == '1');
+				}
+			}
+
+			tree_index[snp] = tree_count;
+			int i_end      = std::max(0.0, log((*it_mut).age_end*10)*C + 1);
+			int i_begin    = std::max(0.0, log((*it_mut).age_begin*10)*C + 1);
+			age_begin[snp] = age_bin[i_begin];
+			age_end[snp]   = age_bin[i_end];
+			//tmrca[snp]     = coords[root];
+
+			std::fill(coords_mut.begin(), coords_mut.end(), coords[root]+1);
+			std::fill(DAF[snp].begin(), DAF[snp].end(), 0);
+			
+			mtr.tree.GetCoordinates(*(*it_mut).branch.begin(), coords_mut);
+			std::size_t m2(0);
+			std::generate(std::begin(sorted_indices), std::end(sorted_indices), [&]{ return m2++; });
+			std::sort(std::begin(sorted_indices), std::end(sorted_indices), [&](int i1, int i2) {
+					return std::tie(coords_mut[i1],i1) < std::tie(coords_mut[i2],i2); } );
+
+			lins = 0;
+			age = coords_mut[*sorted_indices.begin()];
+			i = 0;
+			for(it_sorted_indices = sorted_indices.begin(); it_sorted_indices != sorted_indices.end(); it_sorted_indices++){
+				if(coords_mut[*it_sorted_indices] == coords[root] + 1) break;
+				if(coords_mut[*it_sorted_indices] > age){
+					age = coords_mut[*it_sorted_indices];
+					while(age_bin[i] < age){
+						DAF[snp][i] = lins;
+						assert(DAF[snp][i] <= num_lin[snp][i]);
+						i++;
+						if(i == num_age_bins-1 || i == i_begin) break;
+					}
+				}
+				if(*it_sorted_indices < N){
+					lins++;
+				}else{
+					lins--;
+				}
+				assert(lins >= 1);
+				if(i == num_age_bins-1 || i == i_begin) break;
+			}
+			while(age_bin[i] < age_end[snp]){
+				DAF[snp][i] = 1;
+				assert(DAF[snp][i] <= num_lin[snp][i]);
+				i++;
+				if(i == num_age_bins-1) break;
+			}
+			if(i_begin != i_end) {
+			  assert(DAF[snp][i_begin] == 1);
+				if(i_begin > 0){
+          assert(DAF[snp][i_begin-1] > 1);
+				}
+			}
+
+			snp++;
+		}
+
+		//it_mut points to a SNP, mtr stores the marginal tree corresponding to that SNP.
+		num_bases_SNP_persists = ancmut.NextSNP(mtr, it_mut);
+
+	}
+	tree_index.resize(snp);
+	age_begin.resize(snp);
+	age_end.resize(snp);
+	DAF.resize(snp);
+	num_lin.resize(snp);
+	shared.resize(snp);
+
+	////////////////////////////////////////  
+
+	std::ofstream os_log(options["output"].as<std::string>() + ".log");
+
+	int max_iter = 200;
+	int perc = -1;
+	double log_likelihood = log(0.0), prev_log_likelihood = log(0.0);
+	for(int iter = 0; iter < max_iter; iter++){
+
+		if( (int) (((double)iter)/max_iter * 100.0) > perc ){
+			perc = (int) (((double)iter)/max_iter * 100.0);
+			std::cerr << "[" << perc << "%]\r";
+
+			std::ofstream os(options["output"].as<std::string>() + ".coal");
+
+			for(int i = 0; i < data.N; i++){
+				os << i << " ";
+			}
+			os << std::endl;
+
+			for(int e = 0; e < num_epochs; e++){
+				os << epochs[e] << " ";
+			}
+			os << std::endl;
+
+			for(int i = 0; i < data.N; i++){
+				os << "0 " << i << " ";
+				for(int e = 0; e < num_epochs; e++){
+					os << coal_rates[i][e] << " ";
+				}
+				os << std::endl;
+			}
+
+			os.close();
+
+		}
+
+		aDNA_EM_tree EM(C, epochs, coal_rates[0]);
+
+		prev_log_likelihood = log_likelihood;
+		log_likelihood = 0.0;
+
+		int count = 0;
+		std::vector<double> num(num_epochs, 0.0), denom(num_epochs,0.0);
+		snp = 0;
+		EM.UpdateTree(num_lin[snp]);
+		int tree = tree_index[snp];
+    for(; snp < age_begin.size(); snp++){
+
+			if(tree < tree_index[snp]){
+        EM.UpdateTree(num_lin[snp]);
+				tree = tree_index[snp];
+			}
+
+			//TODO: optimise by precalculating values for each tree, precalculating values for coalescence rates
+			for(int j = 0; j < N_input; j++){
+				if(shared[snp][j] == 1){
+					//std::cerr << snp << " shared" << std::endl;
+				  log_likelihood += EM.EM_shared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num, denom);
+				}else{
+					//std::cerr << snp << " not shared" << std::endl;
+					log_likelihood += EM.EM_notshared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num, denom);
+				}
+
+				for(int e = 0; e < num_epochs; e++){
+					coal_rates_num[0][e]   += num[e];
+					coal_rates_denom[0][e] += denom[e];
+				}
+			}
+
+		}
+
+		for(int i = 0; i < data.N; i++){
+			for(int e = 0; e < num_epochs; e++){
+				std::cerr << e << " " << coal_rates[i][e] << " " << coal_rates_num[i][e] << " " << coal_rates_denom[i][e] << std::endl;
+				if(coal_rates_num[i][e] == 0){
+					if(e > 0){
+						coal_rates[i][e] = coal_rates[i][e-1];
+					}else{
+						coal_rates[i][e] = 0;
+					}
+				}else if(coal_rates_denom[i][e] == 0){
+				}else{
+					coal_rates[i][e] = coal_rates_num[i][e]/coal_rates_denom[i][e];
+					if(coal_rates[i][e] < 1e-7) coal_rates[i][e] = 1e-7;
+					assert(coal_rates[i][e] >= 0.0);
+				}
+			}
+		}
+
+		os_log << log_likelihood << " " << log_likelihood - prev_log_likelihood << std::endl;
+
+		for(int i = 0; i < data.N; i++){
+			std::fill(coal_rates_num[i].begin(), coal_rates_num[i].end(), 0.0);
+			std::fill(coal_rates_denom[i].begin(), coal_rates_denom[i].end(), 0.0);
+		}
+
+	}
+	os_log.close();
+
+	std::ofstream os(options["output"].as<std::string>() + ".coal");
+
+	for(int i = 0; i < data.N; i++){
+		os << i << " ";
+	}
+	os << std::endl;
+
+	for(int e = 0; e < num_epochs; e++){
+		os << epochs[e] << " ";
+	}
+	os << std::endl;
+
+	for(int i = 0; i < data.N; i++){
+		os << "0 " << i << " ";
+		for(int e = 0; e < num_epochs; e++){
+			os << coal_rates[i][e] << " ";
+		}
+		os << std::endl;
+	}
+
+	os.close();
+
+	/////////////////////////////////////////////
+	//Resource Usage
+
+	rusage usage;
+	getrusage(RUSAGE_SELF, &usage);
+
+	std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+	std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+	std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+	std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+	}
+
+
+void
 aDNA_fast_simplified(cxxopts::Options& options){
 
 	//Program options

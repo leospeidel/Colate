@@ -28,7 +28,11 @@ int main(int argc, char* argv[]){
 
     aDNA(options);
 
-  }else if(!mode.compare("aDNA_simple")){
+	}else if(!mode.compare("aDNA_tree")){
+
+		aDNA_tree(options);
+
+	}else if(!mode.compare("aDNA_simple")){
 
     aDNA_fast_simplified_all(options);
 
