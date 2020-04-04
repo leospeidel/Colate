@@ -140,6 +140,62 @@ class aDNA_EM_tree{
 };
 
 
+class aDNA_EM_tree_fast{
+
+	private:
+
+		std::vector<double> coal_rates;
+		std::vector<double> epochs;
+		std::vector<double> t_int;
+		std::vector<double> cumsum_coal_rate, sum_coal_rate_tint, inv_coal_rate_tint;
+		std::vector<int> ep_index;
+		int num_epochs, num_age_bins;
+		double C;
+
+
+		double logsumexp(double loga, double logb);
+		double logminusexp(double loga, double logb);
+
+	public:
+
+		aDNA_EM_tree_fast(double C, std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
+			num_epochs = epochs.size();
+
+			num_age_bins = ((int) (log(1e8) * C)) + 1;
+			t_int.resize(num_age_bins);
+			ep_index.resize(num_age_bins);
+			cumsum_coal_rate.resize(num_age_bins);
+			sum_coal_rate_tint.resize(num_age_bins);
+			inv_coal_rate_tint.resize(num_age_bins);
+
+			std::vector<double>::iterator it_tint = t_int.begin();
+			std::vector<int>::iterator it_ep_index = ep_index.begin();
+			int bin = 0;
+			int e   = 0;
+			*it_tint = 0;
+			*it_ep_index = 0;
+			it_tint++;
+			for(bin = 1; bin < num_age_bins; bin++){
+				*it_tint =  exp((bin-1.0)/C)/10.0;
+				if(e < num_epochs){
+					if(e != num_epochs - 1){
+						if(*it_tint > epochs[e+1]) e++;
+					}
+				}
+				*it_ep_index = e;
+				it_ep_index++;
+				it_tint++;
+			}
+
+		}
+
+		void UpdateTree(std::vector<float>& num_lins);
+		double EM_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom);
+		double EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom); 
+
+};
+
+
 class aDNA_EM_simplified{
 
 	private:

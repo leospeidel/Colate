@@ -30,7 +30,7 @@ int main(int argc, char* argv[]){
 
 	}else if(!mode.compare("aDNA_tree")){
 
-		aDNA_tree(options);
+		aDNA_tree_fast(options);
 
 	}else if(!mode.compare("aDNA_simple")){
 
