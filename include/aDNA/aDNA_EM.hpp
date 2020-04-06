@@ -149,11 +149,21 @@ class aDNA_EM_tree_fast{
 		std::vector<double> t_int;
 		std::vector<double> f, tf, tf_prec;
 		std::vector<double> cumsum_coal_rate, sum_coal_rate_tint, inv_coal_rate_tint;
-		std::vector<double> scaling;
 		std::vector<int> ep_index;
+		std::vector<double> factor;
 		int num_epochs, num_age_bins;
 		double C;
 
+		//iterators
+		std::vector<double>::iterator it_coal;
+		std::vector<double>::iterator it_sum_coal;
+		std::vector<double>::iterator it_inv_coal;
+		std::vector<double>::iterator it_cumsum_coal;
+		std::vector<int>::iterator it_ep_index;
+		std::vector<double>::iterator it_tint;
+		std::vector<double>::iterator it_tint_next;
+		std::vector<float>::iterator it_num_lins;
+		std::vector<double>::iterator it_f, it_tf, it_tf_prec;
 
 		double logsumexp(double loga, double logb);
 		double logminusexp(double loga, double logb);
@@ -174,7 +184,7 @@ class aDNA_EM_tree_fast{
 			f.resize(num_age_bins);
 			tf.resize(num_age_bins);
 			tf_prec.resize(num_age_bins);
-			scaling.resize(num_epochs);
+			factor.resize(num_epochs);
 
 			std::vector<double>::iterator it_tint = t_int.begin();
 			std::vector<int>::iterator it_ep_index = ep_index.begin();

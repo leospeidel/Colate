@@ -1018,7 +1018,7 @@ aDNA_tree_fast(cxxopts::Options& options){
 			assert(epochs[e] > epochs[e-1]);
 		}
 
-	}else{
+	}else if(0){
 		num_epochs = 30;
 		if(options.count("num_bins") > 0){
 			num_epochs = options["num_bins"].as<int>();
@@ -1036,6 +1036,21 @@ aDNA_tree_fast(cxxopts::Options& options){
 		for(int e = 2; e < num_epochs-1; e++){
 			epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
 		}
+		epochs[num_epochs-1] = 1e8/years_per_gen;
+
+	}else{
+
+		num_epochs = 3;
+		float years_per_gen = 28.0;
+		if(options.count("years_per_gen")){
+			years_per_gen = options["years_per_gen"].as<float>();
+		}
+		num_epochs++; 
+		epochs.resize(num_epochs);
+
+		epochs[0] = 0.0;
+		epochs[1] = 5e4/28;
+		epochs[2] = 1e7/28;
 		epochs[num_epochs-1] = 1e8/years_per_gen;
 
 	}
@@ -1167,8 +1182,6 @@ aDNA_tree_fast(cxxopts::Options& options){
 	//iterate through whole file
 	while(num_bases_SNP_persists >= 0.0){
 
-		if(snp == 100000) break;
-
 		if((*it_mut).age_begin < (*it_mut).age_end && (*it_mut).age_end > 0 && (*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
 
 			if(tree_count < (*it_mut).tree){
@@ -1290,7 +1303,7 @@ aDNA_tree_fast(cxxopts::Options& options){
 
 	aDNA_EM_tree_fast EM(C, epochs);
 
-	int max_iter = 1000;
+	int max_iter = 10;
 	int perc = -1;
 	double log_likelihood = log(0.0), prev_log_likelihood = log(0.0);
 	for(int iter = 0; iter < max_iter; iter++){
