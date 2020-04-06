@@ -144,10 +144,12 @@ class aDNA_EM_tree_fast{
 
 	private:
 
-		std::vector<double> coal_rates;
+		std::vector<double> inv_coal_rate_tmpl, sum_coal_rate_tmpl;
 		std::vector<double> epochs;
 		std::vector<double> t_int;
+		std::vector<double> f, tf, tf_prec;
 		std::vector<double> cumsum_coal_rate, sum_coal_rate_tint, inv_coal_rate_tint;
+		std::vector<double> scaling;
 		std::vector<int> ep_index;
 		int num_epochs, num_age_bins;
 		double C;
@@ -158,15 +160,21 @@ class aDNA_EM_tree_fast{
 
 	public:
 
-		aDNA_EM_tree_fast(double C, std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
+		aDNA_EM_tree_fast(double C, std::vector<double>& epochs): epochs(epochs){
 			num_epochs = epochs.size();
 
 			num_age_bins = ((int) (log(1e8) * C)) + 1;
 			t_int.resize(num_age_bins);
 			ep_index.resize(num_age_bins);
 			cumsum_coal_rate.resize(num_age_bins);
+			sum_coal_rate_tmpl.resize(num_age_bins);
+			inv_coal_rate_tmpl.resize(num_age_bins);
 			sum_coal_rate_tint.resize(num_age_bins);
 			inv_coal_rate_tint.resize(num_age_bins);
+			f.resize(num_age_bins);
+			tf.resize(num_age_bins);
+			tf_prec.resize(num_age_bins);
+			scaling.resize(num_epochs);
 
 			std::vector<double>::iterator it_tint = t_int.begin();
 			std::vector<int>::iterator it_ep_index = ep_index.begin();
@@ -189,6 +197,7 @@ class aDNA_EM_tree_fast{
 
 		}
 
+		void UpdateCoal(std::vector<double>& icoal);
 		void UpdateTree(std::vector<float>& num_lins);
 		double EM_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom);
 		double EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom); 

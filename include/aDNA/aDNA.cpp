@@ -11,7 +11,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <string>
-#include <gperftools/profiler.h>
 
 #include "aDNA_EM.hpp"
 
@@ -1289,9 +1288,9 @@ aDNA_tree_fast(cxxopts::Options& options){
 
 	std::ofstream os_log(options["output"].as<std::string>() + ".log");
 
-	ProfilerStart("Relate_aDNA.prof");
+	aDNA_EM_tree_fast EM(C, epochs);
 
-	int max_iter = 5;
+	int max_iter = 1000;
 	int perc = -1;
 	double log_likelihood = log(0.0), prev_log_likelihood = log(0.0);
 	for(int iter = 0; iter < max_iter; iter++){
@@ -1303,7 +1302,7 @@ aDNA_tree_fast(cxxopts::Options& options){
 			perc = (int) (((double)iter)/max_iter * 100.0);
 			//std::cerr << "[" << perc << "%]\r";
 
-			if(0){
+			if(1){
 			std::ofstream os(options["output"].as<std::string>() + ".coal");
 
 			for(int i = 0; i < data.N; i++){
@@ -1329,37 +1328,54 @@ aDNA_tree_fast(cxxopts::Options& options){
 
 		}
 
-		aDNA_EM_tree_fast EM(C, epochs, coal_rates[0]);
+		aDNA_EM_tree EM2(C, epochs, coal_rates[0]);
+		EM.UpdateCoal(coal_rates[0]);
 
 		prev_log_likelihood = log_likelihood;
 		log_likelihood = 0.0;
 
 		int count = 0;
-		std::vector<double> num(num_epochs, 0.0), denom(num_epochs,0.0);
+		std::vector<double> num(num_epochs, 0.0), denom(num_epochs,0.0), num2(num_epochs, 0.0), denom2(num_epochs, 0.0);
 		snp = 0;
 		EM.UpdateTree(num_lin[snp]);
+		//EM2.UpdateTree(num_lin[snp]);
+
+		//std::cerr << "new tree" << std::endl;
 		int tree = tree_index[snp];
 		for(; snp < age_begin.size(); snp++){
 
 			if(tree < tree_index[snp]){
 				EM.UpdateTree(num_lin[snp]);
+				//EM2.UpdateTree(num_lin[snp]);
 				tree = tree_index[snp];
 			}
 
 			//TODO: optimise by precalculating values for each tree, precalculating values for coalescence rates
+		  bool is_shared = false, is_notshared = false;	
 			for(int j = 0; j < N_input; j++){
 				if(shared[snp][j] == 1){
 					//std::cerr << snp << " shared" << std::endl;
-					log_likelihood += EM.EM_shared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num, denom);
+					if(is_shared == false){
+						log_likelihood += EM.EM_shared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num, denom);
+						is_shared = true;
+					}
+					for(int e = 0; e < num_epochs; e++){
+						coal_rates_num[0][e]   += num[e];
+						coal_rates_denom[0][e] += denom[e];
+					}
 				}else{
 					//std::cerr << snp << " not shared" << std::endl;
-					log_likelihood += EM.EM_notshared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num, denom);
+					if(is_notshared == false){
+					  log_likelihood += EM.EM_notshared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num2, denom2);
+						is_notshared = true;
+					}
+					for(int e = 0; e < num_epochs; e++){
+						coal_rates_num[0][e]   += num2[e];
+						coal_rates_denom[0][e] += denom2[e];
+					}
 				}
 
-				for(int e = 0; e < num_epochs; e++){
-					coal_rates_num[0][e]   += num[e];
-					coal_rates_denom[0][e] += denom[e];
-				}
+
 			}
 
 		}
@@ -1418,8 +1434,6 @@ aDNA_tree_fast(cxxopts::Options& options){
 	}
 
 	os.close();
-
-	ProfilerStop();
 
 	/////////////////////////////////////////////
 	//Resource Usage

@@ -260,7 +260,8 @@ TEST_CASE("test EM_tree expectation step"){
 
 		std::vector<float> DAF(num_age_bins, 2), DAF2(num_age_bins, 1), num_lins(num_age_bins, 2);
 
-		aDNA_EM_tree_fast EM(C, epochs, coal_rates[0]);
+		aDNA_EM_tree_fast EM(C, epochs);
+		EM.UpdateCoal(coal_rates[0]);
 		aDNA_EM_tree EM3(C, epochs, coal_rates[0]);
 		EM.UpdateTree(num_lins);
 		for(int e = 0; e < num_epochs; e++){
@@ -297,7 +298,7 @@ TEST_CASE("test EM_tree expectation step"){
 
 			std::fill(num3.begin(), num3.end(), 0.0);
 			std::fill(denom3.begin(), denom3.end(), 0.0);
-			logl3 = EM3.EM_shared(age_bin[bin1], age_bin[bin2], num_lins, DAF, num2, denom2);
+			logl3 = EM3.EM_shared(age_bin[bin1], age_bin[bin2], num_lins, DAF2, num2, denom2);
 
 			REQUIRE(std::fabs(logl - logl2) < 1e-3);
 			REQUIRE(std::fabs(logl - logl3) < 1e-3);
@@ -313,8 +314,9 @@ TEST_CASE("test EM_tree expectation step"){
 
 			std::fill(num3.begin(), num3.end(), 0.0);
 			std::fill(denom3.begin(), denom3.end(), 0.0);
-			logl3 = EM3.EM_notshared(age_bin[bin1], age_bin[bin2], num_lins, DAF, num2, denom2);
+			logl3 = EM3.EM_notshared(age_bin[bin1], age_bin[bin2], num_lins, DAF2, num2, denom2);
 
+			//std::cerr << bin1 << " " << logl << " " << logl3 << std::endl;
 			//REQUIRE(std::fabs(logl - logl3) < 1e-3);
 			}
 

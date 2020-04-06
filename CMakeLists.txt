@@ -4,6 +4,7 @@ cmake_minimum_required      (VERSION 3.1)
 if(CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
 endif()
+#set(CMAKE_CXX_FLAGS "-g -fno-pie")
 set (CMAKE_CXX_STANDARD 11)
 
 find_package( ZLIB REQUIRED )
@@ -23,7 +24,7 @@ set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/aDNA)
 set(FTREE_DIR ${CMAKE_SOURCE_DIR}/include/ftree)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
-set(RELATE_LIBS librelateShared.so libgzstreamShared.so libkastoreShared.so libtskitShared.so)
+set(RELATE_LIBS librelateShared.dylib libgzstreamShared.dylib libkastoreShared.dylib libtskitShared.dylib)
 link_directories(${CMAKE_SOURCE_DIR}/../relate_lib/bin)
 
 # Add subdirectories
@@ -31,8 +32,8 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/tskit)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/gzstream)
-include_directories(${PROJECT_SOURCE_DIR}/include/aDNA)
-include_directories(${PROJECT_SOURCE_DIR}/include/ftree)
+include_directories(${CMAKE_SOURCE_DIR}/include/aDNA)
+include_directories(${CMAKE_SOURCE_DIR}/include/ftree)
 
 add_subdirectory(${ADNA_DIR})
 add_subdirectory(${FTREE_DIR})
