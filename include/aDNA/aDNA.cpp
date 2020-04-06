@@ -1018,8 +1018,8 @@ aDNA_tree_fast(cxxopts::Options& options){
 			assert(epochs[e] > epochs[e-1]);
 		}
 
-	}else if(0){
-		num_epochs = 30;
+	}else if(1){
+		num_epochs = 20;
 		if(options.count("num_bins") > 0){
 			num_epochs = options["num_bins"].as<int>();
 		}
@@ -1084,7 +1084,7 @@ aDNA_tree_fast(cxxopts::Options& options){
 			}
 		}
 	}else{
-		double initial_coal_rate = 1.0/40000.0;
+		double initial_coal_rate = 1.0/10000.0;
 		for(int i = 0; i < data.N; i++){
 			coal_rates[i].resize(num_epochs);
 			coal_rates_num[i].resize(num_epochs);
@@ -1301,11 +1301,75 @@ aDNA_tree_fast(cxxopts::Options& options){
 
 	std::ofstream os_log(options["output"].as<std::string>() + ".log");
 
-	aDNA_EM_tree_fast EM(C, epochs);
-
-	int max_iter = 10;
-	int perc = -1;
 	double log_likelihood = log(0.0), prev_log_likelihood = log(0.0);
+	
+	std::vector<double> epochs_tmp(2), coal_rates_tmp(2);
+	epochs_tmp[0] = 0;
+	epochs_tmp[1] = 1e8/28;
+	aDNA_EM_tree_fast EM(C, N, epochs_tmp);
+
+	double coal_rate_min = 1e-6, coal_rate;
+  double logl_max = log(0.0);
+	int arg_max = 1;
+	for(int f = 1; f <= 50; f++){
+
+		coal_rate = coal_rate_min * exp(log(10) * 0.05*(f-1));
+		for(int e = 0; e < epochs_tmp.size(); e++){
+			coal_rates_tmp[e] = coal_rate;
+		}
+
+		//initialise EM
+		EM.UpdateCoal(coal_rates_tmp);
+		snp = 0;
+		log_likelihood = 0.0;
+		EM.UpdateTree(num_lin[snp]);
+		int tree = tree_index[snp];
+		for(; snp < age_begin.size(); snp++){
+
+			if(tree < tree_index[snp]){
+				EM.UpdateTree(num_lin[snp]);
+				tree = tree_index[snp];
+			}
+
+			bool is_shared = false, is_notshared = false;	
+			double logl_shared, logl_notshared;
+			for(int j = 0; j < N_input; j++){
+				if(shared[snp][j] == 1){
+					if(is_shared == false){
+						logl_shared = EM.Logl_shared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp]);
+						is_shared = true;
+					}
+					log_likelihood += logl_shared;
+				}else{
+					if(is_notshared == false){
+						logl_notshared = EM.Logl_notshared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp]);
+						is_notshared = true;
+					}
+					log_likelihood += logl_notshared;
+				}
+			}
+
+		}
+
+		std::cerr << f << " " << 0.5/coal_rate << " " << log_likelihood << std::endl;
+		if(logl_max < log_likelihood){
+      logl_max = log_likelihood;
+			arg_max  = f;
+		}
+
+	}
+	coal_rate = coal_rate_min * exp(log(10) * 0.05*(arg_max-1));
+	std::fill(coal_rates[0].begin(), coal_rates[0].end(), coal_rate);
+
+	std::cerr << arg_max << " " << 0.5/coal_rate << std::endl;
+	std::cerr << std::endl;
+
+	int max_iter = 1000;
+	int perc = -1;
+
+	EM.UpdateEpochs(epochs);
+	log_likelihood = log(0.0);
+	prev_log_likelihood = log(0.0);
 	for(int iter = 0; iter < max_iter; iter++){
 
 		double start_time = time(NULL);
@@ -1313,7 +1377,7 @@ aDNA_tree_fast(cxxopts::Options& options){
 
 		if( (int) (((double)iter)/max_iter * 100.0) > perc ){
 			perc = (int) (((double)iter)/max_iter * 100.0);
-			//std::cerr << "[" << perc << "%]\r";
+			std::cerr << "[" << perc << "%]\r";
 
 			if(1){
 			std::ofstream os(options["output"].as<std::string>() + ".coal");
@@ -1341,7 +1405,7 @@ aDNA_tree_fast(cxxopts::Options& options){
 
 		}
 
-		aDNA_EM_tree EM2(C, epochs, coal_rates[0]);
+		//aDNA_EM_tree EM2(C, epochs, coal_rates[0]);
 		EM.UpdateCoal(coal_rates[0]);
 
 		prev_log_likelihood = log_likelihood;
@@ -1363,15 +1427,16 @@ aDNA_tree_fast(cxxopts::Options& options){
 				tree = tree_index[snp];
 			}
 
-			//TODO: optimise by precalculating values for each tree, precalculating values for coalescence rates
-		  bool is_shared = false, is_notshared = false;	
+		  bool is_shared = false, is_notshared = false;
+			double logl_shared, logl_notshared;
 			for(int j = 0; j < N_input; j++){
 				if(shared[snp][j] == 1){
 					//std::cerr << snp << " shared" << std::endl;
 					if(is_shared == false){
-						log_likelihood += EM.EM_shared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num, denom);
+						logl_shared = EM.EM_shared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num, denom);
 						is_shared = true;
 					}
+					log_likelihood += logl_shared;
 					for(int e = 0; e < num_epochs; e++){
 						coal_rates_num[0][e]   += num[e];
 						coal_rates_denom[0][e] += denom[e];
@@ -1379,9 +1444,10 @@ aDNA_tree_fast(cxxopts::Options& options){
 				}else{
 					//std::cerr << snp << " not shared" << std::endl;
 					if(is_notshared == false){
-					  log_likelihood += EM.EM_notshared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num2, denom2);
+					  logl_notshared = EM.EM_notshared(age_begin[snp], age_end[snp], num_lin[snp], DAF[snp], num2, denom2);
 						is_notshared = true;
 					}
+					log_likelihood += logl_notshared;
 					for(int e = 0; e < num_epochs; e++){
 						coal_rates_num[0][e]   += num2[e];
 						coal_rates_denom[0][e] += denom2[e];
@@ -1421,7 +1487,7 @@ aDNA_tree_fast(cxxopts::Options& options){
 		clock_t end = clock();
 		double end_time = time(NULL);
 		double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-		std::cerr << elapsed_secs << std::endl;
+		//std::cerr << elapsed_secs << std::endl;
 
 	}
 	os_log.close();

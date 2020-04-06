@@ -260,7 +260,7 @@ TEST_CASE("test EM_tree expectation step"){
 
 		std::vector<float> DAF(num_age_bins, 2), DAF2(num_age_bins, 1), num_lins(num_age_bins, 2);
 
-		aDNA_EM_tree_fast EM(C, epochs);
+		aDNA_EM_tree_fast EM(C, 2, epochs);
 		EM.UpdateCoal(coal_rates[0]);
 		aDNA_EM_tree EM3(C, epochs, coal_rates[0]);
 		EM.UpdateTree(num_lins);
@@ -286,7 +286,7 @@ TEST_CASE("test EM_tree expectation step"){
 				DAF2[i] = 0;
 			}
 
-			double logl, logl2, logl3;
+			double logl, logl2, logl3, logl4;
 
 			std::fill(num.begin(), num.end(), 0.0);
 			std::fill(denom.begin(), denom.end(), 0.0);
@@ -300,8 +300,20 @@ TEST_CASE("test EM_tree expectation step"){
 			std::fill(denom3.begin(), denom3.end(), 0.0);
 			logl3 = EM3.EM_shared(age_bin[bin1], age_bin[bin2], num_lins, DAF2, num2, denom2);
 
+			logl4 = EM.Logl_shared(age_bin[bin1], age_bin[bin2], num_lins, DAF2);
+
 			REQUIRE(std::fabs(logl - logl2) < 1e-3);
 			REQUIRE(std::fabs(logl - logl3) < 1e-3);
+			REQUIRE(std::fabs(logl - logl4) < 1e-3);
+
+			/*
+			std::cerr << bin1 << " " << logl << " " << logl3 << std::endl;
+			for(int e = 0; e < num_epochs; e++){
+		  	std::cerr << e << " " << num[e] << " " << num2[e] << " " << denom[e] << " " << denom2[e] << std::endl;
+        REQUIRE(std::fabs(num[e] - num2[e]) < 1e-3);
+				REQUIRE(std::fabs(denom[e] - denom2[e]) < 1e-3);
+			}
+			*/
 
 			if(bin1 < num_age_bins-1){
 			std::fill(num.begin(), num.end(), 0.0);
@@ -316,8 +328,19 @@ TEST_CASE("test EM_tree expectation step"){
 			std::fill(denom3.begin(), denom3.end(), 0.0);
 			logl3 = EM3.EM_notshared(age_bin[bin1], age_bin[bin2], num_lins, DAF2, num2, denom2);
 
-			//std::cerr << bin1 << " " << logl << " " << logl3 << std::endl;
-			//REQUIRE(std::fabs(logl - logl3) < 1e-3);
+			logl4 = EM.Logl_notshared(age_bin[bin1], age_bin[bin2], num_lins, DAF2);
+
+			if(!std::isinf(logl)){
+				//std::cerr << bin1 << " " << logl << " " << logl3 << std::endl;
+				REQUIRE(std::fabs(logl - logl3) < 1e-3);
+				REQUIRE(std::fabs(logl - logl4) < 1e-3);
+				for(int e = 0; e < num_epochs-1; e++){
+					//std::cerr << e << " " << num[e] << " " << num2[e] << " " << denom[e] << " " << denom2[e] << std::endl;
+					REQUIRE(std::fabs(num[e] - num2[e]) < 1e-2);
+					REQUIRE(std::fabs(denom[e] - denom2[e]) < 1e-2);
+				}
+			}
+
 			}
 
 		}

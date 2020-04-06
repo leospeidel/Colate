@@ -149,6 +149,7 @@ class aDNA_EM_tree_fast{
 		std::vector<double> t_int;
 		std::vector<double> f, tf, tf_prec;
 		std::vector<double> cumsum_coal_rate, sum_coal_rate_tint, inv_coal_rate_tint;
+    std::vector<std::vector<double>> exp_sum_coal_rate_tint;
 		std::vector<int> ep_index;
 		std::vector<double> factor;
 		int num_epochs, num_age_bins;
@@ -165,12 +166,15 @@ class aDNA_EM_tree_fast{
 		std::vector<float>::iterator it_num_lins;
 		std::vector<double>::iterator it_f, it_tf, it_tf_prec;
 
+		std::vector<std::vector<double>>::iterator it1_exp_sum_coal;
+    std::vector<double>::iterator it2_exp_sum_coal, it2_exp_sum_coal_prev;
+
 		double logsumexp(double loga, double logb);
 		double logminusexp(double loga, double logb);
 
 	public:
 
-		aDNA_EM_tree_fast(double C, std::vector<double>& epochs): epochs(epochs){
+		aDNA_EM_tree_fast(double C, int N, std::vector<double>& epochs): epochs(epochs){
 			num_epochs = epochs.size();
 
 			num_age_bins = ((int) (log(1e8) * C)) + 1;
@@ -186,8 +190,14 @@ class aDNA_EM_tree_fast{
 			tf_prec.resize(num_age_bins);
 			factor.resize(num_epochs);
 
-			std::vector<double>::iterator it_tint = t_int.begin();
-			std::vector<int>::iterator it_ep_index = ep_index.begin();
+			
+			exp_sum_coal_rate_tint.resize(num_age_bins);
+			for(int i = 0; i < num_age_bins; i++){
+        exp_sum_coal_rate_tint[i].resize(N);
+			}	
+
+		  it_tint = t_int.begin();
+			it_ep_index = ep_index.begin();
 			int bin = 0;
 			int e   = 0;
 			*it_tint = 0;
@@ -207,8 +217,13 @@ class aDNA_EM_tree_fast{
 
 		}
 
-		void UpdateCoal(std::vector<double>& icoal);
+		void UpdateEpochs(std::vector<double>& iepochs);
+		void UpdateCoal(std::vector<double>& coal);
 		void UpdateTree(std::vector<float>& num_lins);
+
+		double Logl_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF);
+		double Logl_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF);
+
 		double EM_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom);
 		double EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom); 
 
