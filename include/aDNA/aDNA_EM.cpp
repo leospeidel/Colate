@@ -1807,6 +1807,22 @@ aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float
 			}
 			denom[e] += factor[e]*integ;
 			if(denom[e] < 0.0) denom[e] = 0.0;
+			if(!(num[e] >= 0.0)){
+
+				for(int e = 0; e < num_epochs; e++){
+          std::cerr << num[e] << " ";
+				}
+				std::cerr << std::endl;
+				for(int e = 0; e < num_epochs; e++){
+					std::cerr << denom[e] << " ";
+				}
+				std::cerr << std::endl;
+				for(int e = 0; e < num_epochs; e++){
+					std::cerr << inv_coal_rate_tmpl[e] << " ";
+				}
+				std::cerr << std::endl;
+
+			}
 			assert(!std::isnan(num[e]));
 			assert(!std::isnan(denom[e]));
 			assert(num[e] >= 0.0);

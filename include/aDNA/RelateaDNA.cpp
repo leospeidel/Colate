@@ -32,16 +32,24 @@ int main(int argc, char* argv[]){
 
 		aDNA_tree_fast(options);
 
+	}else if(!mode.compare("aDNA_logl")){
+
+		aDNA_logl(options);
+
 	}else if(!mode.compare("aDNA_simple")){
 
     aDNA_fast_simplified_all(options);
 
-  }else{
+	}else if(!mode.compare("make_haps")){
+
+		make_mut_incl_out(options);
+
+	}else{
 
     std::cout << "####### error #######" << std::endl;
     std::cout << "Invalid or missing mode." << std::endl;
     std::cout << "Options for --mode are:" << std::endl;
-    std::cout << "aDNA." << std::endl;
+    std::cout << "aDNA, aDNA_tree, aDNA_logl, aDNA_simple, make_haps." << std::endl;
 
   }
 
