@@ -1530,10 +1530,10 @@ aDNA_tree_fast(cxxopts::Options& options){
           coal_rates_nesterov[e] = coal_rates[e];
         }else{
           //gamma         = coal_rates[e]/coal_rates_denom[e];
-          //coal_rates[e]  += 0.9*gradient_prev[e] + gamma * gradient[e];
+          coal_rates[e]  += 0.9*gradient_prev[e] + gamma * gradient[e];
           //coal_rates_nesterov[e] = coal_rates[e] + 0.9*(0.9*gradient_prev[e] + gamma * gradient[e]);
           coal_rates[e] += gamma * gradient[e]; 
-          coal_rates_nesterov[e] = coal_rates[e];
+          //coal_rates_nesterov[e] = coal_rates[e];
         }
         if(coal_rates[e] < 1e-7){
           coal_rates[e] = 1e-7;

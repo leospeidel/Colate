@@ -16,8 +16,7 @@ int main(int argc, char* argv[]){
     ("sample", "Filename of sample file (Output file format of Shapeit).", cxxopts::value<std::string>())
     ("num_bins", "Optional: Number of bins.", cxxopts::value<int>())
     ("coal", "Filename of file containing coalescence rates.", cxxopts::value<std::string>()) 
-    ("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>())
-    ("regularise", "Optional: Specify whether or not to regularise likelihood. 0: no, 1: yes.", cxxopts::value<int>()) 
+    ("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>()) 
     ("i,input", "Filename of input.", cxxopts::value<std::string>())
     ("o,output", "Filename of output.", cxxopts::value<std::string>());
 
