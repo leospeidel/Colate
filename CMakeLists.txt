@@ -20,7 +20,7 @@ endif( ZLIB_FOUND )
 # Set dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/aDNA)
+set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/coal)
 set(FTREE_DIR ${CMAKE_SOURCE_DIR}/include/ftree)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
@@ -32,14 +32,14 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/tskit)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/gzstream)
-include_directories(${CMAKE_SOURCE_DIR}/include/aDNA)
+include_directories(${CMAKE_SOURCE_DIR}/include/coal)
 include_directories(${CMAKE_SOURCE_DIR}/include/ftree)
 
 add_subdirectory(${ADNA_DIR})
 add_subdirectory(${FTREE_DIR})
 
 # tests
-add_executable(Tests ${TEST_DIR}/Tests.cpp ${ADNA_DIR}/aDNA_EM.hpp ${ADNA_DIR}/aDNA_EM.cpp)
+add_executable(Tests ${TEST_DIR}/Tests.cpp ${ADNA_DIR}/coal_EM.hpp ${ADNA_DIR}/coal_EM.cpp)
 target_link_libraries(Tests ${RELATE_LIBS} UnitTest)
 
 enable_testing()

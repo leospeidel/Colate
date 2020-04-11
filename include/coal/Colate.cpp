@@ -1,4 +1,4 @@
-#include "aDNA.cpp"
+#include "coal.cpp"
 #include "cxxopts.hpp"
 #include <string>
 
@@ -6,7 +6,7 @@ int main(int argc, char* argv[]){
 
   //////////////////////////////////
   //Program options  
-  cxxopts::Options options("RelateaDNA");
+  cxxopts::Options options("Colate");
   options.add_options()
     ("help", "Print help.")
     ("mode", "Choose which part of the algorithm to run.", cxxopts::value<std::string>())
@@ -16,7 +16,8 @@ int main(int argc, char* argv[]){
     ("sample", "Filename of sample file (Output file format of Shapeit).", cxxopts::value<std::string>())
     ("num_bins", "Optional: Number of bins.", cxxopts::value<int>())
     ("coal", "Filename of file containing coalescence rates.", cxxopts::value<std::string>()) 
-    ("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>()) 
+    ("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>())
+    ("regularise", "Optional: Specify whether or not to regularise likelihood. 0: no, 1: yes.", cxxopts::value<int>()) 
     ("i,input", "Filename of input.", cxxopts::value<std::string>())
     ("o,output", "Filename of output.", cxxopts::value<std::string>());
 
@@ -24,21 +25,25 @@ int main(int argc, char* argv[]){
 
   std::string mode = options["mode"].as<std::string>();
 
-  if(!mode.compare("aDNA")){
+	if(!mode.compare("tree")){
 
-    aDNA(options);
+		coal(options);
 
-	}else if(!mode.compare("aDNA_tree")){
+	}else if(!mode.compare("mut")){
 
-		aDNA_tree_fast(options);
+    mut(options);
 
-	}else if(!mode.compare("aDNA_logl")){
+	}else if(!mode.compare("mut_tree")){
 
-		aDNA_logl(options);
+		mut_tree_fast(options);
 
-	}else if(!mode.compare("aDNA_simple")){
+	}else if(!mode.compare("mut_logl")){
 
-    aDNA_fast_simplified_all(options);
+		mut_logl(options);
+
+	}else if(!mode.compare("mut_simple")){
+
+    mut_fast_simplified_all(options);
 
 	}else if(!mode.compare("make_haps")){
 
@@ -49,7 +54,7 @@ int main(int argc, char* argv[]){
     std::cout << "####### error #######" << std::endl;
     std::cout << "Invalid or missing mode." << std::endl;
     std::cout << "Options for --mode are:" << std::endl;
-    std::cout << "aDNA, aDNA_tree, aDNA_logl, aDNA_simple, make_haps." << std::endl;
+    std::cout << "mut, mut_tree, mut_logl, mut_simple, make_haps." << std::endl;
 
   }
 

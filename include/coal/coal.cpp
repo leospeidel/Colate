@@ -12,10 +12,131 @@
 #include <sys/resource.h>
 #include <string>
 
-#include "aDNA_EM.hpp"
+#include "coal_tree.hpp"
+#include "coal_EM.hpp"
 
 void
-aDNA(cxxopts::Options& options){
+coal(cxxopts::Options& options){
+
+	//Program options
+
+	bool help = false;
+	if(!options.count("input") || !options.count("output")){
+		std::cout << "Not enough arguments supplied." << std::endl;
+		std::cout << "Needed: input, output. Optional: num_bins, coal" << std::endl;
+		help = true;
+	}
+	if(options.count("help") || help){
+		std::cout << options.help({""}) << std::endl;
+		std::cout << "Calculate coalescence rates for sample." << std::endl;
+		exit(0);
+	}  
+
+	std::cerr << "---------------------------------------------------------" << std::endl;
+	std::cerr << "Calculating coalescence rates for (ancient) sample.." << std::endl;
+
+	/////////////////////////////////
+	//get TMRCA at each SNP
+
+	int correct = 0;
+	if(options.count("correction") > 0){ 
+		correct = options["correction"].as<int>();
+	}
+
+	////////////////////////////////////////
+
+	//decide on epochs
+	int num_epochs = 0; 
+	std::vector<double> epochs;
+
+	std::ifstream is;
+	std::string line;
+	if(options.count("coal") > 0){
+		is.open(options["coal"].as<std::string>());
+		getline(is, line);
+		getline(is, line);
+		std::string tmp;
+		for(int i = 0; i < line.size(); i++){
+			if(line[i] == ' ' || line[i] == '\t'){
+				epochs.push_back(stof(tmp));
+				tmp = "";
+				num_epochs++;
+			}else{
+				tmp += line[i];
+			}
+		}
+		if(tmp != "") epochs.push_back(stof(tmp));
+
+		assert(epochs[0] == 0);
+		for(int e = 1; e < num_epochs; e++){
+			std::cerr << epochs[e] << " ";
+			assert(epochs[e] > epochs[e-1]);
+		}
+
+	}else{
+		num_epochs = 30;
+		if(options.count("num_bins") > 0){
+			num_epochs = options["num_bins"].as<int>();
+		}
+		float years_per_gen = 28.0;
+		if(options.count("years_per_gen")){
+			years_per_gen = options["years_per_gen"].as<float>();
+		}
+		num_epochs++; 
+		epochs.resize(num_epochs);
+
+		epochs[1] = 1e3/years_per_gen;
+		float log_10 = std::log(10);
+		for(int e = 2; e < num_epochs-1; e++){
+			epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
+		}
+		epochs[num_epochs-1] = 1e8/years_per_gen;
+
+	}
+
+	int num_bootstrap = 20;
+	int block_size = 10000;
+
+
+	MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
+	Muts::iterator it_mut; //iterator for mut file
+	AncMutIterators ancmut(options["input"].as<std::string>() + ".anc", options["input"].as<std::string>() + ".mut");
+	float num_bases_tree_persists = 0.0;
+
+	coal_tree ct(epochs, num_bootstrap, block_size, ancmut);
+
+	int tree_count = 0, perc = -1;
+	num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
+	while(num_bases_tree_persists >= 0.0){
+		if( (int) (((double)tree_count)/ancmut.NumTrees() * 100.0) > perc ){
+			perc = (int) (((double)tree_count)/ancmut.NumTrees() * 100.0);
+			std::cerr << "[" << perc << "%]\r";
+		}
+		tree_count++;
+		ct.populate(mtr.tree);	
+		num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
+	}
+
+	ct.Dump(options["output"].as<std::string>() + ".coal");
+
+	/////////////////////////////////////////////
+	//Resource Usage
+
+	rusage usage;
+	getrusage(RUSAGE_SELF, &usage);
+
+	std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+	std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+	std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+	std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+}
+
+void
+mut(cxxopts::Options& options){
 
   //Program options
 
@@ -370,10 +491,10 @@ aDNA(cxxopts::Options& options){
 
     }
 
-    std::vector<aDNA_EM2> EM;
+    std::vector<coal_EM2> EM;
     EM.reserve(data.N);
     for(int i = 0; i < data.N; i++){
-      EM.push_back(aDNA_EM2(epochs, coal_rates[i]));
+      EM.push_back(coal_EM2(epochs, coal_rates[i]));
     }
 
     prev_log_likelihood = log_likelihood;
@@ -483,7 +604,7 @@ aDNA(cxxopts::Options& options){
 }
 
 void
-aDNA_tree(cxxopts::Options& options){
+mut_tree(cxxopts::Options& options){
 
   //Program options
 
@@ -852,7 +973,7 @@ aDNA_tree(cxxopts::Options& options){
 
     }
 
-    aDNA_EM_tree EM(C, epochs, coal_rates[0]);
+    coal_EM_tree EM(C, epochs, coal_rates[0]);
 
     prev_log_likelihood = log_likelihood;
     log_likelihood = 0.0;
@@ -959,7 +1080,7 @@ aDNA_tree(cxxopts::Options& options){
 }
 
 void
-aDNA_tree_fast(cxxopts::Options& options){
+mut_tree_fast(cxxopts::Options& options){
 
   //Program options
 
@@ -1309,7 +1430,7 @@ aDNA_tree_fast(cxxopts::Options& options){
   std::vector<double> epochs_tmp(2), coal_rates_tmp(2);
   epochs_tmp[0] = 0;
   epochs_tmp[1] = 1e8/28;
-  aDNA_EM_tree_fast EM(C, N, epochs_tmp);
+  coal_EM_tree_fast EM(C, N, epochs_tmp);
 
   double coal_rate_min = 1e-6, coal_rate;
   double logl_max = log(0.0);
@@ -1530,10 +1651,10 @@ aDNA_tree_fast(cxxopts::Options& options){
           coal_rates_nesterov[e] = coal_rates[e];
         }else{
           //gamma         = coal_rates[e]/coal_rates_denom[e];
-          coal_rates[e]  += 0.9*gradient_prev[e] + gamma * gradient[e];
+          //coal_rates[e]  += 0.9*gradient_prev[e] + gamma * gradient[e];
           //coal_rates_nesterov[e] = coal_rates[e] + 0.9*(0.9*gradient_prev[e] + gamma * gradient[e]);
           coal_rates[e] += gamma * gradient[e]; 
-          //coal_rates_nesterov[e] = coal_rates[e];
+          coal_rates_nesterov[e] = coal_rates[e];
         }
         if(coal_rates[e] < 1e-7){
           coal_rates[e] = 1e-7;
@@ -1599,7 +1720,7 @@ aDNA_tree_fast(cxxopts::Options& options){
 }
 
 void
-aDNA_logl(cxxopts::Options& options){
+mut_logl(cxxopts::Options& options){
 
   //Program options
 
@@ -1946,7 +2067,7 @@ aDNA_logl(cxxopts::Options& options){
   epochs_tmp[0] = 0;
   epochs_tmp[1] = 1e4/28;
   epochs_tmp[2] = 1e8/28;
-  aDNA_EM_tree_fast EM(C, N, epochs_tmp);
+  coal_EM_tree_fast EM(C, N, epochs_tmp);
 
   double coal_rate_min = 1e-6, coal_rate1, coal_rate2;
   double logl_max = log(0.0);
@@ -2058,7 +2179,7 @@ aDNA_logl(cxxopts::Options& options){
 ////////////////////////////////////////
 
 void
-aDNA_fast_simplified(cxxopts::Options& options){
+mut_fast_simplified(cxxopts::Options& options){
 
   //Program options
 
@@ -2344,11 +2465,11 @@ aDNA_fast_simplified(cxxopts::Options& options){
 
     //double start_time = time(NULL);
     //clock_t begin = clock();
-    //aDNA_EM_simplified EM(epochs, coal_rates[0]);
-    std::vector<aDNA_EM_simplified> EM;
+    //coal_EM_simplified EM(epochs, coal_rates[0]);
+    std::vector<coal_EM_simplified> EM;
     EM.reserve(data.N);
     for(int i = 0; i < data.N; i++){
-      EM.push_back(aDNA_EM_simplified(epochs, coal_rates[i]));
+      EM.push_back(coal_EM_simplified(epochs, coal_rates[i]));
     }
 
     prev_log_likelihood = log_likelihood;
@@ -2459,7 +2580,7 @@ aDNA_fast_simplified(cxxopts::Options& options){
 }
 
 void
-aDNA_fast_simplified_all(cxxopts::Options& options){
+mut_fast_simplified_all(cxxopts::Options& options){
 
   //Program options
 
@@ -2704,11 +2825,11 @@ aDNA_fast_simplified_all(cxxopts::Options& options){
 
     //double start_time = time(NULL);
     //clock_t begin = clock();
-    //aDNA_EM_simplified EM(epochs, coal_rates[0]);
-    std::vector<aDNA_EM_simplified> EM;
+    //coal_EM_simplified EM(epochs, coal_rates[0]);
+    std::vector<coal_EM_simplified> EM;
     EM.reserve(data.N);
     for(int i = 0; i < data.N; i++){
-      EM.push_back(aDNA_EM_simplified(epochs, coal_rates[i]));
+      EM.push_back(coal_EM_simplified(epochs, coal_rates[i]));
     }
 
     //clock_t end = clock();
@@ -2954,3 +3075,5 @@ make_mut_incl_out(cxxopts::Options& options){
   std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
 
 }
+
+

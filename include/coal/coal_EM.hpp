@@ -12,7 +12,7 @@
 #include <iterator>
 
 
-class aDNA_EM{
+class coal_EM{
 
 	private:
 
@@ -31,7 +31,7 @@ class aDNA_EM{
 
 	public:
 
-		aDNA_EM(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
+		coal_EM(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
 			num_epochs = epochs.size();
 			A_ep.resize(num_epochs);
 			B_ep.resize(num_epochs);
@@ -50,7 +50,7 @@ class aDNA_EM{
 
 };
 
-class aDNA_EM2{
+class coal_EM2{
 
 	private:
 
@@ -68,7 +68,7 @@ class aDNA_EM2{
 
 	public:
 
-		aDNA_EM2(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
+		coal_EM2(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
 			num_epochs = epochs.size();
 			A_ep.resize(num_epochs);
 			B_ep.resize(num_epochs);
@@ -86,7 +86,7 @@ class aDNA_EM2{
 
 };
 
-class aDNA_EM_tree{
+class coal_EM_tree{
 
 	private:
 
@@ -104,7 +104,7 @@ class aDNA_EM_tree{
 
 	public:
 
-		aDNA_EM_tree(double C, std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
+		coal_EM_tree(double C, std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
 			num_epochs = epochs.size();
 			
 			num_age_bins = ((int) (log(1e8) * C)) + 1;
@@ -140,7 +140,7 @@ class aDNA_EM_tree{
 };
 
 
-class aDNA_EM_tree_fast{
+class coal_EM_tree_fast{
 
 	private:
 
@@ -174,7 +174,7 @@ class aDNA_EM_tree_fast{
 
 	public:
 
-		aDNA_EM_tree_fast(double C, int N, std::vector<double>& epochs): epochs(epochs){
+		coal_EM_tree_fast(double C, int N, std::vector<double>& epochs): epochs(epochs){
 			num_epochs = epochs.size();
 
 			num_age_bins = ((int) (log(1e8) * C)) + 1;
@@ -230,7 +230,7 @@ class aDNA_EM_tree_fast{
 };
 
 
-class aDNA_EM_simplified{
+class coal_EM_simplified{
 
 	private:
 
@@ -249,7 +249,7 @@ class aDNA_EM_simplified{
 
 	public:
 
-		aDNA_EM_simplified(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
+		coal_EM_simplified(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
 			num_epochs = epochs.size();
 			A_ep.resize(num_epochs);
 			B_ep.resize(num_epochs);

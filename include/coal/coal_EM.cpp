@@ -1,7 +1,7 @@
-#include "aDNA_EM.hpp"
+#include "coal_EM.hpp"
 
 double
-aDNA_EM::logsumexp(double loga, double logb){
+coal_EM::logsumexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
 		if(std::isinf(logb) || std::isnan(logb)){
@@ -29,7 +29,7 @@ aDNA_EM::logsumexp(double loga, double logb){
 }
 
 double
-aDNA_EM::logminusexp(double loga, double logb){
+coal_EM::logminusexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
 		if(std::isinf(logb) || std::isnan(logb)){
@@ -56,7 +56,7 @@ aDNA_EM::logminusexp(double loga, double logb){
 }
 
 void
-aDNA_EM::get_tint(double age_begin, double age_end, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin, int& i_end){
+coal_EM::get_tint(double age_begin, double age_end, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin, int& i_end){
 
 	int e = 0;
 	int i = 0;
@@ -93,7 +93,7 @@ aDNA_EM::get_tint(double age_begin, double age_end, std::vector<double>& t_int, 
 }
 
 void 
-aDNA_EM::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B, std::vector<double>& C){
+coal_EM::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B, std::vector<double>& C){
 
 	std::vector<double> cumsum_coal_rate(t_int.size(), 0.0);
 	for(int i = 1; i < t_int.size(); i++){
@@ -193,7 +193,7 @@ aDNA_EM::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::ve
 }
 
 void 
-aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B, std::vector<double>& C){
+coal_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B, std::vector<double>& C){
 
 	std::vector<double> cumsum_coal_rate(t_int.size(), 0.0);
 	for(int i = 1; i < t_int.size(); i++){
@@ -325,7 +325,7 @@ aDNA_EM::get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, st
 }
 
 double
-aDNA_EM::EM_shared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom){
+coal_EM::EM_shared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom){
 
 	//calculate A, B, C, then f, and tf
 	std::fill(num.begin(), num.end(), 0);
@@ -453,7 +453,7 @@ aDNA_EM::EM_shared(double age_begin, double age_end, std::vector<double>& num, s
 }
 
 double
-aDNA_EM::EM_notshared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom){
+coal_EM::EM_notshared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom){
 
 	//calculate A, B, C, then f, and tf
 	int num_epochs = epochs.size();
@@ -567,7 +567,7 @@ aDNA_EM::EM_notshared(double age_begin, double age_end, std::vector<double>& num
 ////////////////////////////////////
 
 double
-aDNA_EM2::logsumexp(double loga, double logb){
+coal_EM2::logsumexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
 		if(std::isinf(logb) || std::isnan(logb)){
@@ -595,7 +595,7 @@ aDNA_EM2::logsumexp(double loga, double logb){
 }
 
 double
-aDNA_EM2::logminusexp(double loga, double logb){
+coal_EM2::logminusexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
 		if(std::isinf(logb) || std::isnan(logb)){
@@ -622,7 +622,7 @@ aDNA_EM2::logminusexp(double loga, double logb){
 }
 
 void
-aDNA_EM2::get_tint(double age_begin, double age_end, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin, int& i_end){
+coal_EM2::get_tint(double age_begin, double age_end, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin, int& i_end){
 
 	int e = 0;
 	int i = 0;
@@ -659,7 +659,7 @@ aDNA_EM2::get_tint(double age_begin, double age_end, std::vector<double>& t_int,
 }
 
 void 
-aDNA_EM2::get_AB(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B){
+coal_EM2::get_AB(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B){
 
 	std::vector<double> cumsum_coal_rate(t_int.size(), 0.0);
 	for(int i = 1; i < t_int.size(); i++){
@@ -715,7 +715,7 @@ aDNA_EM2::get_AB(std::vector<double>& t_int, std::vector<int>& ep_index, std::ve
 }
 
 double
-aDNA_EM2::EM_shared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom){
+coal_EM2::EM_shared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom){
 
 	//calculate A, B, then f, and tf
 	std::fill(num.begin(), num.end(), 0);
@@ -844,7 +844,7 @@ aDNA_EM2::EM_shared(double age_begin, double age_end, std::vector<double>& num, 
 }
 
 double
-aDNA_EM2::EM_notshared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom){
+coal_EM2::EM_notshared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom){
 
 	//calculate A, B, C, then f, and tf
 	int num_epochs = epochs.size();
@@ -992,7 +992,7 @@ aDNA_EM2::EM_notshared(double age_begin, double age_end, std::vector<double>& nu
 ////////////////////////////////////
 
 double
-aDNA_EM_tree::logsumexp(double loga, double logb){
+coal_EM_tree::logsumexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
 		if(std::isinf(logb) || std::isnan(logb)){
@@ -1020,7 +1020,7 @@ aDNA_EM_tree::logsumexp(double loga, double logb){
 }
 
 double
-aDNA_EM_tree::logminusexp(double loga, double logb){
+coal_EM_tree::logminusexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
 		if(std::isinf(logb) || std::isnan(logb)){
@@ -1047,7 +1047,7 @@ aDNA_EM_tree::logminusexp(double loga, double logb){
 }
 
 void
-aDNA_EM_tree::UpdateTree(std::vector<float>& num_lins){
+coal_EM_tree::UpdateTree(std::vector<float>& num_lins){
 
 	for(int i = 1; i < t_int.size(); i++){
 		cumsum_coal_rate[i] = cumsum_coal_rate[i-1] + coal_rates[ep_index[i-1]] * num_lins[i-1] * (t_int[i] - t_int[i-1]);
@@ -1056,7 +1056,7 @@ aDNA_EM_tree::UpdateTree(std::vector<float>& num_lins){
 }
 
 double
-aDNA_EM_tree::EM_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom){
+coal_EM_tree::EM_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom){
 
 	//prespecify t_int as a time grid, and ep_index according to t_int
 	//input num_lin and DAF according to t_int
@@ -1098,6 +1098,9 @@ aDNA_EM_tree::EM_shared(double age_begin, double age_end, std::vector<float>& nu
 				denom_e  = logminusexp(denom_e, log(t_begin) + num_e) + log(num_lins[i]);
 				assert(!std::isnan(denom_e));
 				denom[e] = logsumexp(denom[e], logsumexp(denom_e, log(cumsum_bl) + num_e));
+
+				//if(e == 1) std::cerr << num_e << " ";
+				//if(e == 0) std::cerr << logsumexp(denom_e, log(cumsum_bl) + num_e) << " ";
 
 			}else if(t_begin >= age_begin && t_end <= age_end && !age_identical){
 
@@ -1151,6 +1154,11 @@ aDNA_EM_tree::EM_shared(double age_begin, double age_end, std::vector<float>& nu
 		if(i == num_age_bins-1 || DAF[i] == 0) break;
 
 	}
+
+	//std::cerr << std::endl;
+	//e = 1;
+	//std::cerr << exp(num[e]) << " " << exp(normalising_constant) << " " << exp(num[e] - normalising_constant) << std::endl;
+	//std::cerr << exp(denom[e]) << " " << exp(normalising_constant) << " " << exp(denom[e] - normalising_constant) << std::endl;
 
 	e = 0;
 	if(!std::isinf(normalising_constant)){
@@ -1210,7 +1218,7 @@ aDNA_EM_tree::EM_shared(double age_begin, double age_end, std::vector<float>& nu
 }
 
 double
-aDNA_EM_tree::EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom){
+coal_EM_tree::EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom){
 
 	//prespecify t_int as a time grid, and ep_index according to t_int
 	//input num_lin and DAF according to t_int
@@ -1248,9 +1256,9 @@ aDNA_EM_tree::EM_notshared(double age_begin, double age_end, std::vector<float>&
 				num[e]   = logsumexp(num[e], num_e);
 
 				denom_e  = log(1.0-DAF[i]) + 
-					         log((t_begin + inv_coal_rate_e) - (t_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i])) - cumsum_coal_rate[i];
+					log((t_begin + inv_coal_rate_e) - (t_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i])) - cumsum_coal_rate[i];
 				if(std::isnan(denom_e)){
-          std::cerr << t_begin << " " << t_end << " " << age_begin << " " << age_end << " " << inv_coal_rate_e << " " << cumsum_coal_rate[i] << " " << cumsum_coal_rate[i+1] << std::endl;
+					std::cerr << t_begin << " " << t_end << " " << age_begin << " " << age_end << " " << inv_coal_rate_e << " " << cumsum_coal_rate[i] << " " << cumsum_coal_rate[i+1] << std::endl;
 				}
 				assert(!std::isnan(denom_e));
 				denom_e  = logminusexp(denom_e, log(t_begin) + num_e) + log(num_lins[i]);
@@ -1307,11 +1315,11 @@ aDNA_EM_tree::EM_notshared(double age_begin, double age_end, std::vector<float>&
 
 				denom_e  = log((t_begin + inv_coal_rate_e) - (t_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i])) - cumsum_coal_rate[i];
 				if(!std::isnan(denom_e)){
-				assert(!std::isnan(denom_e));
-				denom_e  = logminusexp(denom_e, log(t_begin) + num_e) + log(num_lins[i]);
-				assert(!std::isnan(denom_e));
-				denom[e] = logsumexp(denom[e], logsumexp(denom_e, log(cumsum_bl) + num_e));
-				assert(!std::isnan(denom[e]));
+					assert(!std::isnan(denom_e));
+					denom_e  = logminusexp(denom_e, log(t_begin) + num_e) + log(num_lins[i]);
+					assert(!std::isnan(denom_e));
+					denom[e] = logsumexp(denom[e], logsumexp(denom_e, log(cumsum_bl) + num_e));
+					assert(!std::isnan(denom[e]));
 				}
 			}
 
@@ -1331,47 +1339,47 @@ aDNA_EM_tree::EM_notshared(double age_begin, double age_end, std::vector<float>&
 	}
 
 	if(!std::isinf(normalising_constant)){
-	double integ = 1.0;	
-	i = 0;
-	for(e = 0; e < num_epochs-1; e++){
+		double integ = 1.0;	
+		i = 0;
+		for(e = 0; e < num_epochs-1; e++){
 
-		double factor = 0.0;
-		if(i < num_age_bins){
-			while(ep_index[i] == e){
-				factor += (t_int[i+1]-t_int[i]) * num_lins[i];
-				i++;
-				if(i == num_age_bins) break;
+			double factor = 0.0;
+			if(i < num_age_bins){
+				while(ep_index[i] == e){
+					factor += (t_int[i+1]-t_int[i]) * num_lins[i];
+					i++;
+					if(i == num_age_bins) break;
+				}
 			}
-		}
 
+			num[e]   -= normalising_constant;
+			denom[e] -= normalising_constant;
+			num[e] = exp(num[e]);
+			if(integ > 0.0){
+				integ -= num[e];
+			}else{
+				integ  = 0.0;
+			}
+			denom[e]  = exp(denom[e]);
+			denom[e] += factor*integ;
+			if(denom[e] < 0.0) denom[e] = 0.0;
+			assert(!std::isnan(num[e]));
+			assert(!std::isnan(denom[e]));
+			assert(num[e] >= 0.0);
+			assert(denom[e] >= 0.0);
+		}
+		e = num_epochs-1;
 		num[e]   -= normalising_constant;
 		denom[e] -= normalising_constant;
-		num[e] = exp(num[e]);
-		if(integ > 0.0){
-			integ -= num[e];
-		}else{
-			integ  = 0.0;
-		}
+		num[e]    = exp(num[e]);
 		denom[e]  = exp(denom[e]);
-		denom[e] += factor*integ;
 		if(denom[e] < 0.0) denom[e] = 0.0;
 		assert(!std::isnan(num[e]));
 		assert(!std::isnan(denom[e]));
 		assert(num[e] >= 0.0);
 		assert(denom[e] >= 0.0);
-	}
-	e = num_epochs-1;
-	num[e]   -= normalising_constant;
-	denom[e] -= normalising_constant;
-	num[e]    = exp(num[e]);
-	denom[e]  = exp(denom[e]);
-	if(denom[e] < 0.0) denom[e] = 0.0;
-	assert(!std::isnan(num[e]));
-	assert(!std::isnan(denom[e]));
-	assert(num[e] >= 0.0);
-	assert(denom[e] >= 0.0);
 	}else{
-    std::fill(num.begin(), num.end(), 0.0);
+		std::fill(num.begin(), num.end(), 0.0);
 		std::fill(denom.begin(), denom.end(), 0.0);
 	}
 
@@ -1383,7 +1391,7 @@ aDNA_EM_tree::EM_notshared(double age_begin, double age_end, std::vector<float>&
 ////////////////////////////////////
 
 double
-aDNA_EM_tree_fast::logsumexp(double loga, double logb){
+coal_EM_tree_fast::logsumexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
 		if(std::isinf(logb) || std::isnan(logb)){
@@ -1411,7 +1419,7 @@ aDNA_EM_tree_fast::logsumexp(double loga, double logb){
 }
 
 double
-aDNA_EM_tree_fast::logminusexp(double loga, double logb){
+coal_EM_tree_fast::logminusexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
 		if(std::isinf(logb) || std::isnan(logb)){
@@ -1438,12 +1446,38 @@ aDNA_EM_tree_fast::logminusexp(double loga, double logb){
 }
 
 void
-aDNA_EM_tree_fast::UpdateCoal(std::vector<double>& coal){
+coal_EM_tree_fast::UpdateEpochs(std::vector<double>& iepochs){
+
+	epochs = iepochs;
+	num_epochs = epochs.size();
+	factor.resize(num_epochs);
+
+	it_tint = t_int.begin();
+	it_ep_index = ep_index.begin();
+	int bin = 0;
+	int e   = 0;
+	*it_ep_index = 0;
+	it_tint++;
+	for(bin = 1; bin < num_age_bins; bin++){
+		if(e < num_epochs){
+			if(e != num_epochs - 1){
+				if(*it_tint > epochs[e+1]) e++;
+			}
+		}
+		*it_ep_index = e;
+		it_ep_index++;
+		it_tint++;
+	}
+
+}
+
+void
+coal_EM_tree_fast::UpdateCoal(std::vector<double>& coal){
 
 	it_coal = coal.begin();
 	it_sum_coal = sum_coal_rate_tmpl.begin();
 	it_inv_coal = inv_coal_rate_tmpl.begin();
-  it_ep_index = ep_index.begin();
+	it_ep_index = ep_index.begin();
 	it_tint = t_int.begin();
 	it_tint_next = std::next(it_tint, 1);
 
@@ -1452,46 +1486,73 @@ aDNA_EM_tree_fast::UpdateCoal(std::vector<double>& coal){
 		if(e != num_epochs-1){
 			if(e < *it_ep_index){
 				it_coal++;
-        e = *it_ep_index;
+				e = *it_ep_index;
 			}
 		}
-    *it_inv_coal = 1.0/(*it_coal);
+		*it_inv_coal = 1.0/(*it_coal);
 		it_inv_coal++;
 		it_ep_index++;
 	}
 
 	it_inv_coal = inv_coal_rate_tmpl.begin();
 	for(; it_sum_coal != std::prev(sum_coal_rate_tmpl.end(),1);){
-    *it_sum_coal = (*it_tint_next - *it_tint)/(*it_inv_coal);
+		*it_sum_coal = (*it_tint_next - *it_tint)/(*it_inv_coal);
 		it_sum_coal++;
 		it_inv_coal++;
 		it_tint++;
 		it_tint_next++;
 	}
 
+	it_sum_coal = sum_coal_rate_tmpl.begin();
+	it1_exp_sum_coal = exp_sum_coal_rate_tint.begin();
+	long double exp_coal;
+	for(; it_sum_coal != sum_coal_rate_tmpl.end(); it_sum_coal++){
+		exp_coal = exp(-*it_sum_coal);
+		it2_exp_sum_coal = (*it1_exp_sum_coal).begin();	
+		it2_exp_sum_coal_prev = it2_exp_sum_coal;
+		//int k = 1;
+		//*it2_exp_sum_coal = exp(-*it_sum_coal);
+		*it2_exp_sum_coal = exp_coal;
+		it2_exp_sum_coal++;
+		//k++;
+		for(;it2_exp_sum_coal != (*it1_exp_sum_coal).end();){  
+			//*it2_exp_sum_coal = exp(-*it_sum_coal*k);
+			*it2_exp_sum_coal = *it2_exp_sum_coal_prev * exp_coal;
+			it2_exp_sum_coal++;
+			it2_exp_sum_coal_prev++;
+			//k++;
+		}
+		it1_exp_sum_coal++;
+	}
+
 }
 
 void
-aDNA_EM_tree_fast::UpdateTree(std::vector<float>& num_lins){
+coal_EM_tree_fast::UpdateTree(std::vector<float>& num_lins){
 
 	inv_coal_rate_tint[0] = inv_coal_rate_tmpl[0]/num_lins[0];
-	sum_coal_rate_tint[0] = sum_coal_rate_tmpl[0]*num_lins[0];
-	cumsum_coal_rate[0]   = 0.0;
+	sum_coal_rate_tint[0] = exp_sum_coal_rate_tint[0][num_lins[0]-1];
+	cumsum_coal_rate[0]   = 1.0;
+	//sum_coal_rate_tint[0] = sum_coal_rate_tmpl[0]*num_lins[0];
+	//cumsum_coal_rate[0]   = 0.0;
 	int e = 0;
 	for(int i = 1; i < t_int.size(); i++){
 		if(e < ep_index[i]){
 			e = ep_index[i];
 		}
 		inv_coal_rate_tint[i]   = inv_coal_rate_tmpl[i]/num_lins[i];
-		sum_coal_rate_tint[i]   = sum_coal_rate_tmpl[i]*num_lins[i];
-		cumsum_coal_rate[i]     = cumsum_coal_rate[i-1] + sum_coal_rate_tint[i-1];
-		sum_coal_rate_tint[i-1] = exp(-sum_coal_rate_tint[i-1]);
+		sum_coal_rate_tint[i]   = exp_sum_coal_rate_tint[i][num_lins[i]-1];
+		cumsum_coal_rate[i]     = cumsum_coal_rate[i-1] * sum_coal_rate_tint[i-1];
+		//std::cerr << sum_coal_rate_tint[i] << " " << cumsum_coal_rate[i] << std::endl;
+		//sum_coal_rate_tint[i]   = sum_coal_rate_tmpl[i]*num_lins[i];
+		//cumsum_coal_rate[i]     = cumsum_coal_rate[i-1] + sum_coal_rate_tint[i-1];
+		//sum_coal_rate_tint[i-1] = exp(-sum_coal_rate_tint[i-1]);
 	}
-	sum_coal_rate_tint[t_int.size()-1] = exp(-sum_coal_rate_tint[t_int.size()-1]);
+	//sum_coal_rate_tint[t_int.size()-1] = exp(-sum_coal_rate_tint[t_int.size()-1]);
 
-	for(int i = 0; i < t_int.size(); i++){
-		cumsum_coal_rate[i] = exp(-cumsum_coal_rate[i]);
-	}
+	//for(int i = 0; i < t_int.size(); i++){
+	//	cumsum_coal_rate[i] = exp(-cumsum_coal_rate[i]);
+	//}
 
 	it_sum_coal = sum_coal_rate_tint.begin();
 	it_inv_coal = inv_coal_rate_tint.begin();
@@ -1515,12 +1576,15 @@ aDNA_EM_tree_fast::UpdateTree(std::vector<float>& num_lins){
 		*it_f        = (1.0 - *it_sum_coal) * (*it_cumsum_coal);
 		*it_tf       = ((*it_tint + *it_inv_coal) - (*it_tint_next + *it_inv_coal) * (*it_sum_coal)) * (*it_cumsum_coal);
 		assert(!std::isnan(*it_tf));
-    *it_tf_prec  = *it_tf - (*it_tint)*(*it_f);
+		*it_tf_prec  = *it_tf - (*it_tint)*(*it_f);
 		*it_tf_prec *= (*it_num_lins);
+		if(*it_tf_prec < 0){
+			*it_tf_prec = 0.0;
+		}
 		*it_tf_prec += cumsum_bl * (*it_f);
 		assert(!std::isnan(*it_tf_prec));
 		cumsum_bl   += (*it_tint_next - *it_tint)*(*it_num_lins);
-		
+
 		it_sum_coal++;
 		it_inv_coal++;
 		it_cumsum_coal++;
@@ -1554,8 +1618,94 @@ aDNA_EM_tree_fast::UpdateTree(std::vector<float>& num_lins){
 
 }
 
+double 
+coal_EM_tree_fast::Logl_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF){
+
+	assert(age_begin <= age_end);
+	bool age_identical = false;
+	if(age_begin == age_end) age_identical = true;
+
+	double t_begin, t_end, inv_coal_rate_e, num_e;
+	double logl = 0.0;
+
+	for(int i = 0; i < t_int.size();){
+
+		t_begin         = t_int[i];
+		t_end           = t_int[i+1];
+
+		if(t_end <= age_begin){
+			//constant regime
+			logl   += DAF[i] * f[i];
+		}else if(t_begin >= age_begin && t_end <= age_end && !age_identical){
+
+			inv_coal_rate_e = inv_coal_rate_tint[i];
+			//linear regime
+			num_e  = DAF[i] * ((age_end - t_begin - inv_coal_rate_e) + (t_end - age_end + inv_coal_rate_e) * sum_coal_rate_tint[i]) * cumsum_coal_rate[i];
+			num_e /= (age_end - age_begin);
+			logl  += num_e;	
+
+		}else{
+			break;
+		}
+
+		i++;
+		if(i == num_age_bins-1 || DAF[i] == 0) break;
+	}
+
+	if(logl == 0.0){
+		return(0.0);
+	}else{
+		return(log(logl));
+	}
+
+}
+
+double 
+coal_EM_tree_fast::Logl_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF){
+
+	assert(age_begin <= age_end);
+	bool age_identical = false;
+	if(age_begin == age_end) age_identical = true;
+
+	double t_begin, t_end, inv_coal_rate_e, num_e, denom_e;
+	double logl = 0.0;
+
+	for(int i = 0; i < t_int.size();){
+
+		t_begin         = t_int[i];
+		t_end           = t_int[i+1];
+
+		if(t_end <= age_begin && DAF[i] < 1.0){
+			//constant regime
+			logl   += (1.0 - DAF[i]) * f[i];
+		}else if(t_begin >= age_begin && t_end <= age_end && !age_identical){
+
+			inv_coal_rate_e = inv_coal_rate_tint[i];
+			//linear regime
+			num_e  = DAF[i] * ((age_end - t_begin - inv_coal_rate_e) + (t_end - age_end + inv_coal_rate_e) * sum_coal_rate_tint[i]) * cumsum_coal_rate[i];
+			num_e /= (age_end - age_begin);
+			num_e  = std::max(0.0, f[i] - num_e);
+			assert(!std::isinf(num_e));
+			logl += num_e;
+
+		}else if(DAF[i] == 0.0){
+			logl   += f[i];
+		}
+
+		i++;
+		if(i == num_age_bins-1) break;
+
+	}
+
+	if(logl == 0.0){
+    return(0.0);
+	}else{
+	  return(log(logl));
+	}
+}
+
 double
-aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom){
+coal_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom){
 
 	//prespecify t_int as a time grid, and ep_index according to t_int
 	//input num_lin and DAF according to t_int
@@ -1572,7 +1722,7 @@ aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float
 
 	int i = 0, e = 0;
 	for(e = 0; e < num_epochs; e++){
-	
+
 		double cumsum_bl = 0.0;
 
 		while(ep_index[i] == e){
@@ -1581,9 +1731,11 @@ aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float
 			t_end           = t_int[i+1];
 
 			if(t_end <= age_begin){
-        //constant regime
+				//constant regime
 				num[e]   += DAF[i] * f[i];
 				denom[e] += DAF[i] * tf_prec[i];
+				//if(e == 0) std::cerr << log(DAF[i] * tf_prec[i]) << " " << DAF[i] << " " << tf_prec[i] << "; ";
+				//if(e == 1) std::cerr << log(DAF[i] * f[i]) << " ";
 			}else if(t_begin >= age_begin && t_end <= age_end && !age_identical){
 
 				inv_coal_rate_e = inv_coal_rate_tint[i];
@@ -1600,22 +1752,22 @@ aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float
 					double term2   = (-x_end*(age_end -t_end)/inv_coal_rate_e   - 1.0 + 2.0*(x_end   + inv_coal_rate_e/age_end));
 					double tmp     = term1;
 					tmp           += sum_coal_rate_tint[i] * term2;
-					assert(!std::isnan(tmp));
+					//assert(!std::isnan(tmp));
 
 					if(tmp < 0.0){
 						denom[e] = 0.0;
 					}else{
 						tmp       *= age_end * inv_coal_rate_e * cumsum_coal_rate[i];
-						assert(!std::isnan(tmp));
+						//assert(!std::isnan(tmp));
 						denom_e    = DAF[i]*tmp/(age_end-age_begin);
 
-						assert(!std::isnan(denom_e));
+						//assert(!std::isnan(denom_e));
 						denom_e   -= t_begin*num_e;
 						denom_e   *= num_lins[i];
-						assert(!std::isnan(denom_e));
+						//assert(!std::isnan(denom_e));
 						denom_e   += cumsum_bl*num_e;
 						denom[e]  += denom_e;
-						assert(!std::isnan(denom[e]));
+						assert(!std::isnan(denom_e));
 					}
 
 				}
@@ -1629,22 +1781,23 @@ aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float
 			if(i == num_age_bins-1) break;
 		}
 
-		//normalising_constant += num[e] * exp(-scaling[e]);
 		normalising_constant += num[e];
-    std::cerr << e << " " << num[e] << " " << normalising_constant << " " << ep_index[0] << " " << DAF[i] << " " << f[0] << " " << DAF[1] << " " << f[1] << std::endl;
+
 		if(i == num_age_bins-1 || DAF[i] == 0) break;
 
 	}
 
-	e = 0;
+	//std::cerr << std::endl;
+	//e = 1;
+	//std::cerr << num[e] << " " << normalising_constant << " " << num[e]/normalising_constant << std::endl;
+	//std::cerr << denom[e] << " " << normalising_constant << " " << denom[e]/normalising_constant << std::endl;
+
 	if(normalising_constant > 0.0){
 
 		double integ = 1.0;
-		i = 0;
+		e = 0;
 		for(; e < std::min(num_epochs-1, ep_index[i] + 1); e++){
 
-			//num[e]   *= exp(-scaling[e]);
-			//denom[e] *= exp(-scaling[e]);
 			num[e]   /= normalising_constant;
 			denom[e] /= normalising_constant;
 			if(integ > 0.0){
@@ -1654,6 +1807,22 @@ aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float
 			}
 			denom[e] += factor[e]*integ;
 			if(denom[e] < 0.0) denom[e] = 0.0;
+			if(!(num[e] >= 0.0)){
+
+				for(int e = 0; e < num_epochs; e++){
+          std::cerr << num[e] << " ";
+				}
+				std::cerr << std::endl;
+				for(int e = 0; e < num_epochs; e++){
+					std::cerr << denom[e] << " ";
+				}
+				std::cerr << std::endl;
+				for(int e = 0; e < num_epochs; e++){
+					std::cerr << inv_coal_rate_tmpl[e] << " ";
+				}
+				std::cerr << std::endl;
+
+			}
 			assert(!std::isnan(num[e]));
 			assert(!std::isnan(denom[e]));
 			assert(num[e] >= 0.0);
@@ -1663,8 +1832,6 @@ aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float
 		if(ep_index[i] == num_epochs - 1){
 			e = num_epochs-1;
 
-			//num[e]   *= exp(-scaling[e]);
-			//denom[e] *= exp(-scaling[e]);
 			num[e]   /= normalising_constant;
 			denom[e] /= normalising_constant;
 			if(denom[e] < 0.0) denom[e] = 0.0;
@@ -1682,7 +1849,7 @@ aDNA_EM_tree_fast::EM_shared(double age_begin, double age_end, std::vector<float
 }
 
 double
-aDNA_EM_tree_fast::EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom){
+coal_EM_tree_fast::EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom){
 
 	//prespecify t_int as a time grid, and ep_index according to t_int
 	//input num_lin and DAF according to t_int
@@ -1704,14 +1871,15 @@ aDNA_EM_tree_fast::EM_notshared(double age_begin, double age_end, std::vector<fl
 
 		while(ep_index[i] == e){
 
+			t_begin         = t_int[i];
+			t_end           = t_int[i+1];
+
 			if(t_end <= age_begin && DAF[i] < 1.0){
 				//constant regime
 				num[e]   += (1.0 - DAF[i]) * f[i];
 				denom[e] += (1.0 - DAF[i]) * tf_prec[i];
 			}else if(t_begin >= age_begin && t_end <= age_end && !age_identical){
 
-				t_begin         = t_int[i];
-				t_end           = t_int[i+1];
 				inv_coal_rate_e = inv_coal_rate_tint[i];
 				if(1){
 
@@ -1727,26 +1895,26 @@ aDNA_EM_tree_fast::EM_notshared(double age_begin, double age_end, std::vector<fl
 					double term2   = (-x_end*(age_end -t_end)/inv_coal_rate_e   - 1.0 + 2.0*(x_end   + inv_coal_rate_e/age_end));
 					double tmp     = term1;
 					tmp           += sum_coal_rate_tint[i] * term2;
-					assert(!std::isinf(tmp));
+					//assert(!std::isinf(tmp));
 
 					if(tmp < 0.0){
 						denom[e] = tf[i];
 					}else{
 						tmp       *= age_end * inv_coal_rate_e * cumsum_coal_rate[i];
-						assert(!std::isinf(tmp));
+						//assert(!std::isinf(tmp));
 						denom_e    = DAF[i]*tmp/(age_end-age_begin);
-            denom_e    = tf[i] - denom_e;
+						denom_e    = tf[i] - denom_e;
 					}
-						
-					assert(!std::isinf(denom_e));
+
+					//assert(!std::isinf(denom_e));
 					denom_e   -= t_begin*num_e;
 					if(denom_e > 0){
 						denom_e   *= num_lins[i];
-						assert(!std::isinf(denom_e));
+						//assert(!std::isinf(denom_e));
 						denom_e   += cumsum_bl*num_e;
 						denom[e]  += denom_e;
 					}
-					assert(!std::isnan(denom[e]));
+					assert(!std::isnan(denom_e));
 
 				}
 
@@ -1760,8 +1928,7 @@ aDNA_EM_tree_fast::EM_notshared(double age_begin, double age_end, std::vector<fl
 			if(i == num_age_bins-1) break;
 		}
 
-		//normalising_constant += num[e] * exp(-scaling[e]);
-    normalising_constant += num[e];
+		normalising_constant += num[e];
 		if(i == num_age_bins-1) break;
 
 	}
@@ -1772,8 +1939,6 @@ aDNA_EM_tree_fast::EM_notshared(double age_begin, double age_end, std::vector<fl
 		i = 0;
 		for(e = 0; e < num_epochs-1; e++){
 
-			//num[e]   *= exp(-scaling[e]);
-			//denom[e] *= exp(-scaling[e]);
 			num[e]   /= normalising_constant;
 			denom[e] /= normalising_constant;
 			if(integ > 0.0){
@@ -1789,9 +1954,7 @@ aDNA_EM_tree_fast::EM_notshared(double age_begin, double age_end, std::vector<fl
 			assert(denom[e] >= 0.0);
 		}
 		e = num_epochs-1;
-	
-		//num[e]   *= exp(-scaling[e]);
-		//denom[e] *= exp(-scaling[e]);
+
 		num[e]   /= normalising_constant;
 		denom[e] /= normalising_constant;
 		if(denom[e] < 0.0) denom[e] = 0.0;
@@ -1809,7 +1972,7 @@ aDNA_EM_tree_fast::EM_notshared(double age_begin, double age_end, std::vector<fl
 ////////////////////////////////////
 
 double
-aDNA_EM_simplified::logsumexp(double iloga, double ilogb){
+coal_EM_simplified::logsumexp(double iloga, double ilogb){
 
 	long double loga = iloga;
 	long double logb = ilogb;
@@ -1842,7 +2005,7 @@ aDNA_EM_simplified::logsumexp(double iloga, double ilogb){
 }
 
 double
-aDNA_EM_simplified::logminusexp(double loga, double logb){
+coal_EM_simplified::logminusexp(double loga, double logb){
 
 	//long double loga = iloga;
 	//long double logb = ilogb;
@@ -1874,7 +2037,7 @@ aDNA_EM_simplified::logminusexp(double loga, double logb){
 }
 
 void
-aDNA_EM_simplified::get_tint(double age, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin){
+coal_EM_simplified::get_tint(double age, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin){
 
 	int e = 0;
 	int i = 0;
@@ -1899,7 +2062,7 @@ aDNA_EM_simplified::get_tint(double age, std::vector<double>& t_int, std::vector
 }
 
 void 
-aDNA_EM_simplified::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B){
+coal_EM_simplified::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B){
 
 	std::vector<double> cumsum_coal_rate(t_int.size(), 0.0);
 	for(int i = 1; i < t_int.size(); i++){
@@ -1991,7 +2154,7 @@ aDNA_EM_simplified::get_ABC(std::vector<double>& t_int, std::vector<int>& ep_ind
 }
 
 void 
-aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, int i_begin, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B){
+coal_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, int i_begin, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B){
 
 	std::vector<long double> cumsum_coal_rate(t_int.size(), 0.0);
 	for(int i = 1; i < t_int.size(); i++){
@@ -2115,7 +2278,7 @@ aDNA_EM_simplified::get_ABC_lazy(std::vector<double>& t_int, int i_begin, std::v
 }
 
 double
-aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<double>& denom){
+coal_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<double>& denom){
 
 	//calculate A, B, C, then f, and tf
 	int num_epochs = epochs.size();
@@ -2216,7 +2379,7 @@ aDNA_EM_simplified::EM_shared(double age, std::vector<double>& num, std::vector<
 }
 
 double
-aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vector<double>& denom){
+coal_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vector<double>& denom){
 
 	//calculate A, B, C, then f, and tf
 	int num_epochs = epochs.size();
@@ -2297,7 +2460,7 @@ aDNA_EM_simplified::EM_notshared(double age, std::vector<double>& num, std::vect
 }
 
 double
-aDNA_EM_simplified::EM_shared_exact(double age, std::vector<double>& num, std::vector<double>& denom, double coal_rate){
+coal_EM_simplified::EM_shared_exact(double age, std::vector<double>& num, std::vector<double>& denom, double coal_rate){
 
 	double lambda = coal_rate;	
 	double norm     = logminusexp(0.0, -lambda*age);
@@ -2332,7 +2495,7 @@ aDNA_EM_simplified::EM_shared_exact(double age, std::vector<double>& num, std::v
 }
 
 double
-aDNA_EM_simplified::EM_notshared_exact(double age, std::vector<double>& num, std::vector<double>& denom, double coal_rate){
+coal_EM_simplified::EM_notshared_exact(double age, std::vector<double>& num, std::vector<double>& denom, double coal_rate){
 
 	double lambda = coal_rate;	
 	double norm     = -lambda*age;

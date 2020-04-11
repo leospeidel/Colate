@@ -2,7 +2,7 @@
 
 #include "data.hpp"
 #include "anc.hpp"
-#include "aDNA_EM.hpp"
+#include "coal_EM.hpp"
 
 double
 logsumexp(double loga, double logb){
@@ -97,8 +97,8 @@ TEST_CASE("test EM expectation step"){
 			std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
 		}
 
-		aDNA_EM2 EM(epochs, coal_rates[0]);
-		aDNA_EM_simplified EM2(epochs, coal_rates[0]);
+		coal_EM2 EM(epochs, coal_rates[0]);
+		coal_EM_simplified EM2(epochs, coal_rates[0]);
 
 		int i = 0;
 		std::vector<double> num(num_epochs), denom(num_epochs); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
@@ -260,15 +260,15 @@ TEST_CASE("test EM_tree expectation step"){
 
 		std::vector<float> DAF(num_age_bins, 2), DAF2(num_age_bins, 1), num_lins(num_age_bins, 2);
 
-		aDNA_EM_tree_fast EM(C, 2, epochs);
+		coal_EM_tree_fast EM(C, 2, epochs);
 		EM.UpdateCoal(coal_rates[0]);
-		aDNA_EM_tree EM3(C, epochs, coal_rates[0]);
+		coal_EM_tree EM3(C, epochs, coal_rates[0]);
 		EM.UpdateTree(num_lins);
 		for(int e = 0; e < num_epochs; e++){
       coal_rates[0][e] *= 2;
 		}
-		//aDNA_EM_simplified EM2(epochs, coal_rates[0]);
-		aDNA_EM2 EM2(epochs, coal_rates[0]);
+		//coal_EM_simplified EM2(epochs, coal_rates[0]);
+		coal_EM2 EM2(epochs, coal_rates[0]);
     EM.UpdateTree(num_lins);
 		EM3.UpdateTree(num_lins);
 
@@ -375,7 +375,7 @@ TEST_CASE("test simplified EM expectation step"){
 		std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
 	}
 
-	aDNA_EM_simplified EM(epochs, coal_rates[0]);
+	coal_EM_simplified EM(epochs, coal_rates[0]);
 
 	int i = 0;
 	std::vector<double> num(num_epochs), denom(num_epochs); //temporary variables storing numerator and demonmitor of MLE for SNP given D=0 or D=1
