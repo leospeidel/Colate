@@ -90,7 +90,7 @@ coal_tree::update_ancmut(AncMutIterators& ancmut){
 
 	it1_num   = std::next(num.begin(), num_blocks_prev);
 	it1_denom = std::next(denom.begin(), num_blocks_prev);
-  current_block = num_blocks_prev;
+  current_block++;
   count_trees = 0;
 
 }

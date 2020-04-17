@@ -34,7 +34,6 @@ class coal_tree {
 
 	public:
 
-		coal_tree(std::vector<double> epochs, int num_bootstrap, int block_size);
 		coal_tree(std::vector<double> epochs, int num_bootstrap, int block_size, AncMutIterators& ancmut);
 
     void update_ancmut(AncMutIterators& ancmut);

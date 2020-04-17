@@ -1138,7 +1138,7 @@ ParseFiles(std::string& filename_anc, std::string& filename_mut, std::string& fi
     int tree_count = (*it_mut).tree;
     mtr.tree.GetCoordinates(coords);
 
-    float num_muts_mapping = 0.0, threshold = 0;
+    float num_muts_mapping = 0.0, threshold = N;
     for(std::vector<Node>::iterator it_node = mtr.tree.nodes.begin(); it_node != mtr.tree.nodes.end(); it_node++){
       num_muts_mapping += (*it_node).num_events;
     }
