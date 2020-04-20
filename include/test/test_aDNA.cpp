@@ -97,7 +97,7 @@ TEST_CASE("test EM expectation step"){
 			std::fill(coal_rates[i].begin(), coal_rates[i].end(), initial_coal_rate);
 		}
 
-		coal_EM2 EM(epochs, coal_rates[0]);
+		coal_EM EM(epochs, coal_rates[0]);
 		coal_EM_simplified EM2(epochs, coal_rates[0]);
 
 		int i = 0;
@@ -268,7 +268,7 @@ TEST_CASE("test EM_tree expectation step"){
       coal_rates[0][e] *= 2;
 		}
 		//coal_EM_simplified EM2(epochs, coal_rates[0]);
-		coal_EM2 EM2(epochs, coal_rates[0]);
+		coal_EM EM2(epochs, coal_rates[0]);
     EM.UpdateTree(num_lins);
 		EM3.UpdateTree(num_lins);
 

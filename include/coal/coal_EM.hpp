@@ -20,44 +20,6 @@ class coal_EM{
 		std::vector<double> epochs;
 		int num_epochs;
 
-		std::vector<double> A_ep, B_ep, C_ep;
-
-		double logsumexp(double loga, double logb);
-		double logminusexp(double loga, double logb);
-
-		void get_tint(double age_begin, double age_end, std::vector<double>& t_int, std::vector<int>& ep_index, int& i_begin, int& i_end);
-		void get_ABC(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B, std::vector<double>& C);
-		void get_ABC_lazy(std::vector<double>& t_int, std::vector<int>& ep_index, std::vector<double>& A, std::vector<double>& B, std::vector<double>& C);
-
-	public:
-
-		coal_EM(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
-			num_epochs = epochs.size();
-			A_ep.resize(num_epochs);
-			B_ep.resize(num_epochs);
-			C_ep.resize(num_epochs);
-			std::vector<int> ep_index(num_epochs);
-			int i = 0;
-			for(std::vector<int>::iterator it_ep_index = ep_index.begin(); it_ep_index != ep_index.end(); it_ep_index++){
-				*it_ep_index = i;
-				i++;  
-			}
-			get_ABC(epochs, ep_index, A_ep, B_ep, C_ep);
-		}
-
-		double EM_shared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom);
-		double EM_notshared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom); 
-
-};
-
-class coal_EM2{
-
-	private:
-
-		std::vector<double> coal_rates;
-		std::vector<double> epochs;
-		int num_epochs;
-
 		std::vector<double> A_ep, B_ep;
 
 		double logsumexp(double loga, double logb);
@@ -68,7 +30,7 @@ class coal_EM2{
 
 	public:
 
-		coal_EM2(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
+		coal_EM(std::vector<double>& epochs, std::vector<double>& coal): epochs(epochs), coal_rates(coal){
 			num_epochs = epochs.size();
 			A_ep.resize(num_epochs);
 			B_ep.resize(num_epochs);
@@ -225,8 +187,7 @@ class coal_EM_tree_fast{
 		double Logl_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF);
 
 		double EM_shared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom);
-		double EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom); 
-
+		double EM_notshared(double age_begin, double age_end, std::vector<float>& num_lins, std::vector<float>& DAF, std::vector<double>& num, std::vector<double>& denom); 	
 };
 
 
