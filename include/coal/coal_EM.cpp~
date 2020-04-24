@@ -580,7 +580,7 @@ coal_EM::EM_notshared_sampled(double age_begin, double age_end, std::vector<doub
   bool age_identical = true;
   double nconst = log(0.0);
 
-  int max_iter = 1;
+  int max_iter = 1000;
   for(int iter = 0; iter < max_iter; iter++){
 
     age_begin = dist_unif(rng) * (true_age_end - true_age_begin) + true_age_begin;

@@ -16,6 +16,7 @@ class coal_EM{
 
 	private:
 
+    std::uniform_real_distribution<double> dist_unif(0,1);   
     std::mt19937 rng;
     int seed = 2;
 

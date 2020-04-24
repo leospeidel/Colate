@@ -134,6 +134,7 @@ TEST_CASE("test EM expectation step"){
 					//std::cerr << e << " " << num[e] << " " << denom[e] << std::endl;
 					//std::cerr << e << " " << num2[e] << " " << denom2[e] << std::endl;
 					//std::cerr << e << " " << num[e] - num2[e] << " " << denom[e] - denom2[e] << std::endl << std::endl;
+          if(std::fabs(denom[e] - denom2[e]) > p) exit(1);
 					if(num2[e] > 0){
 						REQUIRE( (std::fabs(num[e] - num2[e]) <= p || std::fabs(num[e] - num2[e])/num2[e] <= p) );
 					}else{
