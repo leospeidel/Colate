@@ -21,6 +21,7 @@ class coal_EM{
 
 		std::vector<double> coal_rates;
 		std::vector<double> epochs;
+		std::vector<int> ep_index_tmpl;
 		int num_epochs;
 
 		std::vector<double> A_ep, B_ep;
@@ -38,13 +39,18 @@ class coal_EM{
 			num_epochs = epochs.size();
 			A_ep.resize(num_epochs);
 			B_ep.resize(num_epochs);
-			std::vector<int> ep_index(num_epochs);
+			ep_index_tmpl.resize(num_epochs);
 			int i = 0;
-			for(std::vector<int>::iterator it_ep_index = ep_index.begin(); it_ep_index != ep_index.end(); it_ep_index++){
+			for(std::vector<int>::iterator it_ep_index = ep_index_tmpl.begin(); it_ep_index != ep_index_tmpl.end(); it_ep_index++){
 				*it_ep_index = i;
 				i++;  
 			}
-			get_AB(epochs, ep_index, A_ep, B_ep);
+			get_AB(epochs, ep_index_tmpl, A_ep, B_ep);
+		}
+
+		void UpdateCoal(std::vector<double>& coal){
+      coal_rates = coal;
+			get_AB(epochs, ep_index_tmpl, A_ep, B_ep);
 		}
 
 		double EM_shared(double age_begin, double age_end, std::vector<double>& num, std::vector<double>& denom);

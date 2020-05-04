@@ -12,13 +12,16 @@ int main(int argc, char* argv[]){
     ("mode", "Choose which part of the algorithm to run.", cxxopts::value<std::string>())
     ("anc", "Filename of file containing trees.", cxxopts::value<std::string>())
     ("mut", "Filename of file containing mut.", cxxopts::value<std::string>())
-    ("haps", "Filename of haps file (Output file format of Shapeit).", cxxopts::value<std::string>())
-    ("sample", "Filename of sample file (Output file format of Shapeit).", cxxopts::value<std::string>())
+		("target_vcf", "Filename of target vcf", cxxopts::value<std::string>())
+		("reference_vcf", "Filename of reference vcf", cxxopts::value<std::string>())
+		("regularise", "Optional: Specify whether or not to regularise likelihood. 0: no, 1: yes.", cxxopts::value<int>())
+		("chr", "Optional: File specifying chromosomes to use.", cxxopts::value<std::string>()) 
     ("num_bins", "Optional: Number of bins.", cxxopts::value<int>())
     ("coal", "Filename of file containing coalescence rates.", cxxopts::value<std::string>()) 
-    ("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>())
-    ("regularise", "Optional: Specify whether or not to regularise likelihood. 0: no, 1: yes.", cxxopts::value<int>())
-    ("chr", "Optional: File specifying chromosomes to use.", cxxopts::value<std::string>()) 
+		("seed", "Optional: Seed for random number generator (int)", cxxopts::value<std::string>())
+		("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>())
+		("haps", "Filename of haps file (Output file format of Shapeit).", cxxopts::value<std::string>())
+		("sample", "Filename of sample file (Output file format of Shapeit).", cxxopts::value<std::string>())
     ("i,input", "Filename of input.", cxxopts::value<std::string>())
     ("o,output", "Filename of output.", cxxopts::value<std::string>());
 
@@ -54,6 +57,11 @@ int main(int argc, char* argv[]){
 
     //make mut
 		make_mut_incl_out(options);
+
+	}else if(!mode.compare("test_vcf")){
+
+		//make mut
+		test_vcf(options);
 
 	}else{
 
