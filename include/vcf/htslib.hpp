@@ -1,3 +1,6 @@
+#ifndef HTSLIB_HPP
+#define HTSLIB_HPP
+
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -86,3 +89,6 @@ class vcf_parser{
 
 
 };
+
+#endif //HTSLIB_HPP
+

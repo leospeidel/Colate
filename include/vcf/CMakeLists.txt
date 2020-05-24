@@ -1,5 +1,6 @@
 project (htslib)
 
+#set (CMAKE_SHARED_LINKER_FLAGS "-lz lm lbz2 -lzma -lcurl -lssl,--as-needed")
 add_library(hts SHARED
 bcf_sr_sort.h          header.h               hts_internal.h         textutils_internal.h   version.h
 config.h               hfile_internal.h       sam_internal.h         thread_pool_internal.h
@@ -25,4 +26,5 @@ htslib/hfile.h             htslib/hts_log.h           htslib/khash.h            
 os/lzma_stub.h
 htslib.hpp htslib.cpp
 )
-target_link_libraries(hts z m bz2 lzma curl)
+target_link_libraries(hts OpenSSL::Crypto z m bz2 lzma curl)
+

@@ -1,4 +1,5 @@
 #include "coal.cpp"
+#include "coal_old.cpp"
 #include "cxxopts.hpp"
 #include <string>
 

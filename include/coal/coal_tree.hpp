@@ -1,3 +1,6 @@
+#ifndef COAL_TREE_EM_HPP
+#define COAL_TREE_EM_HPP
+
 #include <iostream>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -44,4 +47,5 @@ class coal_tree {
 
 };
 
+#endif //COAL_TREE_HPP
 
