@@ -200,10 +200,13 @@ coal_EM::EM_shared(double age_begin, double age_end, std::vector<double>& num, s
       assert(i+1 == i_begin);
       t_begin  = t_int[i];
       t_end    = t_int[i+1];
-      //std::cerr << t_begin << " " << t_end << " " << age_begin << " " << age_end << std::endl;
-      num_e   = logminusexp(-cumsum_coal_rate[i], -cumsum_coal_rate[i+1]);
-      denom_e = log( (t_begin + inv_coal_rate_e)/inv_coal_rate_e - (t_end + inv_coal_rate_e)/inv_coal_rate_e*exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i]) ) + log(inv_coal_rate_e) - cumsum_coal_rate[i];
-      //std::cerr << denom_e << " " << inv_coal_rate_e << " " <<  (t_begin + inv_coal_rate_e) << " " << (t_end + inv_coal_rate_e) << " " << -cumsum_coal_rate[i+1]   << std::endl;
+      if(coal_rates[e] > 0){
+        num_e   = logminusexp(-cumsum_coal_rate[i], -cumsum_coal_rate[i+1]);
+        denom_e = log( (t_begin + inv_coal_rate_e)/inv_coal_rate_e - (t_end + inv_coal_rate_e)/inv_coal_rate_e*exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i]) ) + log(inv_coal_rate_e) - cumsum_coal_rate[i];
+      }else{
+        num_e = log_0;
+        denom_e = log_0;
+      }
       i++;
     }
 
@@ -211,20 +214,25 @@ coal_EM::EM_shared(double age_begin, double age_end, std::vector<double>& num, s
       t_begin = t_int[i];
       t_end   = t_int[i+1];
 
-      num[e] = log((age_end - t_begin - inv_coal_rate_e) + (t_end - age_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1]+cumsum_coal_rate[i])) - cumsum_coal_rate[i] - log(age_end - age_begin);
+      if(coal_rates[e] > 0){
+        num[e] = log((age_end - t_begin - inv_coal_rate_e) + (t_end - age_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1]+cumsum_coal_rate[i])) - cumsum_coal_rate[i] - log(age_end - age_begin);
 
-      double x_begin = t_begin/age_end, x_end = t_end/age_end;
-      double term1 = (x_begin*(age_end-t_begin)/inv_coal_rate_e + 1.0 - 2.0*(x_begin + inv_coal_rate_e/age_end));
-      double term2 = (-x_end*(age_end -t_end)/inv_coal_rate_e   - 1.0 + 2.0*(x_end   + inv_coal_rate_e/age_end));
-      double tmp = term1;
-      tmp       += exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i]) * term2;
+        double x_begin = t_begin/age_end, x_end = t_end/age_end;
+        double term1 = (x_begin*(age_end-t_begin)/inv_coal_rate_e + 1.0 - 2.0*(x_begin + inv_coal_rate_e/age_end));
+        double term2 = (-x_end*(age_end -t_end)/inv_coal_rate_e   - 1.0 + 2.0*(x_end   + inv_coal_rate_e/age_end));
+        double tmp = term1;
+        tmp       += exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i]) * term2;
 
-      if(tmp < 0.0){
-        denom[e] = log(0.0);
+        if(tmp < 0.0){
+          denom[e] = log_0;
+        }else{
+          tmp        = log(tmp);
+          tmp       += log(age_end) + log(inv_coal_rate_e) - cumsum_coal_rate[i];
+          denom[e]   = tmp - log(age_end-age_begin);
+        }
       }else{
-        tmp        = log(tmp);
-        tmp       += log(age_end) + log(inv_coal_rate_e) - cumsum_coal_rate[i];
-        denom[e]   = tmp - log(age_end-age_begin);
+        num[e] = log_0;
+        denom[e] = log_0;
       }
 
       i++;
@@ -253,31 +261,36 @@ coal_EM::EM_shared(double age_begin, double age_end, std::vector<double>& num, s
     if(i == ep_index.size()) break;
   }
 
-  double integ = 1.0;
-  int e = 0;
-  for(e = 0; e < std::min(num_epochs-1, ep_index[i_end] + 1); e++){
-    num[e]   -= normalising_constant;
-    denom[e] -= normalising_constant;
-    num[e] = exp(num[e]);
-    if(integ > 0.0){
-      integ -= num[e];
-    }else{
-      integ  = 0.0;
+  if(!std::isinf(normalising_constant) && !std::isnan(normalising_constant)){
+    double integ = 1.0;
+    int e = 0;
+    for(e = 0; e < std::min(num_epochs-1, ep_index[i_end] + 1); e++){
+      num[e]   -= normalising_constant;
+      denom[e] -= normalising_constant;
+      num[e] = exp(num[e]);
+      if(integ > 0.0){
+        integ -= num[e];
+      }else{
+        integ  = 0.0;
+      }
+      denom[e]  = exp(denom[e]);
+      denom[e] += -epochs[e] * num[e] + (epochs[e+1]-epochs[e])*integ;
+      if(denom[e] < 0.0) denom[e] = 0.0;
     }
-    denom[e]  = exp(denom[e]);
-    denom[e] += -epochs[e] * num[e] + (epochs[e+1]-epochs[e])*integ;
-    if(denom[e] < 0.0) denom[e] = 0.0;
+    if(ep_index[i_end] == num_epochs - 1){
+      e = num_epochs-1;
+      num[e]   -= normalising_constant;
+      denom[e] -= normalising_constant;
+      num[e]    = exp(num[e]);
+      denom[e]  = exp(denom[e]);
+      denom[e] -= epochs[e]*num[e];
+      if(denom[e] < 0.0) denom[e] = 0.0;
+    }
+  }else{
+    normalising_constant = 0.0;
+    std::fill(num.begin(), num.end(), 0.0);
+    std::fill(denom.begin(), denom.end(), 0.0);
   }
-  if(ep_index[i_end] == num_epochs - 1){
-    e = num_epochs-1;
-    num[e]   -= normalising_constant;
-    denom[e] -= normalising_constant;
-    num[e]    = exp(num[e]);
-    denom[e]  = exp(denom[e]);
-    denom[e] -= epochs[e]*num[e];
-    if(denom[e] < 0.0) denom[e] = 0.0;
-  }
-
   return normalising_constant;
 
 }
@@ -319,9 +332,15 @@ coal_EM::EM_notshared(double age_begin, double age_end, std::vector<double>& num
     if(e != num_epochs-1){
       t_begin  = t_int[i];
       t_end    = t_int[i+1];
-      num[e]   = logminusexp(-cumsum_coal_rate[i], -cumsum_coal_rate[i+1]);
-      denom[e] = log( (t_begin + inv_coal_rate_e) - (t_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i]) ) - cumsum_coal_rate[i];
-      normalising_constant = num[e];
+      if(coal_rate_e > 0){
+        num[e]   = logminusexp(-cumsum_coal_rate[i], -cumsum_coal_rate[i+1]);
+        denom[e] = log( (t_begin + inv_coal_rate_e) - (t_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i]) ) - cumsum_coal_rate[i];
+        normalising_constant = num[e];
+      }else{
+        num[e] = log_0;
+        denom[e] = log_0;
+        normalising_constant = log_0;
+      }
       i++;
       e++;
       for(; e < num_epochs; e++){
@@ -331,6 +350,7 @@ coal_EM::EM_notshared(double age_begin, double age_end, std::vector<double>& num
       }
     }else{
       t_begin   = t_int[i];
+      assert(coal_rate_e > 0);
       num[e]    = -cumsum_coal_rate[i];
       denom[e]  = log(t_begin + inv_coal_rate_e)-cumsum_coal_rate[i];
       normalising_constant = num[e];
@@ -347,23 +367,28 @@ coal_EM::EM_notshared(double age_begin, double age_end, std::vector<double>& num
       t_begin = t_int[i];
       t_end   = t_int[i+1];
 
-      num[e] = log( (t_begin - age_begin + inv_coal_rate_e) + (age_begin - t_end - inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1]+cumsum_coal_rate[i])) - cumsum_coal_rate[i] - log(age_end - age_begin);
+      if(coal_rate_e > 0.0){
+        num[e] = log( (t_begin - age_begin + inv_coal_rate_e) + (age_begin - t_end - inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1]+cumsum_coal_rate[i])) - cumsum_coal_rate[i] - log(age_end - age_begin);
+        double x_begin = t_begin/age_end, x_end = t_end/age_end, x_age_begin = age_begin/age_end;
 
-      double x_begin = t_begin/age_end, x_end = t_end/age_end, x_age_begin = age_begin/age_end;
+        double term1 = (x_begin*(t_begin - age_begin)/inv_coal_rate_e + 2.0*(x_begin + inv_coal_rate_e/age_end) - x_age_begin);
+        double term2 = (-x_end*(t_end - age_begin)/inv_coal_rate_e    - 2.0*(x_end   + inv_coal_rate_e/age_end) + x_age_begin);
 
-      double term1 = (x_begin*(t_begin - age_begin)/inv_coal_rate_e + 2.0*(x_begin + inv_coal_rate_e/age_end) - x_age_begin);
-      double term2 = (-x_end*(t_end - age_begin)/inv_coal_rate_e    - 2.0*(x_end   + inv_coal_rate_e/age_end) + x_age_begin);
+        double tmp = term1;
+        tmp       += exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i]) * term2;
 
-      double tmp = term1;
-      tmp       += exp(-cumsum_coal_rate[i+1] + cumsum_coal_rate[i]) * term2;
-
-      if(tmp < 0.0){
-        denom[e] = log(0.0);
+        if(tmp < 0.0){
+          denom[e] = log(0.0);
+        }else{
+          tmp        = log(tmp);
+          tmp       += log(age_end) + log(inv_coal_rate_e) - cumsum_coal_rate[i];
+          denom[e]   = tmp - log(age_end - age_begin);
+        }
       }else{
-        tmp        = log(tmp);
-        tmp       += log(age_end) + log(inv_coal_rate_e) - cumsum_coal_rate[i];
-        denom[e]   = tmp - log(age_end - age_begin);
+        num[e]   = log(0.0);
+        denom[e] = log(0.0);
       }
+
       i++;
       if(ep_index[i_end] == e){
 
@@ -371,13 +396,23 @@ coal_EM::EM_notshared(double age_begin, double age_end, std::vector<double>& num
         if(e != num_epochs-1){
           t_begin  = t_int[i];
           t_end    = t_int[i+1];
-          num[e]   = logsumexp(num[e], logminusexp(-cumsum_coal_rate[i], -cumsum_coal_rate[i+1]));
-          denom[e] = logsumexp(denom[e], log( (t_begin + inv_coal_rate_e) - (t_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1]+cumsum_coal_rate[i]) ) - cumsum_coal_rate[i]);
+          if(coal_rate_e > 0){
+            num[e]   = logsumexp(num[e], logminusexp(-cumsum_coal_rate[i], -cumsum_coal_rate[i+1]));
+            denom[e] = logsumexp(denom[e], log( (t_begin + inv_coal_rate_e) - (t_end + inv_coal_rate_e) * exp(-cumsum_coal_rate[i+1]+cumsum_coal_rate[i]) ) - cumsum_coal_rate[i]);
+          }else{
+            num[e] = log_0;
+            denom[e] = log_0;
+          }
           i++;
         }else{
           t_begin   = t_int[i];
-          num[e]    = logsumexp(num[e], -cumsum_coal_rate[i]);
-          denom[e]  = logsumexp(denom[e], log(t_begin + inv_coal_rate_e)-cumsum_coal_rate[i]);
+          if(coal_rate_e > 0){
+            num[e]    = logsumexp(num[e], -cumsum_coal_rate[i]);
+            denom[e]  = logsumexp(denom[e], log(t_begin + inv_coal_rate_e)-cumsum_coal_rate[i]);
+          }else{
+            num[e] = log_0;
+            denom[e] = log_0;
+          }
           i++;
         }
 
@@ -398,31 +433,37 @@ coal_EM::EM_notshared(double age_begin, double age_end, std::vector<double>& num
 
   }
 
-  double integ = 1.0;
-  for(e = 0; e < ep_index[i_begin]; e++){
-    num[e]   = 0.0;
-    denom[e] = (epochs[e+1]-epochs[e]);
-  }
-  for(; e < num_epochs-1; e++){
+  if(!std::isinf(normalising_constant) && !std::isnan(normalising_constant)){
+    double integ = 1.0;
+    for(e = 0; e < ep_index[i_begin]; e++){
+      num[e]   = 0.0;
+      denom[e] = (epochs[e+1]-epochs[e]);
+    }
+    for(; e < num_epochs-1; e++){
+      num[e]   -= normalising_constant;
+      denom[e] -= normalising_constant;
+      num[e] = exp(num[e]);
+      if(integ > 0.0){
+        integ -= num[e];
+      }else{
+        integ  = 0.0;
+      }
+      denom[e]  = exp(denom[e]);
+      denom[e] += -epochs[e] * num[e] + (epochs[e+1]-epochs[e])*integ;
+      if(denom[e] < 0.0) denom[e] = 0.0;
+    }
+    e = num_epochs-1;
     num[e]   -= normalising_constant;
     denom[e] -= normalising_constant;
-    num[e] = exp(num[e]);
-    if(integ > 0.0){
-      integ -= num[e];
-    }else{
-      integ  = 0.0;
-    }
+    num[e]    = exp(num[e]);
     denom[e]  = exp(denom[e]);
-    denom[e] += -epochs[e] * num[e] + (epochs[e+1]-epochs[e])*integ;
+    denom[e] -= epochs[e]*num[e];
     if(denom[e] < 0.0) denom[e] = 0.0;
+  }else{
+    normalising_constant = 0.0;
+    std::fill(num.begin(), num.end(), 0.0);
+    std::fill(denom.begin(), denom.end(), 0.0);
   }
-  e = num_epochs-1;
-  num[e]   -= normalising_constant;
-  denom[e] -= normalising_constant;
-  num[e]    = exp(num[e]);
-  denom[e]  = exp(denom[e]);
-  denom[e] -= epochs[e]*num[e];
-  if(denom[e] < 0.0) denom[e] = 0.0;
   return normalising_constant;
 
 }

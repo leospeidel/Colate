@@ -211,6 +211,7 @@ test_vcf(cxxopts::Options&options){
 
 }
 
+
 void
 mut(cxxopts::Options& options){
 
@@ -241,6 +242,9 @@ mut(cxxopts::Options& options){
 	//decide on epochs
 	int num_epochs = 0; 
 	std::vector<double> epochs;
+  bool is_ancient = false;
+  double age;
+  double log_10 = std::log(10);
 
 	std::ifstream is;
 	std::string line;
@@ -267,24 +271,75 @@ mut(cxxopts::Options& options){
 		}
 
 	}else if(1){
-		num_epochs = 30;
-		if(options.count("num_bins") > 0){
-			num_epochs = options["num_bins"].as<int>();
-		}
-		float years_per_gen = 28.0;
-		if(options.count("years_per_gen")){
-			years_per_gen = options["years_per_gen"].as<float>();
-		}
-		num_epochs++; 
-		epochs.resize(num_epochs);
 
-		epochs[0] = 0.0;
-		epochs[1] = 1e3/years_per_gen;
-		float log_10 = std::log(10);
-		for(int e = 2; e < num_epochs-1; e++){
-			epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
-		}
-		epochs[num_epochs-1] = 1e8/years_per_gen;
+    //TODO:improve here
+    double target_age = std::stof(options["target_age"].as<std::string>());
+    double ref_age    = std::stof(options["reference_age"].as<std::string>());
+    assert(target_age >= 0.0);
+    assert(ref_age >= 0.0);
+
+    age = std::max(target_age, ref_age);
+    std::cerr << age << std::endl;
+    double log_age = std::log(age)/log_10;
+    if(age > 0.0) is_ancient = true;
+
+    double epoch_lower, epoch_upper, epoch_step;
+    std::string str_epochs = options["epochs"].as<std::string>();
+    std::string tmp;
+    int i = 0;
+    tmp = "";
+    while(str_epochs[i] != ','){
+      tmp += str_epochs[i];
+      i++;
+      if(i == str_epochs.size()) break;
+    }
+    epoch_lower = std::stof(tmp);
+    i++;
+    if(i >= str_epochs.size()){
+      std::cerr << "Error: epochs format is wrong. Specify x,y,stepsize." << std::endl;
+      exit(1);
+    }
+    tmp = "";
+    while(str_epochs[i] != ','){
+      tmp += str_epochs[i];
+      i++;
+      if(i == str_epochs.size()) break;
+    }
+    epoch_upper = std::stof(tmp);
+    i++;
+    if(i >= str_epochs.size()){
+      std::cerr << "Error: epochs format is wrong. Specify x,y,stepsize." << std::endl;
+      exit(1);
+    }
+    tmp = "";
+    while(str_epochs[i] != ','){
+      tmp += str_epochs[i];
+      i++;
+      if(i == str_epochs.size()) break;
+    }
+    epoch_step = std::stof(tmp);
+
+    int ep = 0;
+    epochs.resize(1);
+    epochs[ep] = 0.0;
+    ep++; 
+    double epoch_boundary = 0.0;
+    if(log_age < epoch_lower && age != 0.0){
+      epochs.push_back(age);
+      ep++;
+    }
+    epoch_boundary = epoch_lower;
+    while(epoch_boundary < epoch_upper){
+      if(log_age < epoch_boundary){
+        if(ep == 1 && age != 0.0) epochs.push_back(age);
+        epochs.push_back( std::exp(log_10 * epoch_boundary) );
+        ep++;
+      }
+      epoch_boundary += epoch_step;
+    }
+    epochs.push_back( std::exp(log_10 * epoch_upper) );
+    epochs.push_back( std::max(1e8, 10*epochs[epochs.size()-1]) );
+		num_epochs = epochs.size();
 
 	}else if(0){
 		num_epochs = 6;
@@ -321,7 +376,7 @@ mut(cxxopts::Options& options){
 	}
 
 	//formula for converting age to int: log(age)*C, Ne = haploid population size
-	double C = 1e2;
+	double C = 10;
 	int num_age_bins = ((int) (log(1e8) * C))+1;
 	std::vector<double> age_bin(num_age_bins, 0.0);
 	std::vector<double>::iterator it_age_bin = age_bin.begin();
@@ -354,8 +409,8 @@ mut(cxxopts::Options& options){
 		}
 		while(getline(is_chr, line)){
 			filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
-			filename_target.push_back(options["target_vcf"].as<std::string>() + "_chr" + line + ".mut");
-			filename_ref.push_back(options["reference_vcf"].as<std::string>() + "_chr" + line + ".mut");
+			filename_target.push_back(options["target_vcf"].as<std::string>() + "_chr" + line + ".bcf");
+			filename_ref.push_back(options["reference_vcf"].as<std::string>() + "_chr" + line + ".bcf");
 		}
 		is_chr.close();
 
@@ -378,11 +433,10 @@ mut(cxxopts::Options& options){
 		vcf_parser target(filename_target[chr]);
 		vcf_parser ref(filename_ref[chr]);	
 
-		bool ref_eof = false, target_eof = false;
-
+    bp_ref = 0, bp_target = 0, bp_mut = 0;
 		for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
 
-			if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin < (*it_mut).age_end && (*it_mut).freq.size() == 1){
+			if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin < (*it_mut).age_end && (*it_mut).freq.size() == 1 && (*it_mut).age_end > age){
 
 				int i = 0;
 				ancestral.clear();
@@ -428,12 +482,15 @@ mut(cxxopts::Options& options){
 							}
 
 							int bin_index;
+              //double age_begin = std::max(1.0*(*it_mut).age_begin, age);
+              double age_begin = (*it_mut).age_begin;
 							if(*(*it_mut).freq.begin() == 1){
-								int bin_index1 = std::max(0, (int)std::round(log(10*(*it_mut).age_begin)*C)+1);
+								int bin_index1 = std::max(0, (int)std::round(log(10*age_begin)*C)+1);
 								int bin_index2 = std::max(0, (int)std::round(log(10*(*it_mut).age_end)*C)+1);
+                assert(bin_index1 == 0);
 								bin_index  = bin_index1 * num_age_bins + bin_index2;
 							}else{
-								double age = dist_unif(rng) * ((*it_mut).age_end - (*it_mut).age_begin) + (*it_mut).age_begin;
+								double age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
 								int bin_index_age = std::max(0, (int)std::round(log(10*age)*C)+1);
 								bin_index = bin_index_age * num_age_bins + bin_index_age;
 							}
@@ -473,13 +530,14 @@ mut(cxxopts::Options& options){
 										if(target_flip){
 											DAF_target = N_target - DAF_target;
 										}
-
+                    //assert(DAF_ref == (*it_mut).freq[0]);
 										age_shared_count[bin_index]    += DAF_target * DAF_ref;
 										age_notshared_count[bin_index] += (N_target - DAF_target) * DAF_ref;
 										num_used_snps++;
 									}
 
 								}
+
 							}else{
 
 								ref.extract_GT();
@@ -494,6 +552,7 @@ mut(cxxopts::Options& options){
 								if(ref_flip){
 									DAF_ref = N_ref - DAF_ref;
 								}
+                //assert(DAF_ref == (*it_mut).freq[0]);
 								if(DAF_ref > 0){
 									age_notshared_count[bin_index] += N_target * DAF_ref;
 									num_used_snps++;
@@ -516,7 +575,7 @@ mut(cxxopts::Options& options){
 
 	std::ofstream os_log(options["output"].as<std::string>() + ".log");
 
-	coal_EM EM(epochs, coal_rates);
+	//coal_EM EM(epochs, coal_rates);
 	double gamma = 1;
 	std::vector<double> gradient(num_epochs, 0.0), gradient_prev(num_epochs, 0.0), coal_rates_prev(num_epochs, 0.0), coal_rates_nesterov(num_epochs, 0.0);
 	coal_rates_nesterov = coal_rates;
@@ -531,7 +590,11 @@ mut(cxxopts::Options& options){
 			std::cerr << "[" << perc << "%]\r";
 		}
 
-		EM.UpdateCoal(coal_rates_nesterov);
+		//EM.UpdateCoal(coal_rates_nesterov);
+    if(is_ancient){
+      coal_rates_nesterov[0] = 0;
+    }
+    coal_EM EM(epochs, coal_rates_nesterov);
 		prev_log_likelihood = log_likelihood;
 		log_likelihood = 0.0;
 
@@ -863,7 +926,7 @@ mut_old(cxxopts::Options& options){
 
 	std::uniform_real_distribution<double> dist_unif(0,1);   
 	std::mt19937 rng;
-	int seed = 2;
+	int seed = 1;
 	rng.seed(seed);
 
 	std::vector<std::string> chromosomes;
@@ -884,6 +947,7 @@ mut_old(cxxopts::Options& options){
 		exit(1);
 	}
 
+  int num_used_snps = 0;
 	for(int chr = 0; chr < chromosomes.size(); chr++){
 
 		std::cerr << "CHR: " << chr << std::endl;
@@ -901,7 +965,7 @@ mut_old(cxxopts::Options& options){
 		haps input(file_input_haps.c_str(), file_input_sample.c_str());
 
 		int DAF;
-		int bp_ref, bp_input = -1;
+		int bp_ref = -1, bp_input = -1;
 		int snp = 0, snp_input = 0, snp_ref = 0;
 		double age_begin, age_end;
 		std::vector<char> sequence_ref(ref.GetN()), sequence_input(input.GetN());
@@ -925,6 +989,7 @@ mut_old(cxxopts::Options& options){
 			for(std::vector<char>::iterator it_seq = sequence_ref.begin(); it_seq != sequence_ref.end(); it_seq++){
 				if(*it_seq == '1') DAF++;
 			}
+      DAF = mut.info[snp].freq[0];
 
 			if(bp_ref == mut.info[snp].pos){
 				//either correct == 0, or correct == 1 and DAF < N
@@ -937,6 +1002,7 @@ mut_old(cxxopts::Options& options){
 
 			if(use_SNP && age_end > 0){
 
+        num_used_snps++;
 				assert(age_begin <= age_end);
 
 				int bin_index_age;
@@ -949,7 +1015,23 @@ mut_old(cxxopts::Options& options){
 
 				int bin_index  = bin_index1 * num_age_bins + bin_index2;
 				assert(bin_index < num_age_bins*num_age_bins);
+  
+        if(DAF > 1){
+          bin_index = bin_index_age;
+        }
 
+        int DAF_target = 0;
+        for(int i = 0; i < input.GetN(); i++){
+          DAF_target += (sequence_input[i] == '1');
+        }
+        if(bp_ref == bp_input){
+          age_shared_count[0][bin_index] += DAF_target * DAF;
+          age_notshared_count[0][bin_index] += (input.GetN() - DAF_target) * DAF;
+        }else{
+          age_notshared_count[0][bin_index] += input.GetN() * DAF;
+        }
+
+        /*
 				int count = 0;
 				for(int j = 0; j < ref.GetN(); j++){
 					if(sequence_ref[j] == '1'){
@@ -963,20 +1045,25 @@ mut_old(cxxopts::Options& options){
 								}
 							}else{
 								//not shared
-								age_notshared_count[0][bin_index_age]++;
+								if(DAF == 1){
+									age_notshared_count[0][bin_index]++;
+								}else{
+									age_notshared_count[0][bin_index_age]++;
+								}
 							}
 						}
 						count++;
 					}
 					if(count == DAF) break;
 				}
+        */
 
 			}
 		}
 		ref.CloseFile();
 		input.CloseFile();
 
-	}
+	} 
 
 	////////////////////////////////////////  
 
@@ -3939,6 +4026,13 @@ make_mut_incl_out(cxxopts::Options& options){
 				if(snp_ref == L_ref) break;
 			}
 		}
+
+    if(tree_count < (*it_mut).tree){
+      tree_count = (*it_mut).tree;
+      mtr.tree.GetCoordinates(coords);
+      tmrca = coords[root];
+    }
+    //std::cerr << tmrca << " " << coords[root] << " " << root << std::endl;
 		//if(snp_out < L_out){
 		//	while(mut_out.info[snp_out].pos < bp){
 		//		snp_out++;
@@ -3947,23 +4041,53 @@ make_mut_incl_out(cxxopts::Options& options){
 		//}
 
 		if((*it_mut).pos == bp && DAF > 0 && DAF < N){
-			//if segregating, copy over
-			if(tree_count < (*it_mut).tree){
-				tree_count = (*it_mut).tree;
-				mtr.tree.GetCoordinates(coords);
-				tmrca = coords[root];
-			}
-			mut_combined.info[snp_comb] = (*it_mut);
-			if(mut_combined.info[snp_comb].branch.size() == 1){
-				assert( *mut_combined.info[snp_comb].branch.begin() <= root );
-			}
-			mut_combined.info[snp_comb].tree = tree_count;
-			mut_combined.info[snp_comb].pos = bp;
-			mut_combined.info[snp_comb].freq.push_back(DAF);
-			if(snp_comb > 0) mut_combined.info[snp_comb-1].dist = bp - mut_combined.info[snp_comb-1].pos; 
-			mut_combined.info[snp_comb].snp_id = snp_comb;
 
-			snp_comb++;
+ 
+      if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
+
+        std::string ancestral, derived, haps_ancestral = mhaps.ancestral, haps_derived = mhaps.alternative;
+				int i = 0;
+				ancestral.clear();
+				derived.clear();
+				while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+					ancestral.push_back((*it_mut).mutation_type[i]);
+					i++;
+				}
+				i++;
+				while(i < (*it_mut).mutation_type.size()){
+					derived.push_back((*it_mut).mutation_type[i]);
+					i++;
+				}
+
+        if( (ancestral == haps_ancestral && derived == haps_derived) || (derived == haps_ancestral && ancestral == haps_derived) ){
+
+          if((derived == haps_ancestral && ancestral == haps_derived)) DAF = N-DAF;
+
+          if( (DAF > 1 && ((*it_mut).age_begin > 0)) || (DAF == 1 && (*it_mut).age_begin == 0) ){
+            //if segregating, copy over
+            mut_combined.info[snp_comb] = (*it_mut);
+            if(mut_combined.info[snp_comb].branch.size() == 1){
+              assert( *mut_combined.info[snp_comb].branch.begin() <= root );
+            }
+            mut_combined.info[snp_comb].tree = tree_count;
+            mut_combined.info[snp_comb].pos = bp;
+            mut_combined.info[snp_comb].freq.clear();
+            mut_combined.info[snp_comb].freq.push_back(DAF);
+            if(snp_comb > 0) mut_combined.info[snp_comb-1].dist = bp - mut_combined.info[snp_comb-1].pos; 
+            mut_combined.info[snp_comb].snp_id = snp_comb;
+
+            if(DAF == 1) assert(mut_combined.info[snp_comb].age_begin == 0.0);
+            if(mut_combined.info[snp_comb].age_begin == 0.0){
+              assert(DAF == 1);
+            }
+
+            snp_comb++;
+          }
+
+        }
+
+      }
+
 		}else{
 			//otherwise copy from trees with outgroup
 			if(0){

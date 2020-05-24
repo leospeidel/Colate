@@ -19,6 +19,8 @@ class coal_EM{
     std::mt19937 rng;
     int seed = 2;
 
+    double log_0 = std::log(0.0);
+
 		std::vector<double> coal_rates;
 		std::vector<double> epochs;
 		std::vector<int> ep_index_tmpl;

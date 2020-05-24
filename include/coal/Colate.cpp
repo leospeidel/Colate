@@ -14,11 +14,14 @@ int main(int argc, char* argv[]){
     ("mut", "Filename of file containing mut.", cxxopts::value<std::string>())
 		("target_vcf", "Filename of target vcf", cxxopts::value<std::string>())
 		("reference_vcf", "Filename of reference vcf", cxxopts::value<std::string>())
+    ("target_age", "Target age in generations", cxxopts::value<std::string>())
+    ("reference_age", "Reference age in generations", cxxopts::value<std::string>())
 		("regularise", "Optional: Specify whether or not to regularise likelihood. 0: no, 1: yes.", cxxopts::value<int>())
 		("chr", "Optional: File specifying chromosomes to use.", cxxopts::value<std::string>()) 
-    ("num_bins", "Optional: Number of bins.", cxxopts::value<int>())
+    ("epochs", "Optional: Epoch boundaries 10^(seq(x,y,stepsize)) [format: x,y,stepsize].", cxxopts::value<std::string>())
     ("coal", "Filename of file containing coalescence rates.", cxxopts::value<std::string>()) 
 		("seed", "Optional: Seed for random number generator (int)", cxxopts::value<std::string>())
+    ("num_bins", "Optional: Number of bins.", cxxopts::value<int>())
 		("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>())
 		("haps", "Filename of haps file (Output file format of Shapeit).", cxxopts::value<std::string>())
 		("sample", "Filename of sample file (Output file format of Shapeit).", cxxopts::value<std::string>())
@@ -36,6 +39,10 @@ int main(int argc, char* argv[]){
 	}else if(!mode.compare("mut")){
 
     mut(options);
+
+	}else if(!mode.compare("mut_old")){
+
+    mut_old(options);
 
 	}else if(!mode.compare("mut_tree")){
 

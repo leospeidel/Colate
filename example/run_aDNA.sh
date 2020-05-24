@@ -1,6 +1,0 @@
-#!/bin/bash
-
-../bin/RelateaDNA --mode aDNA --anc ./data/example.anc.gz --mut ./data/example.mut.gz --haps ./data/example.haps.gz --sample ./data/example.sample.gz -i ./data/example -o example_relate.coal
-tail example_relate.coal
-../bin/RelateaDNA --mode aDNA --anc ./data/example_truth.anc.gz --mut ./data/example_truth.mut.gz --haps ./data/example.haps.gz --sample ./data/example.sample.gz -i ./data/example -o example_true.coal
-tail example_true.coal

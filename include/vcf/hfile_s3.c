@@ -62,35 +62,6 @@ typedef struct s3_auth_data {
 
 #define AUTH_LIFETIME 60
 
-#if defined HAVE_COMMONCRYPTO
-
-#include <CommonCrypto/CommonHMAC.h>
-
-#define DIGEST_BUFSIZ CC_SHA1_DIGEST_LENGTH
-#define SHA256_DIGEST_BUFSIZE CC_SHA256_DIGEST_LENGTH
-#define HASH_LENGTH_SHA256 (SHA256_DIGEST_BUFSIZE * 2) + 1
-
-static size_t
-s3_sign(unsigned char *digest, kstring_t *key, kstring_t *message)
-{
-    CCHmac(kCCHmacAlgSHA1, key->s, key->l, message->s, message->l, digest);
-    return CC_SHA1_DIGEST_LENGTH;
-}
-
-
-static void s3_sha256(const unsigned char *in, size_t length, unsigned char *out) {
-    CC_SHA256(in, length, out);
-}
-
-
-static void s3_sign_sha256(const void *key, int key_len, const unsigned char *d, int n, unsigned char *md, unsigned int *md_len) {
-    CCHmac(kCCHmacAlgSHA256, key, key_len, d, n, md);
-    *md_len = CC_SHA256_DIGEST_LENGTH;
-}
-
-
-#elif defined HAVE_HMAC
-
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 
@@ -117,9 +88,6 @@ static void s3_sign_sha256(const void *key, int key_len, const unsigned char *d,
     HMAC(EVP_sha256(), key, key_len, d, n, md, md_len);
 }
 
-#else
-#error No HMAC() routine found by configure
-#endif
 
 static void
 urldecode_kput(const char *s, int len, kstring_t *str)
