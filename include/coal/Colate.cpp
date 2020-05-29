@@ -19,7 +19,7 @@ int main(int argc, char* argv[]){
     ("reference_age", "Reference age in generations", cxxopts::value<std::string>())
 		("regularise", "Optional: Specify whether or not to regularise likelihood. 0: no, 1: yes.", cxxopts::value<int>())
 		("chr", "Optional: File specifying chromosomes to use.", cxxopts::value<std::string>()) 
-    ("epochs", "Optional: Epoch boundaries 10^(seq(x,y,stepsize)) [format: x,y,stepsize].", cxxopts::value<std::string>())
+    ("bins", "Optional: Epoch boundaries 10^(seq(x,y,stepsize)) [format: x,y,stepsize].", cxxopts::value<std::string>())
     ("coal", "Filename of file containing coalescence rates.", cxxopts::value<std::string>()) 
 		("seed", "Optional: Seed for random number generator (int)", cxxopts::value<std::string>())
     ("num_bins", "Optional: Number of bins.", cxxopts::value<int>())
