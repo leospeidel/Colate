@@ -15,8 +15,11 @@ int main(int argc, char* argv[]){
     ("mut", "Filename of file containing mut.", cxxopts::value<std::string>())
 		("target_vcf", "Filename of target vcf", cxxopts::value<std::string>())
 		("reference_vcf", "Filename of reference vcf", cxxopts::value<std::string>())
+		("target_bam", "Filename of target bam", cxxopts::value<std::string>())
     ("target_age", "Target age in generations", cxxopts::value<std::string>())
     ("reference_age", "Reference age in generations", cxxopts::value<std::string>())
+		("ref_genome", "Reference genome", cxxopts::value<std::string>())
+		("anc_genome", "Ancestral genome", cxxopts::value<std::string>())
 		("regularise", "Optional: Specify whether or not to regularise likelihood. 0: no, 1: yes.", cxxopts::value<int>())
 		("chr", "Optional: File specifying chromosomes to use.", cxxopts::value<std::string>()) 
     ("bins", "Optional: Epoch boundaries 10^(seq(x,y,stepsize)) [format: x,y,stepsize].", cxxopts::value<std::string>())
@@ -71,12 +74,17 @@ int main(int argc, char* argv[]){
 		//make mut
 		test_vcf(options);
 
+	}else if(!mode.compare("test_bam")){
+
+		//make mut
+		test_bam(options);
+
 	}else{
 
     std::cout << "####### error #######" << std::endl;
     std::cout << "Invalid or missing mode." << std::endl;
     std::cout << "Options for --mode are:" << std::endl;
-    std::cout << "tree, mut, mut_tree, mut_perturb, mut_logl, mut_simple, make_mut_with_out." << std::endl;
+    std::cout << "tree, mut, make_mut_with_out." << std::endl;
 
   }
 
