@@ -225,7 +225,7 @@ test_bam(cxxopts::Options&options){
 	}  
 
 	std::cerr << "---------------------------------------------------------" << std::endl;
-	std::cerr << "Parsing vcf file.." << std::endl;
+	std::cerr << "Parsing bam file.." << std::endl;
 
 	fasta ref_genome;
 	ref_genome.Read(options["ref_genome"].as<std::string>());
@@ -234,25 +234,32 @@ test_bam(cxxopts::Options&options){
 
 	bam_parser bam(options["input"].as<std::string>(), options["ref_genome"].as<std::string>());
 
-	for(int p = 1000000; p < 1100000; p++){
+	int bp_start = 1000000, bp_end = 70e6;
+	for(int p = bp_start; p < bp_end; p++){
 
 		bam.read_to_pos(p);
+		if(bam.eof) break;
+		if(0){
 		if(bam.pos_of_entry[p % bam.num_entries] == p){
 
-			int num_alleles = 0;
+			int num_alleles = 0, num_reads = 0;
 			for(int i = 0; i < 4; i++){
 				num_alleles += (bam.count_alleles[p % bam.num_entries][i] > 0);
+				num_reads += bam.count_alleles[p % bam.num_entries][i];
 			}
-			if(num_alleles > 1){
+			if(num_alleles > 0){
 				std::cerr << p << ": " << ref_genome.seq[p] << " ";
 				for(int i = 0; i < 4; i++){
 					std::cerr << bam.count_alleles[p % bam.num_entries][i] << " ";
 				}
-				std::cerr << " | " << num_alleles << std::endl;
+				std::cerr << " | " << num_alleles << " " << num_reads << std::endl;
 			}
+		}
 		}
 
 	}
+
+	std::cerr << bam.coverage/((double) bam.pos) << " " << bam.coverage_after_filter/((double) bam.pos) << std::endl;
 
 	if(0){
 		int entry_pos = 0;

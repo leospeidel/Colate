@@ -62,7 +62,7 @@ class bam_parser{
 
 		int count_alleles_for_read(){
 
-			if(mapq > 20 && len >= 10){
+			if(mapq > 30 && len >= 10){
 
 				//calculate how many bp match reference at this read
 				int num_matching = 0;
@@ -79,6 +79,7 @@ class bam_parser{
 				}
 				if(num_matching >= 0.9*len){
 
+					coverage_after_filter += len;
 					for(int i = 0; i < len; i++){
 
 						if(seq[i] == 'A'){
@@ -106,6 +107,8 @@ class bam_parser{
 		bam_hdr_t *bamHdr; //header
 		bam1_t *aln; //alignment
 
+    bool eof;
+
 		int32_t pos; //left most position of alignment in zero-based coordinate
 		char *chr; //contif name
 		uint32_t len; //length of the read
@@ -115,7 +118,9 @@ class bam_parser{
 
 		fasta ref_genome;
 
-		int num_entries = 10000;
+		int coverage = 0, coverage_after_filter = 0;
+
+		int num_entries = 10000; //num_entries in pos_of_entry/count_alleles
 		std::vector<int> pos_of_entry;
 		std::vector<std::vector<int>> count_alleles;
 
@@ -128,6 +133,11 @@ class bam_parser{
 				bamHdr = sam_hdr_read(fp_in); //read header
 				aln = bam_init1(); //initialize an alignment
 
+				eof = false;
+				coverage = 0;
+				coverage_after_filter = 0;
+
+				//initialise count_alleles at any given position
 				prev_pos = -1;
 				pos = 0;
 				pos_of_entry.resize(num_entries);
@@ -154,6 +164,11 @@ class bam_parser{
 				bamHdr = sam_hdr_read(fp_in); //read header
 				aln = bam_init1(); //initialize an alignment
 
+				eof = false;
+				coverage = 0;
+				coverage_after_filter = 0;
+
+				//initialise count_alleles at any given position
 				prev_pos = -1;
 				pos = 0;
 				pos_of_entry.resize(num_entries);
@@ -172,33 +187,39 @@ class bam_parser{
 		int read_entry(){
 			int ret = sam_read1(fp_in, bamHdr, aln);
 
-			pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
-			chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
-			len = aln->core.l_qseq; //length of the read.
+			if(ret > 0){
+				pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
+				chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
+				len = aln->core.l_qseq; //length of the read.
 
-			q = bam_get_seq(aln); //quality string
-			mapq = aln->core.qual ; //mapping quality
+				q = bam_get_seq(aln); //quality string
+				mapq = aln->core.qual ; //mapping quality
 
-			seq = (char *)malloc(len);
-			for(int i=0; i< len ; i++){
-				seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
+				seq = (char *)malloc(len);
+				for(int i=0; i< len ; i++){
+					seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
+				}
+
+				count_alleles_for_read();
+
+				if(pos < prev_pos){
+					std::cerr << "Error: BAM file not sorted by position." << std::endl;
+					exit(1);
+				}
+				prev_pos = pos;
+
+				coverage += len;
+			}else{
+        eof = true;
 			}
-
-			count_alleles_for_read();
-
-			if(pos < prev_pos){
-				std::cerr << "Error: BAM file not sorted by position." << std::endl;
-				exit(1);
-			}
-			prev_pos = pos;
-
 			return(ret);
 		}
 
+		//read all reads covering current_pos
 		int read_to_pos(int current_pos){
-			if( pos - current_pos < num_entries/2.0){
-				while(read_entry()){
-					if( pos - current_pos >= num_entries/2.0) break;
+			if( !eof && pos - current_pos < num_entries/2.0){
+				while(read_entry() > 0){
+					if(pos - current_pos >= num_entries/2.0) break;
 				}
 			}
 		} 
