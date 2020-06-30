@@ -62,13 +62,15 @@ class bam_parser{
 
     void count_alleles_for_read(){
 
-      if(mapq > 30 && len >= 10){
+      if(mapq > 30 && len >= 30){
 
         //calculate how many bp match reference at this read
-        int num_matching = 0;
+        int num_matching = 0, total = 0;
+        int start = std::max(5, (int)(len*0.05)), end = len - std::max(5, (int)(len*0.05));
 
-        for(int i = 0; i < len; i++){
+        for(int i = start; i < end; i++){
 
+          total++;
           if(ref_genome.seq[pos+i] == seq[i]) num_matching++;
 
           //reset count_alleles if necessary
@@ -79,10 +81,10 @@ class bam_parser{
 
         }
 
-        if(num_matching >= 0.9*len){
+        if(total - num_matching <= 3){
 
           coverage_after_filter += len;
-          for(int i = 0; i < len; i++){
+          for(int i = start; i < end; i++){
 
             if(seq[i] == 'A'){
               count_alleles[(pos+i) % num_entries][0]++;
@@ -123,7 +125,7 @@ class bam_parser{
 
     double coverage = 0, coverage_after_filter = 0;
 
-    int num_entries = 1e4; //num_entries in pos_of_entry/count_alleles
+    int num_entries = 1e5; //num_entries in pos_of_entry/count_alleles
     std::vector<int> pos_of_entry;
     std::vector<std::vector<int>> count_alleles;
 

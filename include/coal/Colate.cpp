@@ -14,15 +14,18 @@ int main(int argc, char* argv[]){
     ("anc", "Filename of file containing trees.", cxxopts::value<std::string>())
     ("mut", "Filename of file containing mut.", cxxopts::value<std::string>())
 		("target_vcf", "Filename of target vcf", cxxopts::value<std::string>())
+		("target_mask", "Fasta file containing target mask", cxxopts::value<std::string>())
 		("reference_vcf", "Filename of reference vcf", cxxopts::value<std::string>())
 		("target_bam", "Filename of target bam", cxxopts::value<std::string>())
     ("target_age", "Target age in generations", cxxopts::value<std::string>())
     ("reference_age", "Reference age in generations", cxxopts::value<std::string>())
 		("ref_genome", "Reference genome", cxxopts::value<std::string>())
 		("anc_genome", "Ancestral genome", cxxopts::value<std::string>())
+		("mask", "Genomic mask", cxxopts::value<std::string>())
 		("regularise", "Optional: Specify whether or not to regularise likelihood. 0: no, 1: yes.", cxxopts::value<int>())
 		("chr", "Optional: File specifying chromosomes to use.", cxxopts::value<std::string>()) 
     ("bins", "Optional: Epoch boundaries 10^(seq(x,y,stepsize)) [format: x,y,stepsize].", cxxopts::value<std::string>())
+    ("years_per_gen", "Optional: Years per generation.", cxxopts::value<float>())
     ("coal", "Filename of file containing coalescence rates.", cxxopts::value<std::string>()) 
 		("seed", "Optional: Seed for random number generator (int)", cxxopts::value<std::string>())
     ("num_bins", "Optional: Number of bins.", cxxopts::value<int>())
@@ -68,6 +71,11 @@ int main(int argc, char* argv[]){
 
     //make mut
 		make_mut_incl_out(options);
+
+	}else if(!mode.compare("preprocess_mut")){
+
+    //make mut
+		preprocess_mut(options);
 
 	}else if(!mode.compare("test_vcf")){
 
