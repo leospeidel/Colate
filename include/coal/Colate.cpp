@@ -1,5 +1,5 @@
 #include "coal.cpp"
-#include "coal_old.cpp"
+//#include "coal_old.cpp"
 #include "cxxopts.hpp"
 #include <string>
 
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]){
     ("bins", "Optional: Epoch boundaries 10^(seq(x,y,stepsize)) [format: x,y,stepsize].", cxxopts::value<std::string>())
     ("years_per_gen", "Optional: Years per generation.", cxxopts::value<float>())
     ("coal", "Filename of file containing coalescence rates.", cxxopts::value<std::string>()) 
-		("seed", "Optional: Seed for random number generator (int)", cxxopts::value<std::string>())
+		("seed", "Optional: Seed for random number generator (int)", cxxopts::value<int>())
     ("num_bins", "Optional: Number of bins.", cxxopts::value<int>())
 		("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>())
 		("haps", "Filename of haps file (Output file format of Shapeit).", cxxopts::value<std::string>())
@@ -47,6 +47,7 @@ int main(int argc, char* argv[]){
 
     mut(options);
 
+    /*
 	}else if(!mode.compare("mut_old")){
 
     mut_old(options);
@@ -66,7 +67,7 @@ int main(int argc, char* argv[]){
 	}else if(!mode.compare("mut_simple")){
 
     mut_fast_simplified_all(options);
-
+  */
 	}else if(!mode.compare("make_mut_with_out")){
 
     //make mut
