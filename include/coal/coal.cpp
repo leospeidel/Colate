@@ -1319,7 +1319,7 @@ mut(cxxopts::Options& options){
   }
 
   int num_bases_per_block = 20e6;
-  int num_blocks = 1e4;
+  int num_blocks = 200;
 
   std::vector<std::vector<double>> age_shared_count_block(num_blocks), age_notshared_count_block(num_blocks);
   std::vector<std::vector<double>> age_shared_emp_block(num_blocks), age_notshared_emp_block(num_blocks);

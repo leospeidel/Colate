@@ -33,7 +33,6 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(HTSLIB_DIR ${CMAKE_SOURCE_DIR}/include/vcf)
 set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/coal)
-set(FTREE_DIR ${CMAKE_SOURCE_DIR}/include/ftree)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
 set(RELATE_LIBS relateShared gzstreamShared kastoreShared tskitShared)
@@ -48,11 +47,9 @@ include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/tskit)
 include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/gzstream)
 include_directories(${CMAKE_SOURCE_DIR}/include/vcf)
 include_directories(${CMAKE_SOURCE_DIR}/include/coal)
-include_directories(${CMAKE_SOURCE_DIR}/include/ftree)
 
 add_subdirectory(${HTSLIB_DIR})
 add_subdirectory(${ADNA_DIR})
-add_subdirectory(${FTREE_DIR})
 
 # tests
 add_executable(Tests ${TEST_DIR}/Tests.cpp ${ADNA_DIR}/coal_EM.hpp ${ADNA_DIR}/coal_EM.cpp ${ADNA_DIR}/coal_EM_old.hpp ${ADNA_DIR}/coal_EM_old.cpp)
