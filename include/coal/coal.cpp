@@ -564,6 +564,7 @@ parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& file
                 if(has_ref_genome){
                   derived_target = ref_genome.seq[bp_mut-1];
                   if(derived == derived_target){
+                    //std::cerr << bp_mut << " " << ancestral << " " << derived << " " << derived_target << " " << (*it_mut).age_begin << " " << (*it_mut).age_end << std::endl;
                     DAF_ref = N_ref;
                     DAF_target = N_target;
                   }else{
@@ -823,7 +824,7 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
                     bp_target = target.rec->pos + 1;
                     if(bp_target >= bp_mut) break;
                   }
-                }
+                } 
 
                 DAF_target = 0;
                 if(bp_target == bp_mut){ //exists
@@ -1343,7 +1344,7 @@ mut(cxxopts::Options& options){
   }
   rng.seed(seed);
 
-  int num_bootstrap = 20;
+  int num_bootstrap = 1;
   std::vector<std::vector<double>> age_shared_count(num_bootstrap), age_notshared_count(num_bootstrap);
   std::vector<double> age_shared_emp(num_age_bins*num_age_bins), age_notshared_emp(num_age_bins*num_age_bins);
 
@@ -1364,8 +1365,8 @@ mut(cxxopts::Options& options){
           filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
           filename_target.push_back(options["target_vcf"].as<std::string>() + "_chr" + line + ".bcf");
           filename_ref.push_back(options["reference_vcf"].as<std::string>() + "_chr" + line + ".bcf");
-          if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa.gz");
-          if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa.gz");
+          if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
+          if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
         }
         is_chr.close();
 
@@ -1388,8 +1389,8 @@ mut(cxxopts::Options& options){
         while(getline(is_chr, line)){
           filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
           filename_target.push_back(options["target_vcf"].as<std::string>() + "_chr" + line + ".bcf");
-          if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa.gz");
-          if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa.gz");
+          if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
+          if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
         }
         is_chr.close();
 
@@ -1412,8 +1413,8 @@ mut(cxxopts::Options& options){
           filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
           filename_target.push_back(options["target_bam"].as<std::string>() + "_chr" + line + ".bam");
           filename_ref.push_back(options["reference_vcf"].as<std::string>() + "_chr" + line + ".bcf");
-          filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa.gz");
-          if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa.gz");
+          filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+          if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
         }
         is_chr.close();
 
@@ -1724,7 +1725,7 @@ mut(cxxopts::Options& options){
 
   //coal_EM EM(epochs, coal_rates);
 
-  int max_iter = 50000;
+  int max_iter = 100000;
   //max_iter = 10000;
 
   //std::ofstream os_log(options["output"].as<std::string>() + ".log");
@@ -2113,7 +2114,7 @@ preprocess_mut(cxxopts::Options& options){
   bool help = false;
   if(!options.count("anc") || !options.count("mut") || !options.count("reference_vcf") || !options.count("ref_genome") || !options.count("anc_genome") || !options.count("output")){
     std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: anc, mut, reference_vcf, ref_genome, anc_genome, output." << std::endl;
+    std::cout << "Needed: anc, mut, reference_vcf, ref_genome, anc_genome, mask, output." << std::endl;
     help = true;
   }
   if(options.count("help") || help){
