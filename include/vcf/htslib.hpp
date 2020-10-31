@@ -77,6 +77,7 @@ class bam_parser{
     uint32_t mapq; //mapping quality
     char* seq; //seq
 
+    std::string contig = "";
     fasta ref_genome;
 
     double coverage = 0, coverage_after_filter = 0;
@@ -86,6 +87,7 @@ class bam_parser{
     std::vector<std::vector<int>> count_alleles;
 
     bam_parser();
+    bam_parser(const std::string& filename);
     bam_parser(const std::string& filename, const std::string& filename_ref);
     ~bam_parser(){
       bam_destroy1(aln);
@@ -96,6 +98,7 @@ class bam_parser{
     int read_entry();
     //read all reads covering current_pos
     bool read_to_pos(int current_pos);
+    void assign_contig(std::string& icontig, std::string& filename_ref);
 
 };
 

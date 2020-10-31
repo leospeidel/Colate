@@ -101,6 +101,31 @@ bam_parser::count_alleles_for_read(){
   }
 }
 
+bam_parser::bam_parser(const std::string& filename){
+  fp_in = hts_open(filename.c_str(), "r");
+  if (fp_in == NULL) {
+    std::cerr << "Warning: Failed to open file " << filename << std::endl;
+  }else{
+    bamHdr = sam_hdr_read(fp_in); //read header
+    aln = bam_init1(); //initialize an alignment
+
+    eof = false;
+    coverage = 0;
+    coverage_after_filter = 0;
+
+    //initialise count_alleles at any given position
+    prev_pos = -1;
+    pos = 0;
+    pos_of_entry.resize(num_entries);
+    std::fill(pos_of_entry.begin(), pos_of_entry.end(), -1);
+    count_alleles.resize(num_entries);
+    std::vector<std::vector<int>>::iterator it_count_alleles;
+    for(it_count_alleles = count_alleles.begin(); it_count_alleles != count_alleles.end(); it_count_alleles++){
+      (*it_count_alleles).resize(4);
+    }
+  }
+}
+
 bam_parser::bam_parser(const std::string& filename, const std::string& filename_ref){
   fp_in = hts_open(filename.c_str(), "r");
   if (fp_in == NULL) {
@@ -125,6 +150,8 @@ bam_parser::bam_parser(const std::string& filename, const std::string& filename_
     }
 
     ref_genome.Read(filename_ref);
+    read_entry();
+    contig = chr;
   }
 }
 
@@ -164,6 +191,83 @@ bam_parser::read_entry(){
   if(ret > 0){
     pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
     chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
+    if(strcmp(chr, contig.c_str()) == 0){
+      len = aln->core.l_qseq; //length of the read.
+
+      q = bam_get_seq(aln); //quality string
+      mapq = aln->core.qual ; //mapping quality
+
+      seq = (char *)malloc(len);
+      for(int i=0; i< len ; i++){
+        seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
+      }
+
+      count_alleles_for_read();
+
+      if(pos < prev_pos){
+        std::cerr << "Error: BAM file not sorted by position." << std::endl;
+        exit(1);
+      }
+      prev_pos = pos;
+
+      coverage += len;
+    }
+  }else{
+    eof = true;
+  }
+  return(ret);
+}
+
+bool 
+bam_parser::read_to_pos(int current_pos){
+  if(strcmp(contig.c_str(), chr) == 0){
+    if( !eof && pos - current_pos < num_entries/2.0){
+      while(read_entry() > 0){
+        if(pos - current_pos >= num_entries/2.0) break;
+        if(strcmp(contig.c_str(), chr) != 0) break;
+      }
+    }
+  }
+  return(eof);
+}
+
+void
+bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
+
+  if(icontig != ""){
+    contig = icontig;
+  }
+  ref_genome.Read(filename_ref);
+
+  eof = false;
+  coverage = 0;
+  coverage_after_filter = 0;
+
+  //initialise count_alleles at any given position
+  prev_pos = -1;
+  pos_of_entry.resize(num_entries);
+  std::fill(pos_of_entry.begin(), pos_of_entry.end(), -1);
+  count_alleles.resize(num_entries);
+  std::vector<std::vector<int>>::iterator it_count_alleles;
+  for(it_count_alleles = count_alleles.begin(); it_count_alleles != count_alleles.end(); it_count_alleles++){
+    (*it_count_alleles).resize(4);
+  }
+
+  //read first entry
+  int ret = 1;
+  if(aln == NULL) ret = sam_read1(fp_in, bamHdr, aln);
+
+  if(ret > 0){
+    pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
+    chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
+    if(contig != ""){
+      if(strcmp(chr, contig.c_str()) != 0){
+        std::cerr << "Error: contig names do not match" << std::endl;
+        exit(1);
+      }
+    }else{
+      contig = chr;
+    }
     len = aln->core.l_qseq; //length of the read.
 
     q = bam_get_seq(aln); //quality string
@@ -186,15 +290,5 @@ bam_parser::read_entry(){
   }else{
     eof = true;
   }
-  return(ret);
-}
 
-bool 
-bam_parser::read_to_pos(int current_pos){
-  if( !eof && pos - current_pos < num_entries/2.0){
-    while(read_entry() > 0){
-      if(pos - current_pos >= num_entries/2.0) break;
-    }
-  }
-  return(eof);
-} 
+}
