@@ -237,8 +237,8 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
   if(icontig != ""){
     contig = icontig;
   }
+	ref_genome.seq.clear();
   ref_genome.Read(filename_ref);
-
   eof = false;
   coverage = 0;
   coverage_after_filter = 0;
@@ -255,13 +255,23 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
 
   //read first entry
   int ret = 1;
-  if(aln == NULL) ret = sam_read1(fp_in, bamHdr, aln);
+  if(chr == NULL){
+		ret = sam_read1(fp_in, bamHdr, aln);
+		chr = bamHdr->target_name[aln->core.tid];
+	}
+	if(strcmp(chr, contig.c_str()) != 0){
+		while(strcmp(chr, contig.c_str()) != 0 && ret > 0){
+			ret = sam_read1(fp_in, bamHdr, aln);
+			chr = bamHdr->target_name[aln->core.tid];
+		}
+	}
 
   if(ret > 0){
     pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
     chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
     if(contig != ""){
       if(strcmp(chr, contig.c_str()) != 0){
+				std::cerr << chr << " " << contig << std::endl;
         std::cerr << "Error: contig names do not match" << std::endl;
         exit(1);
       }
