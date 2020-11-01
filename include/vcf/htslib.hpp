@@ -73,6 +73,7 @@ class bam_parser{
     int32_t pos; //left most position of alignment in zero-based coordinate
     char *chr; //contif name
     uint32_t len; //length of the read
+    uint32_t maxlen;
     uint8_t *q; //quality string
     uint32_t mapq; //mapping quality
     char* seq; //seq

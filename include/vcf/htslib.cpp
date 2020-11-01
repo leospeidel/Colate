@@ -123,6 +123,10 @@ bam_parser::bam_parser(const std::string& filename){
     for(it_count_alleles = count_alleles.begin(); it_count_alleles != count_alleles.end(); it_count_alleles++){
       (*it_count_alleles).resize(4);
     }
+
+    maxlen = 1e4;
+    seq = (char *) malloc(maxlen);
+
   }
 }
 
@@ -148,6 +152,9 @@ bam_parser::bam_parser(const std::string& filename, const std::string& filename_
     for(it_count_alleles = count_alleles.begin(); it_count_alleles != count_alleles.end(); it_count_alleles++){
       (*it_count_alleles).resize(4);
     }
+
+    maxlen = 1e4;
+    seq = (char *) malloc(maxlen);
 
     ref_genome.Read(filename_ref);
     read_entry();
@@ -197,7 +204,11 @@ bam_parser::read_entry(){
       q = bam_get_seq(aln); //quality string
       mapq = aln->core.qual ; //mapping quality
 
-      seq = (char *)malloc(len);
+      //seq = (char *)malloc(len);
+      if(len > maxlen){ 
+        seq = (char *) realloc(seq, len);
+        maxlen = len;
+      }
       for(int i=0; i< len ; i++){
         seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
       }
@@ -283,7 +294,12 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
     q = bam_get_seq(aln); //quality string
     mapq = aln->core.qual ; //mapping quality
 
-    seq = (char *)malloc(len);
+    //seq = (char *)malloc(len);
+    if(len > maxlen){ 
+      seq = (char *) realloc(seq, len);
+      maxlen = len;
+    }
+
     for(int i=0; i< len ; i++){
       seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
     }

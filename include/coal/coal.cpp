@@ -277,21 +277,22 @@ test_bam(cxxopts::Options&options){
 
   bam_parser bam(options["target_bam"].as<std::string>(), options["ref_genome"].as<std::string>());
 
-  haps mhaps((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
-  std::vector<char> seq(mhaps.GetN());
-  int bp;
+  //haps mhaps((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
+  //std::vector<char> seq(mhaps.GetN());
+  //int bp;
 
-  for(int i = 0; i < 10; i++){
+  //for(int i = 0; i < 10; i++){
+  for(int bp = 1e4; bp < 250e6; bp++){
 
-    mhaps.ReadSNP(seq, bp);
+    //mhaps.ReadSNP(seq, bp);
 
     if(bam.read_to_pos(bp)) break;
 
-    std::cerr << bp << ": " << ref_genome.seq[bp-1] << " ";
+    //std::cerr << bp << ": " << ref_genome.seq[bp-1] << " ";
     for(int i = 0; i < 4; i++){
       std::cerr << bam.count_alleles[(bp - 1) % bam.num_entries][i] << " ";
     }
-    std::cerr << "| " << mhaps.ancestral << " " << mhaps.alternative << " " << seq[0] << " " << seq[1] << std::endl;
+    //std::cerr << "| " << mhaps.ancestral << " " << mhaps.alternative << " " << seq[0] << " " << seq[1] << std::endl;
 
     if(0){
       int p;
@@ -374,7 +375,7 @@ parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& file
   std::string ancestral, derived, ancestral_target, derived_target;
   Muts::iterator it_mut;
 
-  float num_samples = 50;
+  float num_samples = 100;
   int DAF_target, DAF_ref;
   int bin_index;
 
@@ -1626,7 +1627,6 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
           if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
           if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
 
-
           if(use){
 
             DAF_ref    = 0;
@@ -1882,7 +1882,7 @@ mut(cxxopts::Options& options){
   }
 
   int num_bases_per_block = 20e6;
-  int num_blocks = 200;
+  int num_blocks = 300;
 
   std::vector<std::vector<double>> age_shared_count_block(num_blocks), age_notshared_count_block(num_blocks);
   std::vector<std::vector<double>> age_shared_emp_block(num_blocks), age_notshared_emp_block(num_blocks);
