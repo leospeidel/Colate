@@ -686,7 +686,7 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
   int DAF_target, DAF_ref;
   int bin_index;
 
-  bool has_tar_mask = false, has_ref_mask;
+  bool has_tar_mask = false, has_ref_mask = false;
   if(filename_target_mask.size() > 0) has_tar_mask = true;
   if(filename_reference_mask.size() > 0) has_ref_mask = true;
   bool has_ref_genome = false; //new
@@ -713,7 +713,6 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
     if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
     fasta ref_genome; //new
     if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
-
     current_block_base = 0;
     bp_ref = 0, bp_target = 0, bp_mut = 0;
 
@@ -1591,7 +1590,7 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
 
     fasta tar_mask, ref_mask;
     if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
-    if(has_ref_mask) ref_mask.Read(filename_target_mask[chr]);
+    if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
     fasta ref_genome; //new
     if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
 
@@ -2046,7 +2045,6 @@ mut(cxxopts::Options& options){
     }
     os_mat << "\n";
     for(int i = 0; i < num_bootstrap; i++){
-      std::cerr << i << std::endl;
       std::fill(age_shared_count[i].begin(), age_shared_count[i].end(), 0.0);
       std::fill(age_notshared_count[i].begin(), age_notshared_count[i].end(), 0.0);
       std::fill(age_shared_emp.begin(), age_shared_emp.end(), 0.0);
