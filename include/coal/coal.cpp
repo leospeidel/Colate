@@ -1906,7 +1906,7 @@ mut(cxxopts::Options& options){
   }
   rng.seed(seed);
 
-  int num_bootstrap = 1;
+  int num_bootstrap = 100;
   std::vector<std::vector<double>> age_shared_count(num_bootstrap), age_notshared_count(num_bootstrap);
   std::vector<double> age_shared_emp(num_age_bins*num_age_bins), age_notshared_emp(num_age_bins*num_age_bins);
 
@@ -2034,21 +2034,19 @@ mut(cxxopts::Options& options){
       age_shared_count[i].resize(num_age_bins);
       age_notshared_count[i].resize(num_age_bins);
     }
-
-    std::uniform_int_distribution<int> dist_blocks(0,num_blocks);
+    std::uniform_int_distribution<int> dist_blocks(0,num_blocks-1);
     std::vector<double> blocks(num_blocks);
     std::vector<std::vector<double>>::iterator it_age_shared_count = age_shared_count.begin();
     std::vector<std::vector<double>>::iterator it_age_notshared_count = age_notshared_count.begin();
     std::vector<double>::iterator it1, it2;
-
     //print matrix
     std::ofstream os_mat(options["output"].as<std::string>() + ".colate_mat");  
     for(int bin = 0; bin < num_age_bins; bin++){
       os_mat << age_bin[bin] << " "; 
     }
     os_mat << "\n";
-
     for(int i = 0; i < num_bootstrap; i++){
+      std::cerr << i << std::endl;
       std::fill(age_shared_count[i].begin(), age_shared_count[i].end(), 0.0);
       std::fill(age_notshared_count[i].begin(), age_notshared_count[i].end(), 0.0);
       std::fill(age_shared_emp.begin(), age_shared_emp.end(), 0.0);
@@ -2101,7 +2099,6 @@ mut(cxxopts::Options& options){
       int bin = 0, bin_start = 0;
       while(age_bin[bin] <= age) bin++;
       bin_start = bin;
-
       for(int bin1 = 0; bin1 < 1; bin1++){
 
         double lower_age = age_bin[bin1];
@@ -2174,7 +2171,6 @@ mut(cxxopts::Options& options){
 
     }
     os_mat.close();
-
   }else{
     std::cerr << "Loading precomputed file " << options["output"].as<std::string>() << ".colate_mat" << std::endl;
 
@@ -2302,7 +2298,6 @@ mut(cxxopts::Options& options){
     num_epochs = epochs.size();	
 
   }
-
   ////////////////////////
   //read input sequence (file format? haps/sample? vcf?) and reference sequences (haps/sample? vcf?)
   double initial_coal_rate = 1.0/20000.0;
