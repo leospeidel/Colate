@@ -710,7 +710,7 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
     vcf_parser ref(filename_ref[chr]);
     fasta tar_mask, ref_mask;
     if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
-    if(has_ref_mask) ref_mask.Read(filename_target_mask[chr]);
+    if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
     fasta ref_genome; //new
     if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
 
@@ -1029,7 +1029,7 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 
     fasta tar_mask, ref_mask;
     if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
-    if(has_ref_mask) ref_mask.Read(filename_target_mask[chr]);
+    if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
     fasta ref_genome; //new
     if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
 
@@ -1309,7 +1309,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
 
     fasta tar_mask, ref_mask;
     if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
-    if(has_ref_mask) ref_mask.Read(filename_target_mask[chr]);
+    if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
     fasta ref_genome; //new
     if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
 
