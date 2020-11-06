@@ -67,6 +67,7 @@ bam_parser::count_alleles_for_read(){
 
     for(int i = start; i < end; i++){
 
+      if(pos + i >= ref_genome.seq.size()) break;
       total++;
       if(ref_genome.seq[pos+i] == seq[i]) num_matching++;
 
@@ -78,7 +79,7 @@ bam_parser::count_alleles_for_read(){
 
     }
 
-    if(total - num_matching <= 3){
+    if(total - num_matching <= 3 && total > 0){
 
       coverage_after_filter += len;
       for(int i = start; i < end; i++){
@@ -268,6 +269,7 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
   std::vector<std::vector<int>>::iterator it_count_alleles;
   for(it_count_alleles = count_alleles.begin(); it_count_alleles != count_alleles.end(); it_count_alleles++){
     (*it_count_alleles).resize(4);
+    std::fill((*it_count_alleles).begin(), (*it_count_alleles).end(), 0);
   }
 
   //read first entry

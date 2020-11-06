@@ -1563,8 +1563,6 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
   bool has_tar_mask = false, has_ref_mask = false;
   if(filename_target_mask.size() > 0) has_tar_mask = true;
   if(filename_reference_mask.size() > 0) has_ref_mask = true;
-  bool has_ref_genome = false; //new
-  if(filename_ref_genome.size() > 0) has_ref_genome = true; //new
 
   assert(filename_target.size() == 1);
   bam_parser target(filename_target[0]);
@@ -1591,8 +1589,6 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
     fasta tar_mask, ref_mask;
     if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
     if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
-    fasta ref_genome; //new
-    if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
 
     current_block_base = 0;
     bp_ref = 0, bp_target = 0, bp_mut = 0;
@@ -1805,7 +1801,7 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
     it_age_notshared_emp++;
     num_blocks++;
     std::cerr << "Target coverage: " << ((double) target.coverage)/target.ref_genome.seq.size() << " " << ((double) target.coverage_after_filter)/target.ref_genome.seq.size() << std::endl;
-		std::cerr << "Reference coverage: " << ((double) reference.coverage)/reference.ref_genome.seq.size() << " " << ((double) reference.coverage_after_filter)/reference.ref_genome.seq.size() << std::endl; 
+    std::cerr << "Reference coverage: " << ((double) reference.coverage)/reference.ref_genome.seq.size() << " " << ((double) reference.coverage_after_filter)/reference.ref_genome.seq.size() << std::endl; 
   }
 
   age_shared_count.resize(num_blocks);
@@ -1819,50 +1815,682 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
 
 
 void
+maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
+
+  int N_target, DAF, bp_target = 0, bp_mut = 0, num_used_snps = 0;
+  bool target_flip = false;
+  std::string ancestral, derived, ancestral_target, derived_target;
+  Muts::iterator it_mut;
+
+  int DAF_target, AAF_target;
+  bool has_ref_genome = false; //new
+  if(filename_ref_genome.size() > 0) has_ref_genome = true; //new
+
+  FILE* fp = fopen(filename_output.c_str(), "wb");
+
+  for(int chr = 0; chr < filename_mut.size(); chr++){
+
+    std::cerr << "parsing CHR: " << chr+1 << " / " << filename_mut.size() << std::endl;
+
+    Mutations mut;
+    mut.Read(filename_mut[chr]);
+    vcf_parser target(filename_target[chr]);
+    fasta ref_genome; //new
+    if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
+
+    bp_target = 0, bp_mut = 0;
+
+    target.read_snp();
+    bp_target = target.rec->pos + 1;
+    target.extract_GT();
+    N_target    = target.n * target.ploidy;
+
+    double DAF_check = 0;
+    for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
+
+      if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
+
+        int i = 0;
+        ancestral.clear();
+        derived.clear();
+        while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+          ancestral.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        i++;
+        while(i < (*it_mut).mutation_type.size()){
+          derived.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        bp_mut = (*it_mut).pos;
+
+        if(ancestral.size() > 0 && derived.size() > 0){
+
+          bool use = true;          
+          if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
+          if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
+
+          if(use){
+
+            //check if mutation exists in ref
+            if(bp_target < bp_mut){
+              while(target.read_snp() == 0){
+                bp_target = target.rec->pos + 1;
+                target.extract_GT(); 
+                DAF_check = 0;
+                for(int i = 0; i < target.n*target.ploidy; i++){
+                  DAF_check += bcf_gt_allele(target.gt[i]);
+                }
+                if(bp_target >= bp_mut) break;
+              }
+            }
+
+            DAF_target = 0;
+            if(bp_target == bp_mut){ //exists
+
+              ancestral_target = target.rec->d.allele[0];
+              derived_target   = target.rec->d.allele[1];
+
+              bool accept = false, fixed_for_ref = false;
+              target_flip = false;
+              if(ancestral_target == derived && derived_target == ""){
+
+                //possibility of sharing
+                target.extract_GT();
+
+                if(target.n*target.ploidy < 2){
+                  std::cerr << "Need at least one diploid genome." << std::endl;
+                  exit(1);
+                }
+
+                N_target = 0;
+
+                bool biallelic = true;
+                int k = 0;
+                for(int i = 0; i < target.n; i++){
+                  for(int j = 0; j < target.ploidy; j++){
+                    DAF_target += bcf_gt_allele(target.gt[target.ploidy*i+j]);
+                    N_target++;
+                    k++;
+                    if(bcf_gt_allele(target.gt[target.ploidy*i+j]) > 1) biallelic = false;
+                  }
+                }
+
+                if(biallelic){
+                  if(DAF_target != 0){
+                    use = false;
+                  }else{
+                    DAF_target = N_target;
+                  }
+                }else{
+                  use = false;
+                }
+
+              }else if( (ancestral_target == ancestral && derived_target == derived) || (ancestral_target == derived && derived_target == ancestral) ){
+
+                target_flip = false;
+                if( (ancestral_target == derived && derived_target == ancestral) ) target_flip = true;
+
+                //possibility of sharing
+                target.extract_GT();
+
+                N_target = 0;
+
+                bool biallelic = true;
+                int k = 0;
+                for(int i = 0; i < target.n; i++){
+                  for(int j = 0; j < target.ploidy; j++){
+                    DAF_target += bcf_gt_allele(target.gt[target.ploidy*i+j]);
+                    N_target++;
+                    k++;
+                    if(bcf_gt_allele(target.gt[target.ploidy*i+j]) > 1) biallelic = false;
+                  }
+                }
+
+                if(biallelic){
+                  if(target_flip){
+                    DAF_target = N_target - DAF_target;
+                  }
+                }else{
+                  use = false;
+                }
+              }else{
+                use = false;
+              }
+            }else{ //doesn't exist so use ref genome
+
+              if(has_ref_genome){
+                derived_target = ref_genome.seq[bp_mut-1];
+                if(derived == derived_target){
+                  DAF_target = N_target;
+                }else{
+                  use = false;
+                }
+              }else{
+                use = false;
+              }
+
+            }
+
+            if(use){        
+              //fprintf(fp, "%s %d %c %c %d %d", filename_chr[chr].c_str(), bp_mut, ancestral[0], derived[0], N_target-DAF_target, DAF_target);          
+              int lchrom = strlen(filename_chr[chr].c_str());
+              AAF_target = N_target - DAF_target;
+              fwrite(&lchrom, sizeof(int), 1, fp);
+              fwrite(filename_chr[chr].c_str(), sizeof(char), lchrom, fp);
+              fwrite(&bp_mut, sizeof(int), 1, fp);
+              fwrite(&ancestral[0], sizeof(char), 1, fp);
+              fwrite(&derived[0], sizeof(char), 1, fp);
+              fwrite(&AAF_target, sizeof(int), 1, fp);
+              fwrite(&DAF_target, sizeof(int), 1, fp);
+            }
+          }
+
+        }
+      }
+    }
+  }
+  fclose(fp);
+
+}
+
+void
+maketmp_bam(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_bam, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
+
+  int N_target, DAF, bp_target = 0, bp_mut = 0;
+  bool target_flip = false;
+  std::string ancestral, derived, ancestral_target, derived_target;
+  Muts::iterator it_mut;
+
+  int DAF_target, AAF_target;
+  int bin_index;
+
+  bam_parser target(filename_bam);
+
+  FILE* fp = fopen(filename_output.c_str(), "wb");
+
+  for(int chr = 0; chr < filename_mut.size(); chr++){
+
+    std::cerr << "parsing CHR: " << chr + 1 << " / " << filename_mut.size() << std::endl;
+
+    target.assign_contig(filename_chr[chr], filename_ref_genome[chr]);
+
+    Mutations mut;
+    mut.Read(filename_mut[chr]);
+
+    bp_target = 0, bp_mut = 0;
+    for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
+
+      if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
+
+        int i = 0;
+        ancestral.clear();
+        derived.clear();
+        while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+          ancestral.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        i++;
+        while(i < (*it_mut).mutation_type.size()){
+          derived.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        bp_mut = (*it_mut).pos;
+
+        if(ancestral.size() > 0 && derived.size() > 0){
+
+          bool use = true;
+          if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
+          if(use){
+
+            DAF_target = 0;
+            AAF_target = 0;
+
+            //check if mutation exists in target     
+            int bp_target = bp_mut - 1;
+            target.read_to_pos(bp_target);
+            int num_alleles = 0;
+            if(target.pos_of_entry[bp_target % target.num_entries] == bp_target){
+              int num_reads = 0;
+              for(int i = 0; i < 4; i++){
+                num_reads += target.count_alleles[bp_target % target.num_entries][i];
+                num_alleles += (target.count_alleles[bp_target % target.num_entries][i] > 0);
+              }
+
+              if(num_reads > 0){
+
+                if(ancestral == "A"){
+                  AAF_target = target.count_alleles[bp_target % target.num_entries][0];
+                }else if(ancestral == "C"){
+                  AAF_target = target.count_alleles[bp_target % target.num_entries][1];
+                }else if(ancestral == "G"){
+                  AAF_target = target.count_alleles[bp_target % target.num_entries][2];
+                }else if(ancestral == "T"){
+                  AAF_target = target.count_alleles[bp_target % target.num_entries][3];
+                }
+                if(derived == "A"){
+                  DAF_target = target.count_alleles[bp_target % target.num_entries][0];
+                }else if(derived == "C"){
+                  DAF_target = target.count_alleles[bp_target % target.num_entries][1];
+                }else if(derived == "G"){
+                  DAF_target = target.count_alleles[bp_target % target.num_entries][2];
+                }else if(derived == "T"){
+                  DAF_target = target.count_alleles[bp_target % target.num_entries][3];
+                }
+
+                if( (AAF_target > 0 || DAF_target > 0)){
+                  if(!(num_alleles <= 2)) use = false;
+                }else{
+                  use = false;
+                }
+
+              }else{
+                use = false;
+              }
+
+            }else{
+              use = false;
+            }
+          } 
+
+          //
+          //os << filename_chr[chr] << " " << bp_mut << " " << ancestral << " " << derived << " " << AAF_target << " " << DAF_target << "\n";
+          //if(use) fprintf(fp, "%s %d %c %c %d %d", filename_chr[chr].c_str(), bp_mut, ancestral[0], derived[0], AAF_target, DAF_target);
+
+          if(use){
+            int lchrom = strlen(filename_chr[chr].c_str());
+            fwrite(&lchrom, sizeof(int), 1, fp);
+            fwrite(filename_chr[chr].c_str(), sizeof(char), lchrom, fp);
+            fwrite(&bp_mut, sizeof(int), 1, fp);
+            fwrite(&ancestral[0], sizeof(char), 1, fp);
+            fwrite(&derived[0], sizeof(char), 1, fp);
+            fwrite(&AAF_target, sizeof(int), 1, fp);
+            fwrite(&DAF_target, sizeof(int), 1, fp);
+          }
+
+        }
+      }
+    }
+
+    std::cerr << "Bam coverage: " << ((double) target.coverage)/target.ref_genome.seq.size() << " " << ((double) target.coverage_after_filter)/target.ref_genome.seq.size() << std::endl;
+  }
+  fclose(fp);
+
+}
+
+int
+parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_target, std::string& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, double age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+
+  std::uniform_real_distribution<double> dist_unif(0,1);
+  int num_age_bins = ((int) (log(1e8) * C))+1;
+  int N_ref, N_target, DAF, bp_ref = 0, bp_target = 0, bp_mut = 0, num_used_snps = 0, num_used_snps2 = 0;
+  bool ref_flip = false, target_flip = false;
+  std::string ancestral, derived;
+  char ancestral_ref, derived_ref, ancestral_target, derived_target;
+  Muts::iterator it_mut;
+
+  float num_samples = 20;
+  char chrom_target[1024], chrom_ref[1024];
+  int DAF_target, AAF_target, DAF_ref, AAF_ref, lchrom;
+  int bin_index;
+
+  FILE* fp_target = fopen(filename_target.c_str(), "rb");
+  FILE* fp_ref    = fopen(filename_ref.c_str(), "rb");
+
+  bool has_tar_mask = false, has_ref_mask = false;
+  if(filename_target_mask.size() > 0) has_tar_mask = true;
+  if(filename_reference_mask.size() > 0) has_ref_mask = true;
+
+  std::vector<std::vector<double>>::iterator it_age_shared_count    = age_shared_count.begin();
+  std::vector<std::vector<double>>::iterator it_age_notshared_count = age_notshared_count.begin();
+  std::vector<std::vector<double>>::iterator it_age_shared_emp      = age_shared_emp.begin();
+  std::vector<std::vector<double>>::iterator it_age_notshared_emp   = age_notshared_emp.begin();
+  int current_block_base = 0;
+  int num_blocks = 0;
+
+  for(int chr = 0; chr < filename_mut.size(); chr++){
+
+    std::cerr << "parsing CHR: " << chr+1 << " / " << filename_mut.size() << std::endl;
+
+    Mutations mut;
+    mut.Read(filename_mut[chr]);
+
+    fasta tar_mask, ref_mask;
+    if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
+    if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
+
+    current_block_base = 0;
+    bp_mut = 0;
+
+    while( strcmp(chrom_ref, filename_chr[chr].c_str()) != 0 ){
+      fread(&lchrom, sizeof(int), 1, fp_ref);
+      fread(chrom_ref, sizeof(char), lchrom, fp_ref);
+      chrom_ref[lchrom] = '\0';
+      fread(&bp_ref, sizeof(int), 1, fp_ref);
+      fread(&ancestral_ref, sizeof(char), 1, fp_ref);
+      fread(&derived_ref, sizeof(char), 1, fp_ref);
+      fread(&AAF_ref, sizeof(int), 1, fp_ref);
+      fread(&DAF_ref, sizeof(int), 1, fp_ref);
+    }
+
+    while( strcmp(chrom_target, filename_chr[chr].c_str()) != 0 ){
+      fread(&lchrom, sizeof(int), 1, fp_target);
+      fread(chrom_target, sizeof(char), lchrom, fp_target);
+      chrom_target[lchrom] = '\0';
+      fread(&bp_target, sizeof(int), 1, fp_target);
+      fread(&ancestral_target, sizeof(char), 1, fp_target);
+      fread(&derived_target, sizeof(char), 1, fp_target);
+      fread(&AAF_target, sizeof(int), 1, fp_target);
+      fread(&DAF_target, sizeof(int), 1, fp_target);
+    }
+
+
+
+    for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
+
+      if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin < (*it_mut).age_end && (*it_mut).freq.size() >= 0 && (*it_mut).age_end >= age){
+
+        int i = 0;
+        ancestral.clear();
+        derived.clear();
+        while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+          ancestral.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        i++;
+        while(i < (*it_mut).mutation_type.size()){
+          derived.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        bp_mut = (*it_mut).pos;
+
+        if(ancestral.size() > 0 && derived.size() > 0){
+
+          bool use = true;
+          if(has_tar_mask && bp_mut < tar_mask.seq.size()){
+            if(tar_mask.seq[bp_mut-1] != 'P') use = false;
+          }
+          if(has_ref_mask && bp_mut < ref_mask.seq.size()){
+            if(ref_mask.seq[bp_mut-1] != 'P') use = false;
+          }
+          if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
+          if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
+
+          //std::cerr << filename_chr[chr] << " " << chrom_ref << " " << chrom_target << std::endl;
+          //std::cerr << bp_mut << " " << bp_target << " " << bp_ref << std::endl;
+
+          if(use){
+            DAF_ref    = 0;
+            AAF_ref    = 0;
+            while( (strcmp(chrom_ref, filename_chr[chr].c_str()) == 0 && bp_ref < bp_mut) ){
+              fread(&lchrom, sizeof(int), 1, fp_ref);
+              fread(chrom_ref, sizeof(char), lchrom, fp_ref);
+              chrom_ref[lchrom] = '\0';
+              fread(&bp_ref, sizeof(int), 1, fp_ref);
+              fread(&ancestral_ref, sizeof(char), 1, fp_ref);
+              fread(&derived_ref, sizeof(char), 1, fp_ref);
+              fread(&AAF_ref, sizeof(int), 1, fp_ref);
+              fread(&DAF_ref, sizeof(int), 1, fp_ref);
+            }
+            if( strcmp(chrom_ref, filename_chr[chr].c_str()) != 0 || bp_ref != bp_mut || ancestral_ref != ancestral[0] || derived_ref != derived[0]){
+              use = false;
+            }
+          } 
+          if(DAF_ref == 0) use = false;
+          N_ref = DAF_ref + AAF_ref;
+
+          if(use){
+            DAF_target = 0;
+            AAF_target = 0;
+            while( (strcmp(chrom_target, filename_chr[chr].c_str()) == 0 && bp_target < bp_mut) ){
+              fread(&lchrom, sizeof(int), 1, fp_target);
+              fread(chrom_target, sizeof(char), lchrom, fp_target);
+              chrom_target[lchrom] = '\0';
+              fread(&bp_target, sizeof(int), 1, fp_target);
+              fread(&ancestral_target, sizeof(char), 1, fp_target);
+              fread(&derived_target, sizeof(char), 1, fp_target);
+              fread(&AAF_target, sizeof(int), 1, fp_target);
+              fread(&DAF_target, sizeof(int), 1, fp_target);
+            }
+            if( strcmp(chrom_target, filename_chr[chr].c_str()) != 0 || bp_target != bp_mut || ancestral_target != ancestral[0] || derived_target != derived[0]){
+              use = false;
+            }
+          } 
+          N_target = DAF_target + AAF_target;
+
+          //populate age_shared_count and age_notshared_count
+          if(use){
+
+            double age_begin = (*it_mut).age_begin;
+            while(current_block_base + num_bases_per_block < bp_mut){
+              current_block_base += num_bases_per_block;
+              it_age_shared_emp++;
+              it_age_notshared_emp++;
+              it_age_shared_count++;
+              it_age_notshared_count++;
+              num_blocks++;
+            }
+
+            bool skip = false;
+            if((*it_mut).age_begin <= age){
+
+              if(1){
+                double age_begin2 = age_begin;
+                age_begin2 = 0.0;
+                int bin_index1 = std::max(0, (int)std::round(log(10*age_begin2)*C)+1);
+                int bin_index2 = std::max(0, (int)std::round(log(10*(*it_mut).age_end)*C)+1);
+                bin_index  = bin_index1 * num_age_bins + bin_index2;
+                (*it_age_shared_emp)[bin_index]    += DAF_target * DAF_ref/((double)N_ref);
+                (*it_age_notshared_emp)[bin_index] += AAF_target * DAF_ref/((double)N_ref);
+
+                if(1){
+                  int j = 0;
+                  while(j < num_samples){
+                    skip = false;
+                    double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
+                    if(sampled_age < age && DAF_target > 0) skip = true;
+                    int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
+                    bin_index = bin_index_age;// * num_age_bins + bin_index_age;
+
+                    if(!skip){
+                      (*it_age_notshared_count)[bin_index] += AAF_target * DAF_ref/((double)N_ref * num_samples);
+                      j++;
+                    }
+                  }
+                }
+              }
+
+            }else{
+
+              int j = 0;
+              while(j < num_samples){
+                skip = false;
+                double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
+                if(sampled_age < age && DAF_target > 0) skip = true;
+                int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
+                bin_index = bin_index_age;// * num_age_bins + bin_index_age;
+
+                if(!skip){
+                  (*it_age_shared_count)[bin_index]    += DAF_target * DAF_ref/((double)N_ref * num_samples);
+                  (*it_age_notshared_count)[bin_index] += AAF_target * DAF_ref/((double)N_ref * num_samples);
+                  j++;
+                }
+              }
+
+            }
+
+
+          }
+
+        }
+      }
+    }
+
+    it_age_shared_count++;
+    it_age_notshared_count++;
+    it_age_shared_emp++;
+    it_age_notshared_emp++;
+    num_blocks++;
+  }
+  fclose(fp_target);
+  fclose(fp_ref);
+  age_shared_count.resize(num_blocks);
+  age_notshared_count.resize(num_blocks);
+  age_shared_emp.resize(num_blocks);
+  age_notshared_emp.resize(num_blocks);
+
+  return num_blocks;
+
+}
+
+
+
+
+
+
+void
 calc_depth(cxxopts::Options& options){
 
-	//Program options
+  //Program options
 
-	bool help = false;
-	if(!options.count("target_bam") || !options.count("ref_genome") || !options.count("chr") || !options.count("output")){
-		std::cout << "Not enough arguments supplied." << std::endl;
-		std::cout << "Needed: target_bam, ref_genome, chr, output." << std::endl;
-		help = true;
-	}
-	if(options.count("help") || help){
-		std::cout << options.help({""}) << std::endl;
-		std::cout << "Calculate target bam." << std::endl;
-		exit(0);
-	}  
+  bool help = false;
+  if(!options.count("target_bam") || !options.count("ref_genome") || !options.count("chr") || !options.count("output")){
+    std::cout << "Not enough arguments supplied." << std::endl;
+    std::cout << "Needed: target_bam, ref_genome, chr, output." << std::endl;
+    help = true;
+  }
+  if(options.count("help") || help){
+    std::cout << options.help({""}) << std::endl;
+    std::cout << "Calculate target bam." << std::endl;
+    exit(0);
+  }  
 
-	igzstream is_chr(options["chr"].as<std::string>());
-	if(is_chr.fail()){
-		std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
-	}
+  igzstream is_chr(options["chr"].as<std::string>());
+  if(is_chr.fail()){
+    std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+  }
   std::string line;
-	std::vector<std::string> name_chr, filename_ref_genome;
-	while(getline(is_chr, line)){
-		name_chr.push_back(line);
-		filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
-	}
-	is_chr.close();
+  std::vector<std::string> name_chr, filename_ref_genome;
+  while(getline(is_chr, line)){
+    name_chr.push_back(line);
+    filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+  }
+  is_chr.close();
 
-	bam_parser target(options["target_bam"].as<std::string>());
+  bam_parser target(options["target_bam"].as<std::string>());
 
-	double cov = 0.0, cov_filtered = 0.0, genome_length = 0.0;
+  double cov = 0.0, cov_filtered = 0.0, genome_length = 0.0;
 
-	for(int chr = 0; chr < name_chr.size(); chr++){
-		target.assign_contig(name_chr[chr], filename_ref_genome[chr]);
-		target.read_to_pos(target.ref_genome.seq.size());
+  for(int chr = 0; chr < name_chr.size(); chr++){
+    target.assign_contig(name_chr[chr], filename_ref_genome[chr]);
+    target.read_to_pos(target.ref_genome.seq.size());
 
-		cov           += target.coverage;
-		cov_filtered  += target.coverage_after_filter;
-		genome_length += target.ref_genome.seq.size();
-	}
+    cov           += target.coverage;
+    cov_filtered  += target.coverage_after_filter;
+    genome_length += target.ref_genome.seq.size();
+  }
 
   std::ofstream os(options["output"].as<std::string>());
   os << cov/genome_length << " " << cov_filtered/genome_length << std::endl;
-	os.close();
+  os.close();
+
+}
+
+void
+make_tmp(cxxopts::Options& options){
+
+  //Program options
+
+  bool help = false;
+  if(!options.count("mut") || !options.count("output")){
+    std::cout << "Not enough arguments supplied." << std::endl;
+    std::cout << "Needed: mut, ref_genome, output, either of target_vcf or target_bam." << std::endl;
+    help = true;
+  }
+  if(options.count("help") || help){
+    std::cout << options.help({""}) << std::endl;
+    std::cout << "Calculate coalescence rates for sample." << std::endl;
+    exit(0);
+  }  
+
+  std::cerr << "---------------------------------------------------------" << std::endl;
+  std::cerr << "Calculating Colate tmp input file for " << options["target_tmp"].as<std::string>() << ".." << std::endl;
+
+
+
+  std::string line;
+  ////////////////////////////////////////
+
+  std::vector<std::string> filename_mut, filename_target, filename_ref_genome, name_chr;
+
+  if(options.count("target_vcf") > 0){
+    if(options.count("chr") > 0){
+
+      igzstream is_chr(options["chr"].as<std::string>());
+      if(is_chr.fail()){
+        std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+      }
+      while(getline(is_chr, line)){
+        name_chr.push_back(line);
+        filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
+        filename_target.push_back(options["target_vcf"].as<std::string>() + "_chr" + line + ".bcf");
+        filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+      }
+      is_chr.close();
+
+    }else{
+
+      name_chr.push_back("");
+      filename_mut.push_back(options["mut"].as<std::string>());
+      filename_target.push_back(options["target_vcf"].as<std::string>());
+      filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
+
+    }
+
+    std::string filename_output = options["output"].as<std::string>() + ".colate.in";
+    maketmp_vcf(name_chr, filename_mut, filename_target, filename_ref_genome, filename_output);
+  }
+
+  if(options.count("target_bam") > 0){
+    if(options.count("chr") > 0){
+
+      igzstream is_chr(options["chr"].as<std::string>());
+      if(is_chr.fail()){
+        std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+      }
+      while(getline(is_chr, line)){
+        name_chr.push_back(line);
+        filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
+        filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+      }
+      is_chr.close();
+
+    }else{
+
+      name_chr.push_back("");
+      filename_mut.push_back(options["mut"].as<std::string>());
+      filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
+
+    }
+
+    std::string filename_bam    = options["target_bam"].as<std::string>();
+    std::string filename_output = options["output"].as<std::string>() + ".colate.in";
+    maketmp_bam(name_chr, filename_mut, filename_bam, filename_ref_genome, filename_output);
+  }
+
+  /////////////////////////////////////////////
+  //Resource Usage
+
+  rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+
+  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
 
 }
 
@@ -1874,7 +2502,7 @@ mut(cxxopts::Options& options){
   bool help = false;
   if(!options.count("mut") || !options.count("output")){
     std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: mut, bins, output. Optional: target_vcf, reference_vcf, target_bam, reference_bam, ref_genome, target_age, reference_age, target_mask, reference_mask, coal" << std::endl;
+    std::cout << "Needed: mut, bins, output. Optional: target_tmp, reference_tmp, target_vcf, reference_vcf, target_bam, reference_bam, ref_genome, target_age, reference_age, target_mask, reference_mask, coal" << std::endl;
     help = true;
   }
   if(options.count("help") || help){
@@ -2014,13 +2642,13 @@ mut(cxxopts::Options& options){
       num_blocks = parse_vcf(filename_mut, filename_target, filename_target_mask, filename_ref_genome, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_bam") && options.count("reference_vcf")){
-      
-			filename_target.push_back(options["target_bam"].as<std::string>() + ".bam");
-			//check order of contigs
-			//check coverage for each contig
-			
-			
-			if(options.count("chr") > 0){
+
+      filename_target.push_back(options["target_bam"].as<std::string>() + ".bam");
+      //check order of contigs
+      //check coverage for each contig
+
+
+      if(options.count("chr") > 0){
 
         igzstream is_chr(options["chr"].as<std::string>());
         if(is_chr.fail()){
@@ -2048,10 +2676,10 @@ mut(cxxopts::Options& options){
 
     }else if(options.count("target_bam") && options.count("reference_bam")){
 
-			filename_target.push_back(options["target_bam"].as<std::string>());
-			filename_ref.push_back(options["reference_bam"].as<std::string>());
+      filename_target.push_back(options["target_bam"].as<std::string>());
+      filename_ref.push_back(options["reference_bam"].as<std::string>());
       //check order of contigs
-			//check coverage for each contig
+      //check coverage for each contig
 
       if(options.count("chr") > 0){
 
@@ -2078,9 +2706,41 @@ mut(cxxopts::Options& options){
       }
       num_blocks = parse_onebambam(name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
+    }else if(options.count("target_tmp") && options.count("reference_tmp")){
+
+      filename_target.push_back(options["target_tmp"].as<std::string>());
+      filename_ref.push_back(options["reference_tmp"].as<std::string>());
+      //check order of contigs
+      //check coverage for each contig
+
+      if(options.count("chr") > 0){
+
+        igzstream is_chr(options["chr"].as<std::string>());
+        if(is_chr.fail()){
+          std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+        }
+        while(getline(is_chr, line)){
+          name_chr.push_back(line);
+          filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
+          if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
+          if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>() + "_chr" + line + ".fa");
+        }
+        is_chr.close();
+
+      }else{
+        name_chr.push_back("");
+        filename_mut.push_back(options["mut"].as<std::string>());
+        if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
+        if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());
+      }
+      num_blocks = parse_tmptmp(name_chr, filename_mut, filename_target[0], filename_ref[0], filename_target_mask, filename_reference_mask, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
+
     }
 
     std::cerr << "Number of blocks: " << num_blocks << std::endl;
+
+    bool tmp_file = true;
+    if(options.count("target_tmp") > 0 && options.count("reference_tmp") > 0) tmp_file = false;
 
     for(int i = 0; i < num_bootstrap; i++){
       age_shared_count[i].resize(num_age_bins);
@@ -2092,11 +2752,14 @@ mut(cxxopts::Options& options){
     std::vector<std::vector<double>>::iterator it_age_notshared_count = age_notshared_count.begin();
     std::vector<double>::iterator it1, it2;
     //print matrix
-    std::ofstream os_mat(options["output"].as<std::string>() + ".colate_mat");  
-    for(int bin = 0; bin < num_age_bins; bin++){
-      os_mat << age_bin[bin] << " "; 
+    std::ofstream os_mat;
+    if(tmp_file){
+      os_mat.open(options["output"].as<std::string>() + ".colate_mat");  
+      for(int bin = 0; bin < num_age_bins; bin++){
+        os_mat << age_bin[bin] << " "; 
+      }
+      os_mat << "\n";
     }
-    os_mat << "\n";
     for(int i = 0; i < num_bootstrap; i++){
       std::fill(age_shared_count[i].begin(), age_shared_count[i].end(), 0.0);
       std::fill(age_notshared_count[i].begin(), age_notshared_count[i].end(), 0.0);
@@ -2207,21 +2870,23 @@ mut(cxxopts::Options& options){
       }
 
       double norm = 1e3;
-      for(int bin = 0; bin < num_age_bins; bin++){
-        (*it_age_shared_count)[bin] /= norm;
-        os_mat << (*it_age_shared_count)[bin] << " ";
+      if(tmp_file){
+        for(int bin = 0; bin < num_age_bins; bin++){
+          (*it_age_shared_count)[bin] /= norm;
+          os_mat << (*it_age_shared_count)[bin] << " ";
+        }
+        os_mat << "\n";
+        for(int bin = 0; bin < num_age_bins; bin++){
+          (*it_age_notshared_count)[bin] /= norm;
+          os_mat << (*it_age_notshared_count)[bin] << " ";
+        }
+        os_mat << "\n";
       }
-      os_mat << "\n";
-      for(int bin = 0; bin < num_age_bins; bin++){
-        (*it_age_notshared_count)[bin] /= norm;
-        os_mat << (*it_age_notshared_count)[bin] << " ";
-      }
-      os_mat << "\n";
       it_age_shared_count++;
       it_age_notshared_count++;
 
     }
-    os_mat.close();
+    if(tmp_file) os_mat.close();
   }else{
     std::cerr << "Loading precomputed file " << options["output"].as<std::string>() << ".colate_mat" << std::endl;
 
@@ -2262,21 +2927,21 @@ mut(cxxopts::Options& options){
     is.open(options["coal"].as<std::string>());
     getline(is, line);
     getline(is, line);
-    std::string tmp;
+    std::cerr << line << std::endl;
+    std::string tmp = "";
     for(int i = 0; i < line.size(); i++){
       if(line[i] == ' ' || line[i] == '\t'){
         epochs.push_back(stof(tmp));
         tmp = "";
-        num_epochs++;
       }else{
         tmp += line[i];
       }
     }
     if(tmp != "") epochs.push_back(stof(tmp));
+    num_epochs = epochs.size();
 
     assert(epochs[0] == 0);
     for(int e = 1; e < num_epochs; e++){
-      std::cerr << epochs[e] << " ";
       assert(epochs[e] > epochs[e-1]);
     }
 

@@ -19,6 +19,8 @@ int main(int argc, char* argv[]){
 		("reference_mask", "Fasta file containing reference mask", cxxopts::value<std::string>())
 		("target_bam", "Filename of target bam", cxxopts::value<std::string>())
 		("reference_bam", "Filename of reference bam", cxxopts::value<std::string>())
+		("target_tmp", "Filename of target tmp file", cxxopts::value<std::string>())
+		("reference_tmp", "Filename of reference tmp file", cxxopts::value<std::string>())
     ("target_age", "Target age in generations", cxxopts::value<std::string>())
     ("reference_age", "Reference age in generations", cxxopts::value<std::string>())
 		("ref_genome", "Reference genome", cxxopts::value<std::string>())
@@ -69,16 +71,21 @@ int main(int argc, char* argv[]){
 	}else if(!mode.compare("mut_simple")){
 
     mut_fast_simplified_all(options);
-  */
 	}else if(!mode.compare("make_mut_with_out")){
 
     //make mut
 		make_mut_incl_out(options);
 
+  */
 	}else if(!mode.compare("preprocess_mut")){
 
     //make mut
 		preprocess_mut(options);
+
+	}else if(!mode.compare("make_tmp")){
+
+    //make mut
+	  make_tmp(options);
 
 	}else if(!mode.compare("test_vcf")){
 
