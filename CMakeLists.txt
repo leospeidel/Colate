@@ -33,7 +33,7 @@ endif()
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(HTSLIB_DIR ${CMAKE_SOURCE_DIR}/include/vcf)
-set(ADNA_DIR ${CMAKE_SOURCE_DIR}/include/coal)
+set(COLATE_DIR ${CMAKE_SOURCE_DIR}/include/coal)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
 set(RELATE_LIBS relateShared gzstreamShared kastoreShared tskitShared)
@@ -50,10 +50,10 @@ include_directories(${CMAKE_SOURCE_DIR}/include/vcf)
 include_directories(${CMAKE_SOURCE_DIR}/include/coal)
 
 add_subdirectory(${HTSLIB_DIR})
-add_subdirectory(${ADNA_DIR})
+add_subdirectory(${COLATE_DIR})
 
 # tests
-add_executable(Tests ${TEST_DIR}/Tests.cpp ${ADNA_DIR}/coal_EM.hpp ${ADNA_DIR}/coal_EM.cpp ${ADNA_DIR}/coal_EM_old.hpp ${ADNA_DIR}/coal_EM_old.cpp)
+add_executable(Tests ${TEST_DIR}/Tests.cpp ${COLATE_DIR}/coal_EM.hpp ${COLATE_DIR}/coal_EM.cpp ${COLATE_DIR}/coal_EM_old.hpp ${COLATE_DIR}/coal_EM_old.cpp)
 target_link_libraries(Tests ${RELATE_LIBS} UnitTest)
 
 enable_testing()

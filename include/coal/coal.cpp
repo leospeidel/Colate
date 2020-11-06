@@ -1804,7 +1804,8 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
     it_age_shared_emp++;
     it_age_notshared_emp++;
     num_blocks++;
-    std::cerr << "Coverage: " << ((double) target.coverage)/target.ref_genome.seq.size() << " " << ((double) target.coverage_after_filter)/target.ref_genome.seq.size() << std::endl; 
+    std::cerr << "Target coverage: " << ((double) target.coverage)/target.ref_genome.seq.size() << " " << ((double) target.coverage_after_filter)/target.ref_genome.seq.size() << std::endl;
+		std::cerr << "Reference coverage: " << ((double) reference.coverage)/reference.ref_genome.seq.size() << " " << ((double) reference.coverage_after_filter)/reference.ref_genome.seq.size() << std::endl; 
   }
 
   age_shared_count.resize(num_blocks);
@@ -1817,6 +1818,53 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
 }
 
 
+void
+calc_depth(cxxopts::Options& options){
+
+	//Program options
+
+	bool help = false;
+	if(!options.count("target_bam") || !options.count("ref_genome") || !options.count("chr") || !options.count("output")){
+		std::cout << "Not enough arguments supplied." << std::endl;
+		std::cout << "Needed: target_bam, ref_genome, chr, output." << std::endl;
+		help = true;
+	}
+	if(options.count("help") || help){
+		std::cout << options.help({""}) << std::endl;
+		std::cout << "Calculate target bam." << std::endl;
+		exit(0);
+	}  
+
+	igzstream is_chr(options["chr"].as<std::string>());
+	if(is_chr.fail()){
+		std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+	}
+  std::string line;
+	std::vector<std::string> name_chr, filename_ref_genome;
+	while(getline(is_chr, line)){
+		name_chr.push_back(line);
+		filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+	}
+	is_chr.close();
+
+	bam_parser target(options["target_bam"].as<std::string>());
+
+	double cov = 0.0, cov_filtered = 0.0, genome_length = 0.0;
+
+	for(int chr = 0; chr < name_chr.size(); chr++){
+		target.assign_contig(name_chr[chr], filename_ref_genome[chr]);
+		target.read_to_pos(target.ref_genome.seq.size());
+
+		cov           += target.coverage;
+		cov_filtered  += target.coverage_after_filter;
+		genome_length += target.ref_genome.seq.size();
+	}
+
+  std::ofstream os(options["output"].as<std::string>());
+  os << cov/genome_length << " " << cov_filtered/genome_length << std::endl;
+	os.close();
+
+}
 
 void
 mut(cxxopts::Options& options){
@@ -1905,7 +1953,7 @@ mut(cxxopts::Options& options){
   }
   rng.seed(seed);
 
-  int num_bootstrap = 100;
+  int num_bootstrap = 10;
   std::vector<std::vector<double>> age_shared_count(num_bootstrap), age_notshared_count(num_bootstrap);
   std::vector<double> age_shared_emp(num_age_bins*num_age_bins), age_notshared_emp(num_age_bins*num_age_bins);
 
@@ -1966,17 +2014,21 @@ mut(cxxopts::Options& options){
       num_blocks = parse_vcf(filename_mut, filename_target, filename_target_mask, filename_ref_genome, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_bam") && options.count("reference_vcf")){
-      if(options.count("chr") > 0){
+      
+			filename_target.push_back(options["target_bam"].as<std::string>() + ".bam");
+			//check order of contigs
+			//check coverage for each contig
+			
+			
+			if(options.count("chr") > 0){
 
         igzstream is_chr(options["chr"].as<std::string>());
         if(is_chr.fail()){
           std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
         }
-        filename_target.push_back(options["target_bam"].as<std::string>() + ".bam");
         while(getline(is_chr, line)){
           name_chr.push_back(line);
           filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
-          //filename_target.push_back(options["target_bam"].as<std::string>() + "_chr" + line + ".bam");
           filename_ref.push_back(options["reference_vcf"].as<std::string>() + "_chr" + line + ".bcf");
           filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
           if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
@@ -1987,7 +2039,6 @@ mut(cxxopts::Options& options){
       }else{
         name_chr.push_back("");
         filename_mut.push_back(options["mut"].as<std::string>());
-        filename_target.push_back(options["target_bam"].as<std::string>());
         filename_ref.push_back(options["reference_vcf"].as<std::string>());
         filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
@@ -1996,14 +2047,18 @@ mut(cxxopts::Options& options){
       num_blocks = parse_onebamvcf(name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_bam") && options.count("reference_bam")){
+
+			filename_target.push_back(options["target_bam"].as<std::string>());
+			filename_ref.push_back(options["reference_bam"].as<std::string>());
+      //check order of contigs
+			//check coverage for each contig
+
       if(options.count("chr") > 0){
 
         igzstream is_chr(options["chr"].as<std::string>());
         if(is_chr.fail()){
           std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
         }
-        filename_target.push_back(options["target_bam"].as<std::string>());
-        filename_ref.push_back(options["reference_bam"].as<std::string>());
         while(getline(is_chr, line)){
           name_chr.push_back(line);
           filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
@@ -2017,8 +2072,6 @@ mut(cxxopts::Options& options){
       }else{
         name_chr.push_back("");
         filename_mut.push_back(options["mut"].as<std::string>());
-        filename_target.push_back(options["target_bam"].as<std::string>());
-        filename_ref.push_back(options["reference_bam"].as<std::string>());
         filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());

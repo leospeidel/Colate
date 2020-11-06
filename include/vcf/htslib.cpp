@@ -96,9 +96,11 @@ bam_parser::count_alleles_for_read(){
         }
 
       }
+
     }
 
   }
+
 }
 
 bam_parser::bam_parser(const std::string& filename){
@@ -198,6 +200,10 @@ bam_parser::read_entry(){
   if(ret > 0){
     pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
     chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
+
+		//TODO:
+		//check here whether read is paired and decide whether to use it
+
     if(strcmp(chr, contig.c_str()) == 0){
       len = aln->core.l_qseq; //length of the read.
 

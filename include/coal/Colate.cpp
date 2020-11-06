@@ -90,12 +90,17 @@ int main(int argc, char* argv[]){
 		//make mut
 		test_bam(options);
 
+	}else if(!mode.compare("calc_depth")){
+
+		//make mut
+		calc_depth(options);
+
 	}else{
 
     std::cout << "####### error #######" << std::endl;
     std::cout << "Invalid or missing mode." << std::endl;
     std::cout << "Options for --mode are:" << std::endl;
-    std::cout << "tree, mut, make_mut_with_out." << std::endl;
+    std::cout << "tree, mut, make_mut_with_out, calc_depth." << std::endl;
 
   }
 

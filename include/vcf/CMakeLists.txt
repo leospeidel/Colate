@@ -25,5 +25,5 @@ htslib/hfile.h             htslib/hts_log.h           htslib/khash.h            
 os/lzma_stub.h
 htslib.hpp htslib.cpp
 )
-target_link_libraries(hts OpenSSL::Crypto z m bz2 lzma curl pthread)
+target_link_libraries(hts OpenSSL::Crypto z m bz2 curl lzma pthread)
 
