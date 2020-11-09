@@ -1209,7 +1209,7 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
                     while(j < num_samples){
                       skip = false;
                       double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                      if(sampled_age < age && DAF_target > 0) skip = true;
+                      if(sampled_age < age) skip = true;
                       int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                       bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1227,7 +1227,7 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
                 while(j < num_samples){
                   skip = false;
                   double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                  if(sampled_age < age && DAF_target > 0) skip = true;
+                  if(sampled_age < age) skip = true;
                   int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                   bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1489,7 +1489,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
                     while(j < num_samples){
                       skip = false;
                       double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                      if(sampled_age < age && DAF_target > 0) skip = true;
+                      if(sampled_age < age) skip = true;
                       int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                       bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1507,7 +1507,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
                 while(j < num_samples){
                   skip = false;
                   double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                  if(sampled_age < age && DAF_target > 0) skip = true;
+                  if(sampled_age < age) skip = true;
                   int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                   bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1757,7 +1757,7 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
                   while(j < num_samples){
                     skip = false;
                     double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                    if(sampled_age < age && DAF_target > 0) skip = true;
+                    if(sampled_age < age) skip = true;
                     int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                     bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1775,7 +1775,7 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
               while(j < num_samples){
                 skip = false;
                 double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                if(sampled_age < age && DAF_target > 0) skip = true;
+                if(sampled_age < age) skip = true;
                 int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                 bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -2163,7 +2163,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
     bp_mut = 0;
 
     while( strcmp(chrom_ref, filename_chr[chr].c_str()) != 0 ){
-      fread(&lchrom, sizeof(int), 1, fp_ref);
+      if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
       fread(chrom_ref, sizeof(char), lchrom, fp_ref);
       chrom_ref[lchrom] = '\0';
       fread(&bp_ref, sizeof(int), 1, fp_ref);
@@ -2174,7 +2174,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
     }
 
     while( strcmp(chrom_target, filename_chr[chr].c_str()) != 0 ){
-      fread(&lchrom, sizeof(int), 1, fp_target);
+      if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
       fread(chrom_target, sizeof(char), lchrom, fp_target);
       chrom_target[lchrom] = '\0';
       fread(&bp_target, sizeof(int), 1, fp_target);
@@ -2223,7 +2223,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
             DAF_ref    = 0;
             AAF_ref    = 0;
             while( (strcmp(chrom_ref, filename_chr[chr].c_str()) == 0 && bp_ref < bp_mut) ){
-              fread(&lchrom, sizeof(int), 1, fp_ref);
+              if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
               fread(chrom_ref, sizeof(char), lchrom, fp_ref);
               chrom_ref[lchrom] = '\0';
               fread(&bp_ref, sizeof(int), 1, fp_ref);
@@ -2243,7 +2243,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
             DAF_target = 0;
             AAF_target = 0;
             while( (strcmp(chrom_target, filename_chr[chr].c_str()) == 0 && bp_target < bp_mut) ){
-              fread(&lchrom, sizeof(int), 1, fp_target);
+              if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
               fread(chrom_target, sizeof(char), lchrom, fp_target);
               chrom_target[lchrom] = '\0';
               fread(&bp_target, sizeof(int), 1, fp_target);
@@ -2924,20 +2924,42 @@ mut(cxxopts::Options& options){
   std::vector<double> epochs;
   std::ifstream is;
   if(options.count("coal") > 0){
+
     is.open(options["coal"].as<std::string>());
     getline(is, line);
     getline(is, line);
     std::cerr << line << std::endl;
     std::string tmp = "";
+		int ep = 0;
     for(int i = 0; i < line.size(); i++){
       if(line[i] == ' ' || line[i] == '\t'){
-        epochs.push_back(stof(tmp));
+				if(ep == 1 && age < stof(tmp) && age != 0.0){
+					epochs.push_back(age);
+					ep++;
+				}
+        if(ep != 1 || age == 0.0){
+					epochs.push_back(stof(tmp));
+					ep++;
+				}
         tmp = "";
       }else{
         tmp += line[i];
       }
     }
-    if(tmp != "") epochs.push_back(stof(tmp));
+
+		if(tmp != ""){
+			if(ep == 1 && age < stof(tmp) && age != 0.0){
+				epochs.push_back(age);
+				ep++;
+			}
+			if(ep != 1 || age == 0.0){
+				epochs.push_back(stof(tmp));
+				ep++;
+			}
+		}
+		if(age != 0.0) assert(ep > 2);
+		if(age == 0.0) assert(ep > 1);
+
     num_epochs = epochs.size();
 
     assert(epochs[0] == 0);

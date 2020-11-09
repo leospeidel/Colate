@@ -1,5 +1,5 @@
 project                     (Colate)
-cmake_minimum_required      (VERSION 3.1)
+#cmake_minimum_required      (VERSION 3.1)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
