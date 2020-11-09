@@ -87,16 +87,6 @@ int main(int argc, char* argv[]){
     //make mut
 	  make_tmp(options);
 
-	}else if(!mode.compare("test_vcf")){
-
-		//make mut
-		test_vcf(options);
-
-	}else if(!mode.compare("test_bam")){
-
-		//make mut
-		test_bam(options);
-
 	}else if(!mode.compare("calc_depth")){
 
 		//make mut

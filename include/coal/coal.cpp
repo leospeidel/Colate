@@ -202,171 +202,10 @@ coal(cxxopts::Options& options){
 
 }
 
+
+//////////////////////
 int
-test_vcf(cxxopts::Options&options){
-
-  bool help = false;
-  if(!options.count("input")){
-    std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: input" << std::endl;
-    help = true;
-  }
-  if(options.count("help") || help){
-    std::cout << options.help({""}) << std::endl;
-    std::cout << "Calculate coalescence rates for sample." << std::endl;
-    exit(0);
-  }  
-
-  std::cerr << "---------------------------------------------------------" << std::endl;
-  std::cerr << "Parsing vcf file.." << std::endl;
-
-  vcf_parser v(options["input"].as<std::string>());
-  std::cerr << v.has_field("PL") << " " << v.has_field("foo") << std::endl;
-  while(v.read_snp() == 0){
-    v.extract_field("GT");
-    for(int i = 0; i < v.n; i++){
-      std::cerr << "(";
-      for(int j = 0; j < v.num_entries_per_sample; j++){
-        std::cerr << bcf_gt_allele(v.f[v.num_entries_per_sample*i+j]) << "|";
-      }
-      std::cerr << ") ";
-    }
-    std::cerr << std::endl;
-  }
-
-  return EXIT_SUCCESS;
-
-  /////////////////////////////////////////////
-  //Resource Usage
-
-  rusage usage;
-  getrusage(RUSAGE_SELF, &usage);
-
-  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
-#ifdef __APPLE__
-  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
-#else
-  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
-#endif
-  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
-
-}
-
-int
-test_bam(cxxopts::Options&options){
-
-  bool help = false;
-  if(!options.count("input")){
-    std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: input" << std::endl;
-    help = true;
-  }
-  if(options.count("help") || help){
-    std::cout << options.help({""}) << std::endl;
-    std::cout << "Calculate coalescence rates for sample." << std::endl;
-    exit(0);
-  }  
-
-  std::cerr << "---------------------------------------------------------" << std::endl;
-  std::cerr << "Parsing bam file.." << std::endl;
-
-  fasta ref_genome;
-  ref_genome.Read(options["ref_genome"].as<std::string>());
-  fasta anc_genome;
-  //anc_genome.Read(options["anc_genome"].as<std::string>());
-
-  bam_parser bam(options["target_bam"].as<std::string>(), options["ref_genome"].as<std::string>());
-
-  //haps mhaps((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
-  //std::vector<char> seq(mhaps.GetN());
-  //int bp;
-
-  //for(int i = 0; i < 10; i++){
-  for(int bp = 1e4; bp < 250e6; bp++){
-
-    //mhaps.ReadSNP(seq, bp);
-
-    if(bam.read_to_pos(bp)) break;
-
-    //std::cerr << bp << ": " << ref_genome.seq[bp-1] << " ";
-    for(int i = 0; i < 4; i++){
-      std::cerr << bam.count_alleles[(bp - 1) % bam.num_entries][i] << " ";
-    }
-    //std::cerr << "| " << mhaps.ancestral << " " << mhaps.alternative << " " << seq[0] << " " << seq[1] << std::endl;
-
-    if(0){
-      int p;
-      if(bam.pos_of_entry[p % bam.num_entries] == p){
-
-        int num_alleles = 0, num_reads = 0;
-        for(int i = 0; i < 4; i++){
-          num_alleles += (bam.count_alleles[p % bam.num_entries][i] > 0);
-          num_reads += bam.count_alleles[p % bam.num_entries][i];
-        }
-        if(num_alleles > 0){
-          std::cerr << p << ": " << ref_genome.seq[p] << " ";
-          for(int i = 0; i < 4; i++){
-            std::cerr << bam.count_alleles[p % bam.num_entries][i] << " ";
-          }
-          std::cerr << " | " << num_alleles << " " << num_reads << std::endl;
-        }
-      }
-    }
-
-  }
-
-  std::cerr << bam.pos << std::endl;
-  std::cerr << bam.coverage/((double) bam.pos) << " " << bam.coverage_after_filter/((double) bam.pos) << std::endl;
-
-  if(0){
-    int entry_pos = 0;
-    while(bam.read_entry() > 0){
-
-      if(bam.pos - entry_pos > 5000){
-        for(int p = entry_pos; p < bam.pos; p++){
-
-          if(bam.pos_of_entry[p % bam.num_entries] == p){
-
-            int num_alleles = 0;
-            for(int i = 0; i < 4; i++){
-              num_alleles += (bam.count_alleles[p % bam.num_entries][i] > 0);
-            }
-            if(num_alleles > 1){
-              std::cerr << p << ": " << ref_genome.seq[p] << " ";
-              for(int i = 0; i < 4; i++){
-                std::cerr << bam.count_alleles[p % bam.num_entries][i] << " ";
-              }
-              std::cerr << " | " << num_alleles << std::endl;
-            }
-          }
-
-        }
-        entry_pos = bam.pos;
-      }
-
-    }
-  }
-
-  return EXIT_SUCCESS;
-
-  /////////////////////////////////////////////
-  //Resource Usage
-
-  rusage usage;
-  getrusage(RUSAGE_SELF, &usage);
-
-  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
-#ifdef __APPLE__
-  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
-#else
-  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
-#endif
-  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
-
-}
-
-int
-parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_ref_genome, double age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -591,10 +430,11 @@ parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& file
                 }
 
                 double age_begin = (*it_mut).age_begin;
+                if(age_begin < ref_age) age_begin = ref_age;
                 num_used_snps++;
 
                 bool skip = false;
-                if((*it_mut).age_begin <= age){
+                if(age_begin <= age){
 
                   double age_begin2 = age_begin;
                   age_begin2 = 0.0;
@@ -673,7 +513,7 @@ parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& file
 }
 
 int
-parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -916,10 +756,11 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
               }
 
               double age_begin = (*it_mut).age_begin;
+              if(age_begin < ref_age) age_begin = ref_age;
               num_used_snps++;
 
               bool skip = false;
-              if((*it_mut).age_begin <= age){
+              if(age_begin <= age){
 
                 double age_begin2 = age_begin;
                 age_begin2 = 0.0;
@@ -941,9 +782,9 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
                   if(!skip){
                     //age_shared_count[bin_index]    += DAF_target * DAF_ref/num_samples;
                     (*it_age_notshared_count)[bin_index] += (N_target - DAF_target) * DAF_ref/((double) N_ref * num_samples);
-                    j++;
+                    //j++;
                   }
-                  //j++;
+                  j++;
                 }
 
               }else{
@@ -991,7 +832,7 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 }
 
 int
-parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -1183,6 +1024,8 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
             if(use){
 
               double age_begin = (*it_mut).age_begin;
+              if(age_begin < ref_age) age_begin = ref_age;
+
               while(current_block_base + num_bases_per_block < bp_mut){
                 current_block_base += num_bases_per_block;
                 it_age_shared_emp++;
@@ -1193,7 +1036,7 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
               }
 
               bool skip = false;
-              if((*it_mut).age_begin <= age){
+              if(age_begin <= age){
 
                 if(1){
                   double age_begin2 = age_begin;
@@ -1215,8 +1058,9 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 
                       if(!skip){
                         (*it_age_notshared_count)[bin_index] += AAF_target * DAF_ref/((double)N_ref * num_samples);
-                        j++;
+                        //j++;
                       }
+                      j++;
                     }
                   }
                 }
@@ -1267,7 +1111,7 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 }
 
 int
-parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -1463,6 +1307,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
             if(use){
 
               double age_begin = (*it_mut).age_begin;
+              if(age_begin < ref_age) age_begin = ref_age;
               while(current_block_base + num_bases_per_block < bp_mut){
                 current_block_base += num_bases_per_block;
                 it_age_shared_emp++;
@@ -1473,7 +1318,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
               }
 
               bool skip = false;
-              if((*it_mut).age_begin <= age){
+              if(age_begin <= age){
 
                 if(1){
                   double age_begin2 = age_begin;
@@ -1495,8 +1340,9 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
 
                       if(!skip){
                         (*it_age_notshared_count)[bin_index] += AAF_target * DAF_ref/((double)N_ref * num_samples);
-                        j++;
+                        //j++;
                       }
+                      j++;
                     }
                   }
                 }
@@ -1547,7 +1393,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
 }
 
 int
-parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -1731,6 +1577,7 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
           if(use){
 
             double age_begin = (*it_mut).age_begin;
+            if(age_begin < ref_age) age_begin = ref_age;
             while(current_block_base + num_bases_per_block < bp_mut){
               current_block_base += num_bases_per_block;
               it_age_shared_emp++;
@@ -1741,7 +1588,7 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
             }
 
             bool skip = false;
-            if((*it_mut).age_begin <= age){
+            if(age_begin <= age){
 
               if(1){
                 double age_begin2 = age_begin;
@@ -1763,8 +1610,9 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
 
                     if(!skip){
                       (*it_age_notshared_count)[bin_index] += AAF_target * DAF_ref/((double)N_ref * num_samples);
-                      j++;
+                      //j++;
                     }
+                    j++;
                   }
                 }
               }
@@ -1814,6 +1662,7 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
 }
 
 
+///////////////////////
 void
 maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
 
@@ -1845,7 +1694,6 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
     target.extract_GT();
     N_target    = target.n * target.ploidy;
 
-    double DAF_check = 0;
     for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
 
       if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
@@ -1876,11 +1724,7 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
             if(bp_target < bp_mut){
               while(target.read_snp() == 0){
                 bp_target = target.rec->pos + 1;
-                target.extract_GT(); 
-                DAF_check = 0;
-                for(int i = 0; i < target.n*target.ploidy; i++){
-                  DAF_check += bcf_gt_allele(target.gt[i]);
-                }
+                target.extract_GT();  
                 if(bp_target >= bp_mut) break;
               }
             }
@@ -1895,6 +1739,7 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
               target_flip = false;
               if(ancestral_target == derived && derived_target == ""){
 
+                std::cerr << "debug" << std::endl;
                 //possibility of sharing
                 target.extract_GT();
 
@@ -1963,6 +1808,8 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
                 derived_target = ref_genome.seq[bp_mut-1];
                 if(derived == derived_target){
                   DAF_target = N_target;
+                }else if(ancestral == derived_target){
+                  DAF_target == 0;
                 }else{
                   use = false;
                 }
@@ -2119,7 +1966,7 @@ maketmp_bam(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 }
 
 int
-parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_target, std::string& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, double age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_target, std::string& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -2129,7 +1976,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
   char ancestral_ref, derived_ref, ancestral_target, derived_target;
   Muts::iterator it_mut;
 
-  float num_samples = 20;
+  float num_samples = 100;
   char chrom_target[1024], chrom_ref[1024];
   int DAF_target, AAF_target, DAF_ref, AAF_ref, lchrom;
   int bin_index;
@@ -2262,6 +2109,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
           if(use){
 
             double age_begin = (*it_mut).age_begin;
+            if(age_begin < ref_age) age_begin = ref_age;
             while(current_block_base + num_bases_per_block < bp_mut){
               current_block_base += num_bases_per_block;
               it_age_shared_emp++;
@@ -2272,7 +2120,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
             }
 
             bool skip = false;
-            if((*it_mut).age_begin <= age){
+            if(age_begin <= age){
 
               if(1){
                 double age_begin2 = age_begin;
@@ -2288,14 +2136,15 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
                   while(j < num_samples){
                     skip = false;
                     double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                    if(sampled_age < age && DAF_target > 0) skip = true;
+                    if(sampled_age < age) skip = true;
                     int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                     bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
                     if(!skip){
                       (*it_age_notshared_count)[bin_index] += AAF_target * DAF_ref/((double)N_ref * num_samples);
-                      j++;
+                      //j++;
                     }
+                    j++;
                   }
                 }
               }
@@ -2306,7 +2155,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
               while(j < num_samples){
                 skip = false;
                 double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                if(sampled_age < age && DAF_target > 0) skip = true;
+                if(sampled_age < age) skip = true;
                 int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                 bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -2344,10 +2193,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 }
 
 
-
-
-
-
+//////////////////////
 void
 calc_depth(cxxopts::Options& options){
 
@@ -2556,8 +2402,8 @@ mut(cxxopts::Options& options){
     it_age_bin++;
   }
 
-  int num_bases_per_block = 20e6;
-  int num_blocks = 300;
+  int num_bases_per_block = 10e6;
+  int num_blocks = 500;
 
   std::vector<std::vector<double>> age_shared_count_block(num_blocks), age_notshared_count_block(num_blocks);
   std::vector<std::vector<double>> age_shared_emp_block(num_blocks), age_notshared_emp_block(num_blocks);
@@ -2581,7 +2427,7 @@ mut(cxxopts::Options& options){
   }
   rng.seed(seed);
 
-  int num_bootstrap = 10;
+  int num_bootstrap = 20;
   std::vector<std::vector<double>> age_shared_count(num_bootstrap), age_notshared_count(num_bootstrap);
   std::vector<double> age_shared_emp(num_age_bins*num_age_bins), age_notshared_emp(num_age_bins*num_age_bins);
 
@@ -2616,7 +2462,7 @@ mut(cxxopts::Options& options){
         if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());
         if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
       }
-      num_blocks = parse_vcfvcf(filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
+      num_blocks = parse_vcfvcf(filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_vcf")){
       if(options.count("chr") > 0){
@@ -2639,7 +2485,7 @@ mut(cxxopts::Options& options){
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
       }
-      num_blocks = parse_vcf(filename_mut, filename_target, filename_target_mask, filename_ref_genome, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
+      num_blocks = parse_vcf(filename_mut, filename_target, filename_target_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_bam") && options.count("reference_vcf")){
 
@@ -2672,7 +2518,7 @@ mut(cxxopts::Options& options){
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());
       }
-      num_blocks = parse_onebamvcf(name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
+      num_blocks = parse_onebamvcf(name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_bam") && options.count("reference_bam")){
 
@@ -2704,7 +2550,7 @@ mut(cxxopts::Options& options){
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());
       }
-      num_blocks = parse_onebambam(name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
+      num_blocks = parse_onebambam(name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_tmp") && options.count("reference_tmp")){
 
@@ -2733,7 +2579,7 @@ mut(cxxopts::Options& options){
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());
       }
-      num_blocks = parse_tmptmp(name_chr, filename_mut, filename_target[0], filename_ref[0], filename_target_mask, filename_reference_mask, age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
+      num_blocks = parse_tmptmp(name_chr, filename_mut, filename_target[0], filename_ref[0], filename_target_mask, filename_reference_mask, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }
 
@@ -3022,7 +2868,8 @@ mut(cxxopts::Options& options){
       if(log_age < epoch_boundary){
         if(ep == 1 && age != 0.0){
           epochs.push_back(age);
-          epoch_boundary += epoch_step;
+          std::cerr << -log_age + epoch_boundary << " " << epoch_step << std::endl;
+          if(epoch_boundary - log_age < 0.1*epoch_step) epoch_boundary += epoch_step;
         }
         if(std::fabs(log_age - epoch_boundary) > 1e-3){
           epochs.push_back( std::exp(log_10 * epoch_boundary)/years_per_gen );
@@ -3231,199 +3078,6 @@ mut(cxxopts::Options& options){
 
   }
   os.close();
-
-  /////////////////////////////////////////////
-  //Resource Usage
-
-  rusage usage;
-  getrusage(RUSAGE_SELF, &usage);
-
-  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
-#ifdef __APPLE__
-  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
-#else
-  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
-#endif
-  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
-
-}
-
-void
-make_mut_incl_out(cxxopts::Options& options){
-
-  bool help = false;
-  if(!options.count("anc") || !options.count("mut") || !options.count("haps") || !options.count("sample") || !options.count("output")){
-    std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: anc, mut, haps, sample, output." << std::endl;
-    help = true;
-  }
-  if(options.count("help") || help){
-    std::cout << options.help({""}) << std::endl;
-    std::cout << "Make mut file including fixed mutations." << std::endl;
-    exit(0);
-  }  
-
-  std::cerr << "---------------------------------------------------------" << std::endl;
-  std::cerr << "Adding fixed mutations to mut file.." << std::endl;
-
-  double outgroup_age = 10e6/28;
-
-  haps mhaps(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
-  int N = mhaps.GetN();
-  int L = mhaps.GetL();
-  std::vector<char> sequence(N);
-  int bp = -1, DAF;
-
-  MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
-  Muts::iterator it_mut; //iterator for mut file
-  AncMutIterators ancmut(options["anc"].as<std::string>(), options["mut"].as<std::string>());
-  float num_bases_snp_persists = 0.0;
-  std::vector<float> coords;
-  double tmrca = 0.0;
-  int root = 2*ancmut.NumTips()-2;
-
-  //Mutations mut_out;
-  //mut_out.Read(options["input"].as<std::string>() + ".mut");
-
-  Mutations mut_combined;
-  mut_combined.info.resize(L);
-
-  int L_ref = ancmut.NumSnps();
-  //int L_out = mut_out.info.size();
-
-  std::string ancestral, derived;
-  int snp_ref = 0, snp_out = 0, snp_hap = 0, snp_comb = 0;
-  num_bases_snp_persists = ancmut.FirstSNP(mtr, it_mut);
-  mtr.tree.GetCoordinates(coords);
-  tmrca = coords[root];
-
-  int tree_count = (*it_mut).tree;
-  for(; snp_hap < L; snp_hap++){
-
-    mhaps.ReadSNP(sequence, bp);
-    DAF = 0;
-    for(std::vector<char>::iterator it_seq = sequence.begin(); it_seq != sequence.end(); it_seq++){
-      DAF += (*it_seq == '1');
-    }
-
-    //check if snp exists in mut, and whether it has freq > 0 in ref
-    if(snp_ref < L_ref){
-      while((*it_mut).pos < bp){
-        num_bases_snp_persists = ancmut.NextSNP(mtr, it_mut);
-        snp_ref++;
-        if(snp_ref == L_ref) break;
-      }
-    }
-
-    if(tree_count < (*it_mut).tree){
-      tree_count = (*it_mut).tree;
-      mtr.tree.GetCoordinates(coords);
-      tmrca = coords[root];
-    }
-    //std::cerr << tmrca << " " << coords[root] << " " << root << std::endl;
-    //if(snp_out < L_out){
-    //	while(mut_out.info[snp_out].pos < bp){
-    //		snp_out++;
-    //		if(snp_out == L_out) break;
-    //	}
-    //}
-
-    if((*it_mut).pos == bp && DAF > 0 && DAF < N){
-
-      if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
-
-        std::string ancestral, derived, haps_ancestral = mhaps.ancestral, haps_derived = mhaps.alternative;
-        int i = 0;
-        ancestral.clear();
-        derived.clear();
-        while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
-          ancestral.push_back((*it_mut).mutation_type[i]);
-          i++;
-        }
-        i++;
-        while(i < (*it_mut).mutation_type.size()){
-          derived.push_back((*it_mut).mutation_type[i]);
-          i++;
-        }
-
-        if( (ancestral == haps_ancestral && derived == haps_derived) || (derived == haps_ancestral && ancestral == haps_derived) ){
-
-          if((derived == haps_ancestral && ancestral == haps_derived)) DAF = N-DAF;
-
-          if((*it_mut).age_end > 0){
-
-            //if segregating, copy over
-            mut_combined.info[snp_comb] = (*it_mut);
-            //if(mut_combined.info[snp_comb].branch.size() == 1){
-            //  assert( *mut_combined.info[snp_comb].branch.begin() <= root );
-            //}
-            mut_combined.info[snp_comb].tree = tree_count;
-            mut_combined.info[snp_comb].pos = bp;
-            mut_combined.info[snp_comb].freq.clear();
-            mut_combined.info[snp_comb].freq.push_back(DAF);
-            if(snp_comb > 0) mut_combined.info[snp_comb-1].dist = bp - mut_combined.info[snp_comb-1].pos; 
-            mut_combined.info[snp_comb].snp_id = snp_comb;
-
-            //if(DAF == 1) assert(mut_combined.info[snp_comb].age_begin == 0.0);
-            if(mut_combined.info[snp_comb].age_begin == 0.0){
-              assert(DAF == 1);
-            }
-
-            snp_comb++;
-          }
-
-        }
-
-      }
-
-    }else{
-      //otherwise copy from trees with outgroup
-      if(0){
-        /*
-           if(DAF == N && bp == mut_out.info[snp_out].pos){
-           if(tmrca <= mut_out.info[snp_out].age_end){
-           mut_combined.info[snp_hap].branch.resize(1);
-           mut_combined.info[snp_hap].branch[0] = root;
-           mut_combined.info[snp_hap].age_begin = tmrca;
-           mut_combined.info[snp_hap].age_end   = mut_out.info[snp_out].age_end;
-           assert(mut_combined.info[snp_hap].age_begin <= mut_combined.info[snp_hap].age_end);
-           }
-           }else{
-           mut_combined.info[snp_hap].age_begin = 0;
-           mut_combined.info[snp_hap].age_end = 0;
-           mut_combined.info[snp_hap].branch.clear();
-           }
-           */
-      }else{     
-
-        if(DAF == N){
-          if(tmrca <= outgroup_age){
-            mut_combined.info[snp_comb].branch.resize(1);
-            mut_combined.info[snp_comb].branch[0] = root;
-            mut_combined.info[snp_comb].age_begin = tmrca;
-            mut_combined.info[snp_comb].age_end   = outgroup_age;
-            assert(mut_combined.info[snp_comb].age_begin <= mut_combined.info[snp_comb].age_end);
-
-            mut_combined.info[snp_comb].tree = tree_count;
-            mut_combined.info[snp_comb].pos = bp;
-            mut_combined.info[snp_comb].freq.push_back(DAF);
-
-            ancestral = mhaps.ancestral;
-            derived   = mhaps.alternative;
-            mut_combined.info[snp_comb].mutation_type = ancestral + "/" + derived;
-            if(snp_comb > 0) mut_combined.info[snp_comb-1].dist = bp - mut_combined.info[snp_comb-1].pos; 
-            mut_combined.info[snp_comb].snp_id = snp_comb;
-
-            snp_comb++;
-          }
-        }
-      }
-    }
-
-  }
-
-  mut_combined.info.resize(snp_comb);
-  mut_combined.Dump(options["output"].as<std::string>());
 
   /////////////////////////////////////////////
   //Resource Usage

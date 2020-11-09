@@ -21,6 +21,171 @@
 #include "coal_EM.hpp"
 #include "coal_EM_old.hpp"
 
+
+int
+test_vcf(cxxopts::Options&options){
+
+  bool help = false;
+  if(!options.count("input")){
+    std::cout << "Not enough arguments supplied." << std::endl;
+    std::cout << "Needed: input" << std::endl;
+    help = true;
+  }
+  if(options.count("help") || help){
+    std::cout << options.help({""}) << std::endl;
+    std::cout << "Calculate coalescence rates for sample." << std::endl;
+    exit(0);
+  }  
+
+  std::cerr << "---------------------------------------------------------" << std::endl;
+  std::cerr << "Parsing vcf file.." << std::endl;
+
+  vcf_parser v(options["input"].as<std::string>());
+  std::cerr << v.has_field("PL") << " " << v.has_field("foo") << std::endl;
+  while(v.read_snp() == 0){
+    v.extract_field("GT");
+    for(int i = 0; i < v.n; i++){
+      std::cerr << "(";
+      for(int j = 0; j < v.num_entries_per_sample; j++){
+        std::cerr << bcf_gt_allele(v.f[v.num_entries_per_sample*i+j]) << "|";
+      }
+      std::cerr << ") ";
+    }
+    std::cerr << std::endl;
+  }
+
+  return EXIT_SUCCESS;
+
+  /////////////////////////////////////////////
+  //Resource Usage
+
+  rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+
+  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+}
+
+int
+test_bam(cxxopts::Options&options){
+
+  bool help = false;
+  if(!options.count("input")){
+    std::cout << "Not enough arguments supplied." << std::endl;
+    std::cout << "Needed: input" << std::endl;
+    help = true;
+  }
+  if(options.count("help") || help){
+    std::cout << options.help({""}) << std::endl;
+    std::cout << "Calculate coalescence rates for sample." << std::endl;
+    exit(0);
+  }  
+
+  std::cerr << "---------------------------------------------------------" << std::endl;
+  std::cerr << "Parsing bam file.." << std::endl;
+
+  fasta ref_genome;
+  ref_genome.Read(options["ref_genome"].as<std::string>());
+  fasta anc_genome;
+  //anc_genome.Read(options["anc_genome"].as<std::string>());
+
+  bam_parser bam(options["target_bam"].as<std::string>(), options["ref_genome"].as<std::string>());
+
+  //haps mhaps((options["input"].as<std::string>() + ".haps.gz").c_str(), (options["input"].as<std::string>() + ".sample.gz").c_str());
+  //std::vector<char> seq(mhaps.GetN());
+  //int bp;
+
+  //for(int i = 0; i < 10; i++){
+  for(int bp = 1e4; bp < 250e6; bp++){
+
+    //mhaps.ReadSNP(seq, bp);
+
+    if(bam.read_to_pos(bp)) break;
+
+    //std::cerr << bp << ": " << ref_genome.seq[bp-1] << " ";
+    for(int i = 0; i < 4; i++){
+      std::cerr << bam.count_alleles[(bp - 1) % bam.num_entries][i] << " ";
+    }
+    //std::cerr << "| " << mhaps.ancestral << " " << mhaps.alternative << " " << seq[0] << " " << seq[1] << std::endl;
+
+    if(0){
+      int p;
+      if(bam.pos_of_entry[p % bam.num_entries] == p){
+
+        int num_alleles = 0, num_reads = 0;
+        for(int i = 0; i < 4; i++){
+          num_alleles += (bam.count_alleles[p % bam.num_entries][i] > 0);
+          num_reads += bam.count_alleles[p % bam.num_entries][i];
+        }
+        if(num_alleles > 0){
+          std::cerr << p << ": " << ref_genome.seq[p] << " ";
+          for(int i = 0; i < 4; i++){
+            std::cerr << bam.count_alleles[p % bam.num_entries][i] << " ";
+          }
+          std::cerr << " | " << num_alleles << " " << num_reads << std::endl;
+        }
+      }
+    }
+
+  }
+
+  std::cerr << bam.pos << std::endl;
+  std::cerr << bam.coverage/((double) bam.pos) << " " << bam.coverage_after_filter/((double) bam.pos) << std::endl;
+
+  if(0){
+    int entry_pos = 0;
+    while(bam.read_entry() > 0){
+
+      if(bam.pos - entry_pos > 5000){
+        for(int p = entry_pos; p < bam.pos; p++){
+
+          if(bam.pos_of_entry[p % bam.num_entries] == p){
+
+            int num_alleles = 0;
+            for(int i = 0; i < 4; i++){
+              num_alleles += (bam.count_alleles[p % bam.num_entries][i] > 0);
+            }
+            if(num_alleles > 1){
+              std::cerr << p << ": " << ref_genome.seq[p] << " ";
+              for(int i = 0; i < 4; i++){
+                std::cerr << bam.count_alleles[p % bam.num_entries][i] << " ";
+              }
+              std::cerr << " | " << num_alleles << std::endl;
+            }
+          }
+
+        }
+        entry_pos = bam.pos;
+      }
+
+    }
+  }
+
+  return EXIT_SUCCESS;
+
+  /////////////////////////////////////////////
+  //Resource Usage
+
+  rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+
+  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+}
+
+
 void
 mut_old(cxxopts::Options& options){
 
@@ -3227,4 +3392,198 @@ mut_fast_simplified_all(cxxopts::Options& options){
 	std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
 
 }
+
+void
+make_mut_incl_out(cxxopts::Options& options){
+
+  bool help = false;
+  if(!options.count("anc") || !options.count("mut") || !options.count("haps") || !options.count("sample") || !options.count("output")){
+    std::cout << "Not enough arguments supplied." << std::endl;
+    std::cout << "Needed: anc, mut, haps, sample, output." << std::endl;
+    help = true;
+  }
+  if(options.count("help") || help){
+    std::cout << options.help({""}) << std::endl;
+    std::cout << "Make mut file including fixed mutations." << std::endl;
+    exit(0);
+  }  
+
+  std::cerr << "---------------------------------------------------------" << std::endl;
+  std::cerr << "Adding fixed mutations to mut file.." << std::endl;
+
+  double outgroup_age = 10e6/28;
+
+  haps mhaps(options["haps"].as<std::string>().c_str(), options["sample"].as<std::string>().c_str());
+  int N = mhaps.GetN();
+  int L = mhaps.GetL();
+  std::vector<char> sequence(N);
+  int bp = -1, DAF;
+
+  MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
+  Muts::iterator it_mut; //iterator for mut file
+  AncMutIterators ancmut(options["anc"].as<std::string>(), options["mut"].as<std::string>());
+  float num_bases_snp_persists = 0.0;
+  std::vector<float> coords;
+  double tmrca = 0.0;
+  int root = 2*ancmut.NumTips()-2;
+
+  //Mutations mut_out;
+  //mut_out.Read(options["input"].as<std::string>() + ".mut");
+
+  Mutations mut_combined;
+  mut_combined.info.resize(L);
+
+  int L_ref = ancmut.NumSnps();
+  //int L_out = mut_out.info.size();
+
+  std::string ancestral, derived;
+  int snp_ref = 0, snp_out = 0, snp_hap = 0, snp_comb = 0;
+  num_bases_snp_persists = ancmut.FirstSNP(mtr, it_mut);
+  mtr.tree.GetCoordinates(coords);
+  tmrca = coords[root];
+
+  int tree_count = (*it_mut).tree;
+  for(; snp_hap < L; snp_hap++){
+
+    mhaps.ReadSNP(sequence, bp);
+    DAF = 0;
+    for(std::vector<char>::iterator it_seq = sequence.begin(); it_seq != sequence.end(); it_seq++){
+      DAF += (*it_seq == '1');
+    }
+
+    //check if snp exists in mut, and whether it has freq > 0 in ref
+    if(snp_ref < L_ref){
+      while((*it_mut).pos < bp){
+        num_bases_snp_persists = ancmut.NextSNP(mtr, it_mut);
+        snp_ref++;
+        if(snp_ref == L_ref) break;
+      }
+    }
+
+    if(tree_count < (*it_mut).tree){
+      tree_count = (*it_mut).tree;
+      mtr.tree.GetCoordinates(coords);
+      tmrca = coords[root];
+    }
+    //std::cerr << tmrca << " " << coords[root] << " " << root << std::endl;
+    //if(snp_out < L_out){
+    //	while(mut_out.info[snp_out].pos < bp){
+    //		snp_out++;
+    //		if(snp_out == L_out) break;
+    //	}
+    //}
+
+    if((*it_mut).pos == bp && DAF > 0 && DAF < N){
+
+      if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
+
+        std::string ancestral, derived, haps_ancestral = mhaps.ancestral, haps_derived = mhaps.alternative;
+        int i = 0;
+        ancestral.clear();
+        derived.clear();
+        while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+          ancestral.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        i++;
+        while(i < (*it_mut).mutation_type.size()){
+          derived.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+
+        if( (ancestral == haps_ancestral && derived == haps_derived) || (derived == haps_ancestral && ancestral == haps_derived) ){
+
+          if((derived == haps_ancestral && ancestral == haps_derived)) DAF = N-DAF;
+
+          if((*it_mut).age_end > 0){
+
+            //if segregating, copy over
+            mut_combined.info[snp_comb] = (*it_mut);
+            //if(mut_combined.info[snp_comb].branch.size() == 1){
+            //  assert( *mut_combined.info[snp_comb].branch.begin() <= root );
+            //}
+            mut_combined.info[snp_comb].tree = tree_count;
+            mut_combined.info[snp_comb].pos = bp;
+            mut_combined.info[snp_comb].freq.clear();
+            mut_combined.info[snp_comb].freq.push_back(DAF);
+            if(snp_comb > 0) mut_combined.info[snp_comb-1].dist = bp - mut_combined.info[snp_comb-1].pos; 
+            mut_combined.info[snp_comb].snp_id = snp_comb;
+
+            //if(DAF == 1) assert(mut_combined.info[snp_comb].age_begin == 0.0);
+            if(mut_combined.info[snp_comb].age_begin == 0.0){
+              assert(DAF == 1);
+            }
+
+            snp_comb++;
+          }
+
+        }
+
+      }
+
+    }else{
+      //otherwise copy from trees with outgroup
+      if(0){
+        /*
+           if(DAF == N && bp == mut_out.info[snp_out].pos){
+           if(tmrca <= mut_out.info[snp_out].age_end){
+           mut_combined.info[snp_hap].branch.resize(1);
+           mut_combined.info[snp_hap].branch[0] = root;
+           mut_combined.info[snp_hap].age_begin = tmrca;
+           mut_combined.info[snp_hap].age_end   = mut_out.info[snp_out].age_end;
+           assert(mut_combined.info[snp_hap].age_begin <= mut_combined.info[snp_hap].age_end);
+           }
+           }else{
+           mut_combined.info[snp_hap].age_begin = 0;
+           mut_combined.info[snp_hap].age_end = 0;
+           mut_combined.info[snp_hap].branch.clear();
+           }
+           */
+      }else{     
+
+        if(DAF == N){
+          if(tmrca <= outgroup_age){
+            mut_combined.info[snp_comb].branch.resize(1);
+            mut_combined.info[snp_comb].branch[0] = root;
+            mut_combined.info[snp_comb].age_begin = tmrca;
+            mut_combined.info[snp_comb].age_end   = outgroup_age;
+            assert(mut_combined.info[snp_comb].age_begin <= mut_combined.info[snp_comb].age_end);
+
+            mut_combined.info[snp_comb].tree = tree_count;
+            mut_combined.info[snp_comb].pos = bp;
+            mut_combined.info[snp_comb].freq.push_back(DAF);
+
+            ancestral = mhaps.ancestral;
+            derived   = mhaps.alternative;
+            mut_combined.info[snp_comb].mutation_type = ancestral + "/" + derived;
+            if(snp_comb > 0) mut_combined.info[snp_comb-1].dist = bp - mut_combined.info[snp_comb-1].pos; 
+            mut_combined.info[snp_comb].snp_id = snp_comb;
+
+            snp_comb++;
+          }
+        }
+      }
+    }
+
+  }
+
+  mut_combined.info.resize(snp_comb);
+  mut_combined.Dump(options["output"].as<std::string>());
+
+  /////////////////////////////////////////////
+  //Resource Usage
+
+  rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+
+  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+}
+
 
