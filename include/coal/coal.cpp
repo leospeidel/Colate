@@ -450,7 +450,8 @@ parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& file
                     while(j < num_samples){
                       skip = false;
                       double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                      if(sampled_age < age) skip = true;
+                      //if(sampled_age < age) skip = true;
+											if(sampled_age < age) sampled_age = age;
                       int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                       bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -775,7 +776,8 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
                 while(j < num_samples){
                   skip = false;
                   double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                  if(sampled_age < age) skip = true;
+                  //if(sampled_age < age) skip = true;
+									if(sampled_age < age) sampled_age = age;
                   int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                   bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1052,7 +1054,8 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
                     while(j < num_samples){
                       skip = false;
                       double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                      if(sampled_age < age) skip = true;
+                      //if(sampled_age < age) skip = true;
+											if(sampled_age < age) sampled_age = age;
                       int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                       bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1334,7 +1337,8 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
                     while(j < num_samples){
                       skip = false;
                       double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                      if(sampled_age < age) skip = true;
+                      //if(sampled_age < age) skip = true;
+											if(sampled_age < age) sampled_age = age;
                       int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                       bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1604,7 +1608,8 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
                   while(j < num_samples){
                     skip = false;
                     double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                    if(sampled_age < age) skip = true;
+                    //if(sampled_age < age) skip = true;
+										if(sampled_age < age) sampled_age = age;
                     int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                     bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -2110,6 +2115,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 
             double age_begin = (*it_mut).age_begin;
             if(age_begin < ref_age) age_begin = ref_age;
+
             while(current_block_base + num_bases_per_block < bp_mut){
               current_block_base += num_bases_per_block;
               it_age_shared_emp++;
@@ -2136,7 +2142,8 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
                   while(j < num_samples){
                     skip = false;
                     double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-                    if(sampled_age < age) skip = true;
+                    //if(sampled_age < age) skip = true;
+										if(sampled_age < age) sampled_age = age;
                     int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                     bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -2382,6 +2389,7 @@ mut(cxxopts::Options& options){
   }
 
   age = std::max(target_age, ref_age)/years_per_gen;
+	ref_age /= years_per_gen;
   std::cerr << age << std::endl; 
   if(age > 0.0) is_ancient = true;
 
@@ -2774,7 +2782,6 @@ mut(cxxopts::Options& options){
     is.open(options["coal"].as<std::string>());
     getline(is, line);
     getline(is, line);
-    std::cerr << line << std::endl;
     std::string tmp = "";
 		int ep = 0;
     for(int i = 0; i < line.size(); i++){
@@ -2868,7 +2875,6 @@ mut(cxxopts::Options& options){
       if(log_age < epoch_boundary){
         if(ep == 1 && age != 0.0){
           epochs.push_back(age);
-          std::cerr << -log_age + epoch_boundary << " " << epoch_step << std::endl;
           if(epoch_boundary - log_age < 0.1*epoch_step) epoch_boundary += epoch_step;
         }
         if(std::fabs(log_age - epoch_boundary) > 1e-3){
