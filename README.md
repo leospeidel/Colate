@@ -2,16 +2,17 @@
 
 Please send any questions and bug reports to leo.speidel@outlook.com.
 
-# Requirements
+
+# Installation
+
+Precompiled binaries can be found under ./binaries.
+
+## Requirements
 
 - C++11
 - cmake
 - ZLIB
 - OpenSSL
-
-# Installation
-
-Precompiled binaries can be found under ./binaries.
 
 To compile from source use
 ```` bash
@@ -26,7 +27,7 @@ make
 
 ## Step 1
 
-Get mutations ages from a genealogy; this step will add fixed mutations to a *.mut file (see Relate documentation for file format), which is needed for Colate.
+Get mutations ages from a genealogy; this step will add fixed mutations to a *.mut file (see [Relate documentation](file:///Users/speidel/Documents/genomics/relate/docs/getting_started.html#Output) for file format), which is needed for Colate.
 ```` bash
 chr=1
 ${PATH_TO_BINARY}/Colate --mode preprocess_mut \
@@ -59,20 +60,20 @@ You can either directly run Colate on vcfs or bams, or precompute an input file,
 mut="example_fixed"
 bins="3,7,0.2"
 ${PATH_TO_BINARY}/Colate \
-			--mode mut \
-			--mut ${mut} \
-			--target_vcf example_target \
-			--reference_vcf example_reference \
-      --ref_genome GRCh37_chr${chr}.fa.gz \
-			--target_mask target_mask \
-			--reference_mask reference_mask \
-			--bins ${bins} \
-			--chr chr.txt \
-			--num_bootstrap 20 \
-			--target_age 1000 \
-			--reference_age 0 \
-			--years_per_gen 28 \
-			-o example_out
+	--mode mut \
+	--mut ${mut} \
+	--target_vcf example_target \
+	--reference_vcf example_reference \
+        --ref_genome GRCh37_chr${chr}.fa.gz \
+	--target_mask target_mask \
+	--reference_mask reference_mask \
+	--bins ${bins} \
+	--chr chr.txt \
+	--num_bootstrap 20 \
+	--target_age 1000 \
+	--reference_age 0 \
+	--years_per_gen 28 \
+	-o example_out
 ````
 
 ### bams
@@ -84,18 +85,18 @@ ${PATH_TO_BINARY}/Colate \
 mut="example_fixed"
 bins="3,7,0.2"
 ${PATH_TO_BINARY}/Colate \
-			--mode mut \
-			--mut ${mut} \
-			--target_bam example_target.bam \
-			--reference_bam example_reference.bam \
-      --ref_genome GRCh37 \
-			--bins ${bins} \
-			--chr chr.txt \
-			--num_bootstrap 20 \
-			--target_age 1000 \
-			--reference_age 0 \
-			--years_per_gen 28 \
-			-o example_out
+	--mode mut \
+	--mut ${mut} \
+	--target_bam example_target.bam \
+	--reference_bam example_reference.bam \
+        --ref_genome GRCh37 \
+	--bins ${bins} \
+	--chr chr.txt \
+	--num_bootstrap 20 \
+	--target_age 1000 \
+	--reference_age 0 \
+	--years_per_gen 28 \
+	-o example_out
 ````
 
 ## Alternative Step 2
@@ -109,7 +110,7 @@ mut="example_fixed"
 	--mut ${mut} \
 	--target_vcf example_target \ 
 	--ref_genome GRCh37 \
-  --chr chr.txt \
+        --chr chr.txt \
 	-o example_out
 ````
 
@@ -120,7 +121,7 @@ mut="example_fixed"
 	--mut ${mut} \
 	--target_bam example_target.bam \ 
 	--ref_genome GRCh37 \
-  --chr chr.txt \
+        --chr chr.txt \
 	-o example_out
 ````
 
@@ -130,22 +131,22 @@ mut="example_fixed"
 #--target_mask, --reference_mask, --target_age, --reference_age, --years_per_gen, --num_bootstrap are optional
 mut="example_fixed"
 ~/leo/software/Colate/bin/Colate \
-			--mode mut \
-			--mut ${mut} \
-			--target_tmp example_target.colate.in \
-			--reference_tmp example_reference.colate.in \
-			--target_mask target_mask \
-			--reference_mask reference_mask \
-		  --bins ${bins} \
-			--chr chr.txt \
-			--num_bootstrap 20 \
-			--target_age 1000 \
-			--reference_age 0 \
-			--years_per_gen 28 \
-			-o example_out
+	--mode mut \
+	--mut ${mut} \
+	--target_tmp example_target.colate.in \
+	--reference_tmp example_reference.colate.in \
+	--target_mask target_mask \
+	--reference_mask reference_mask \
+        --bins ${bins} \
+	--chr chr.txt \
+	--num_bootstrap 20 \
+	--target_age 1000 \
+	--reference_age 0 \
+	--years_per_gen 28 \
+	-o example_out
 ````
 
-#Output format
+# Output format
 
-*coal files (see Relate documentation for file format).
-These can be loaded using the relater R package.
+*coal files (see [Relate documentation](file:///Users/speidel/Documents/genomics/relate/docs/modules.html#PopulationSizeScript_FileFormats) for file format).
+These can be loaded using the [relater R package](https://github.com/leospeidel/relater).
