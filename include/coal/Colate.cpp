@@ -36,6 +36,7 @@ int main(int argc, char* argv[]){
 		("correction", "Optional: Specify whether or not to correct for bias due to SNPs segregating. 0: no, 1: yes.", cxxopts::value<int>())
 		("haps", "Filename of haps file (Output file format of Shapeit).", cxxopts::value<std::string>())
 		("sample", "Filename of sample file (Output file format of Shapeit).", cxxopts::value<std::string>())
+		("num_bootstraps", "Optional: Number of bootstraps.", cxxopts::value<int>())
     ("i,input", "Filename of input.", cxxopts::value<std::string>())
     ("o,output", "Filename of output.", cxxopts::value<std::string>());
 

@@ -2355,7 +2355,7 @@ mut(cxxopts::Options& options){
   bool help = false;
   if(!options.count("mut") || !options.count("output")){
     std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: mut, bins, output. Optional: target_tmp, reference_tmp, target_vcf, reference_vcf, target_bam, reference_bam, ref_genome, target_age, reference_age, target_mask, reference_mask, coal" << std::endl;
+    std::cout << "Needed: mut, bins, output. Optional: target_tmp, reference_tmp, target_vcf, reference_vcf, target_bam, reference_bam, ref_genome, target_age, reference_age, target_mask, reference_mask, coal, num_bootstrap." << std::endl;
     help = true;
   }
   if(options.count("help") || help){
@@ -2435,7 +2435,8 @@ mut(cxxopts::Options& options){
   }
   rng.seed(seed);
 
-  int num_bootstrap = 20;
+  int num_bootstrap = 1;
+	if(options.count("num_bootstraps") > 0) num_bootstrap = options["num_bootstraps"].as<int>();
   std::vector<std::vector<double>> age_shared_count(num_bootstrap), age_notshared_count(num_bootstrap);
   std::vector<double> age_shared_emp(num_age_bins*num_age_bins), age_notshared_emp(num_age_bins*num_age_bins);
 
