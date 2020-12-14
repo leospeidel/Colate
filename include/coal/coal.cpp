@@ -1814,7 +1814,7 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
                 if(derived == derived_target){
                   DAF_target = N_target;
                 }else if(ancestral == derived_target){
-                  DAF_target == 0;
+                  DAF_target = 0;
                 }else{
                   use = false;
                 }

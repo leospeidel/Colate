@@ -1,5 +1,5 @@
 project                     (Colate)
-#cmake_minimum_required      (VERSION 3.1)
+cmake_minimum_required      (VERSION 3.1)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
@@ -15,46 +15,53 @@ if ( ZLIB_FOUND )
 endif( ZLIB_FOUND )
 
 # Search OpenSSL
-find_package(OpenSSL REQUIRED) 
-	message(STATUS "OpenSSL Found: ${OPENSSL_VERSION}")
-	if ( OPENSSL_FOUND )
-	message(STATUS "OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
-	message(STATUS "OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
-	include_directories( ${OPENSSL_INCLUDE_DIRS} )
-endif()
 
-#find_package(FindLibLZMA REQUIRED)
-#find_package( OpenMP REQUIRED )
-#if ( OpenMP_FOUND )
-#  include_directories( ${OpenMP_INCLUDE_DIRS} ) 
-#endif( OpenMP_FOUND )
+find_package(OpenSSL REQUIRED) 	
+if ( OPENSSL_FOUND )
+if(APPLE)
+	include_directories(/usr/local/Cellar/openssl@1.1/1.1.1i/include)
+	list(APPEND LIB_LIST /usr/local/Cellar/openssl@1.1/1.1.1i/lib/libssl.dylib)
+	list(APPEND LIB_LIST /usr/local/Cellar/openssl@1.1/1.1.1i/lib/libcrypto.dylib)
+	message(STATUS "OpenSSL Version: ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES}")
+else()
+	include_directories(${OPENSSL_INCLUDE_DIR})
+	list(APPEND LIB_LIST ${OPENSSL_LIBRARIES})
+	message(STATUS "OpenSSL Version: ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES}")
+endif()
+endif()
 
 # Set dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/include/src)
+set(GZSTREAM_DIR ${CMAKE_SOURCE_DIR}/include/src/gzstream)
+set(TSKIT_DIR ${CMAKE_SOURCE_DIR}/include/src/tskit)
 set(HTSLIB_DIR ${CMAKE_SOURCE_DIR}/include/vcf)
 set(COLATE_DIR ${CMAKE_SOURCE_DIR}/include/coal)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
-set(RELATE_LIBS relateShared gzstreamShared kastoreShared tskitShared)
-link_directories(${CMAKE_SOURCE_DIR}/../relate_lib/bin)
 link_directories(${HTSLIB_DIR})
 set(HTSLIB hts)
 
+
 # Add subdirectories
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src)
-include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/tskit)
-include_directories(${CMAKE_SOURCE_DIR}/../relate_lib/include/src/gzstream)
-include_directories(${CMAKE_SOURCE_DIR}/include/vcf)
-include_directories(${CMAKE_SOURCE_DIR}/include/coal)
+include_directories(${GZSTREAM_DIR})
+include_directories(${TEST_DIR})
+include_directories(${TSKIT_DIR})
+include_directories(${HTSLIB_DIR})
+include_directories(${COLATE_DIR})
 
+add_subdirectory(${PROJECT_SOURCE_DIR})
+add_subdirectory(${GZSTREAM_DIR})
+add_subdirectory(${TSKIT_DIR})
+add_subdirectory(${TEST_DIR})
 add_subdirectory(${HTSLIB_DIR})
 add_subdirectory(${COLATE_DIR})
 
 # tests
 add_executable(Tests ${TEST_DIR}/Tests.cpp ${COLATE_DIR}/coal_EM.hpp ${COLATE_DIR}/coal_EM.cpp ${COLATE_DIR}/coal_EM_old.hpp ${COLATE_DIR}/coal_EM_old.cpp)
-target_link_libraries(Tests ${RELATE_LIBS} UnitTest)
+target_link_libraries(Tests relateShared UnitTest)
 
 enable_testing()
 add_test(UnitTest ${CMAKE_BINARY_DIR}/Tests)
