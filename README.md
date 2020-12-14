@@ -23,7 +23,11 @@ make
 
 # Documentation
 
-- Preliminary - will be refined in future. 
+## Files required:
+- reference genome
+- ancestral genome
+- genome mask file (optional)
+- a genealogy to date mutations (see below for precomputed genealogies)
 
 ## Step 1
 
