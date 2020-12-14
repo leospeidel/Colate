@@ -57,7 +57,7 @@ You can either directly run Colate on vcfs or bams, or precompute an input file,
 
 ```` bash
 mut="example_fixed"
-~/leo/software/Colate/bin/Colate \
+${PATH_TO_BINARY}/Colate \
 	--mode make_tmp \
 	--mut ${mut} \
 	--target_vcf example_target \ 
@@ -72,7 +72,7 @@ mut="example_fixed"
 
 ```` bash
 mut="example_fixed"
-~/leo/software/Colate/bin/Colate \
+${PATH_TO_BINARY}/Colate \
 	--mode make_tmp \
 	--mut ${mut} \
 	--target_bam example_target.bam \ 
@@ -84,9 +84,13 @@ mut="example_fixed"
 #### 2. Compute coalescenece rates
 
 ```` bash
-#--target_mask, --reference_mask, --target_age, --reference_age, --years_per_gen, --num_bootstrap are optional
+#--target_mask, --reference_mask, 
+#--target_age, --reference_age, 
+#--years_per_gen, --num_bootstrap are optional
+
 mut="example_fixed"
-~/leo/software/Colate/bin/Colate \
+bins="3,7,0.2"
+${PATH_TO_BINARY}/Colate \
 	--mode mut \
 	--mut ${mut} \
 	--target_tmp example_target.colate.in \
@@ -110,9 +114,11 @@ mut="example_fixed"
 - If --chr is not specified, full file names are required (e.g., --target example.bcf), however these should only contain a single chromosome.
 
 ```` bash
+#--target_mask, --reference_mask, 
+#--target_age, --reference_age, 
+#--years_per_gen, --num_bootstrap are optional
 #age is specified in years.
 #Assumption is any site not in the bcf is homozygous reference (unless masked out by a mask file).
-#--target_mask, --reference_mask, --target_age, --reference_age, --years_per_gen, --num_bootstrap are optional
 
 mut="example_fixed"
 bins="3,7,0.2"
@@ -139,6 +145,9 @@ ${PATH_TO_BINARY}/Colate \
 - ref_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
 
 ```` bash
+#--target_age, --reference_age, 
+#--years_per_gen, --num_bootstrap are optional
+
 mut="example_fixed"
 bins="3,7,0.2"
 ${PATH_TO_BINARY}/Colate \
