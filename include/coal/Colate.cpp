@@ -98,7 +98,7 @@ int main(int argc, char* argv[]){
     std::cout << "####### error #######" << std::endl;
     std::cout << "Invalid or missing mode." << std::endl;
     std::cout << "Options for --mode are:" << std::endl;
-    std::cout << "tree, mut, make_mut_with_out, calc_depth." << std::endl;
+    std::cout << "preprocess_mut, make_tmp, mut, calc_depth." << std::endl;
 
   }
 

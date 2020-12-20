@@ -48,9 +48,11 @@ ${PATH_TO_BINARY}/Colate --mode preprocess_mut \
 
 We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).
 
+Links to human ancestral genomes and recombination maps can be found [here](https://myersgroup.github.io/relate/input_data.html#Data).
+
 ## Step 2: Run Colate
 
-You can either directly run Colate on vcfs or bams, or precompute an input file, which is beneficial when running Colate repeatedly on the same samples.
+You can either directly run Colate on bcfs or bams, or precompute an input file, which is beneficial when running Colate repeatedly on the same samples.
 
 ### Precompute Colate input files and then run Colate
 #### 1. Precompute Colate input files for target and reference: 
