@@ -1,6 +1,6 @@
 # Colate
 
-**Software for inferring coalescence rates for unphased, unimputed genomes.**
+**Software for inferring coalescence rates for unphased, low-coverage genomes.**
 - Input fileformats: bcf/bam files 
 - Requires mutation ages obtained from a genealogy (e.g., using [Relate](https://myersgroup.github.io/relate/)). Precomputed mutation ages available below.
 
@@ -17,6 +17,7 @@ Requirements:
 - cmake
 - ZLIB
 - OpenSSL
+- lzma
 
 To compile from source use
 ```` bash
