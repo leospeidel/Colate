@@ -30,6 +30,10 @@ else()
 endif()
 endif()
 
+add_definitions(-static)
+add_definitions(-static-libgcc)
+set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
+
 # Set dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -61,7 +65,7 @@ add_subdirectory(${COLATE_DIR})
 
 # tests
 add_executable(Tests ${TEST_DIR}/Tests.cpp ${COLATE_DIR}/coal_EM.hpp ${COLATE_DIR}/coal_EM.cpp ${COLATE_DIR}/coal_EM_old.hpp ${COLATE_DIR}/coal_EM_old.cpp)
-target_link_libraries(Tests relateShared UnitTest)
+target_link_libraries(Tests relateStatic UnitTest)
 
 enable_testing()
 add_test(UnitTest ${CMAKE_BINARY_DIR}/Tests)

@@ -1,6 +1,6 @@
 project (htslib)
 
-add_library(hts SHARED
+add_library(hts STATIC
 bcf_sr_sort.h          header.h               hts_internal.h         textutils_internal.h   version.h
 config.h               hfile_internal.h       sam_internal.h         thread_pool_internal.h
 
@@ -25,5 +25,5 @@ htslib/hfile.h             htslib/hts_log.h           htslib/khash.h            
 os/lzma_stub.h
 htslib.hpp htslib.cpp
 )
-target_link_libraries(hts relateShared OpenSSL::Crypto z m bz2 curl lzma pthread)
+target_link_libraries(hts relateStatic OpenSSL::Crypto z m bz2 curl lzma pthread)
 

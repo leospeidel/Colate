@@ -46,7 +46,7 @@ ${PATH_TO_BINARY}/Colate --mode preprocess_mut \
 	-o example_fixed_chr${chr}
 ````
 
-We provide a preprocessed file for the SGDP data here:
+We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).
 
 ## Step 2: Run Colate
 
