@@ -1,6 +1,8 @@
 # Colate
 
-**Software for inferring coalescence rates for unphased, unimputed genomes.**<br>Input fileformats: bcf/bam files & requires mutation ages obtained from a genealogy (e.g., using [Relate](https://myersgroup.github.io/relate/)). Precomputed mutation ages available below.
+**Software for inferring coalescence rates for unphased, unimputed genomes.**
+- Input fileformats: bcf/bam files 
+- Requires mutation ages obtained from a genealogy (e.g., using [Relate](https://myersgroup.github.io/relate/)). Precomputed mutation ages available below.
 
 Please send any comments, questions and bug reports to leo.speidel@outlook.com.
 
