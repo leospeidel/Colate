@@ -31,7 +31,13 @@ Colate uses a modifed version of [htslib](https://github.com/samtools/htslib), w
 - genome mask file (optional)
 - a genealogy to date mutations (see below for precomputed genealogies)
 
+We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).
+
+Links to human ancestral genomes and recombination maps can be found [here](https://myersgroup.github.io/relate/input_data.html#Data).
+
 ## Step 1
+
+**(not needed if using preprocessed files from above)**
 
 Get mutations ages from a genealogy; this step will add fixed mutations to a *.mut file (see [Relate documentation](https://myersgroup.github.io/relate/getting_started.html#Output) for file format), which is needed for Colate.
 ```` bash
@@ -46,9 +52,6 @@ ${PATH_TO_BINARY}/Colate --mode preprocess_mut \
 	-o example_fixed_chr${chr}
 ````
 
-We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).
-
-Links to human ancestral genomes and recombination maps can be found [here](https://myersgroup.github.io/relate/input_data.html#Data).
 
 ## Step 2: Run Colate
 
@@ -58,10 +61,10 @@ You can either directly run Colate on bcfs or bams, or precompute an input file,
 #### 1. Precompute Colate input files for target and reference: 
 
 **bcfs**:
+- bcfs contain samples of interest (Please use e.g., bcftools view -S or -s to subset bcf files).
+- chr.txt: Chromosome names, one per line (can be any strings)
 - If chromosome names are "1", "2", etc, then input files are *\_chr1.bcf, *\_chr2.bcf etc.
 - If --chr is not specified, full file names are required (e.g., --target example.bcf), however these should only contain a single chromosome.
-- chr.txt: Chromosome names, one per line (can be any strings)
-
 
 ```` bash
 mut="example_fixed"
@@ -77,8 +80,7 @@ ${PATH_TO_BINARY}/Colate \
 **bams**:
 - bams should be sorted by chromosome name (same order as in chr.txt), and by position.
 - ref_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
-- chr.txt: Chromosome names, one per line (can be any strings)
-
+- chr.txt: Chromosome names, one per line (can be any strings but consistent with file names)
 
 ```` bash
 mut="example_fixed"
@@ -182,3 +184,14 @@ ${PATH_TO_BINARY}/Colate \
 
 *coal files (see [Relate documentation](https://myersgroup.github.io/relate/modules.html#PopulationSizeScript_FileFormats) for file format).
 These can be loaded using the [relater R package](https://github.com/leospeidel/relater).
+
+```` R
+library(relater)
+coal <- read.coal("example_out.coal") #group2 indexes bootstrap iterations
+````
+Summarize bootstrap iterations:
+```` R
+library(dplyr)
+coal %>% group_by()
+````
+
