@@ -1,6 +1,8 @@
 # Colate
 
-Please send any questions and bug reports to leo.speidel@outlook.com.
+**Software for inferring coalescence rates for unphased, unimputed genomes.**<br>Input fileformats: bcf/bam files & requires mutation ages obtained from a genealogy (e.g., using [Relate](https://myersgroup.github.io/relate/)). Precomputed mutation ages available below.
+
+Please send any comments, questions and bug reports to leo.speidel@outlook.com.
 
 
 # Installation
@@ -31,8 +33,7 @@ Colate uses a modifed version of [htslib](https://github.com/samtools/htslib), w
 - genome mask file (optional)
 - a genealogy to date mutations (see below for precomputed genealogies)
 
-We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).
-
+We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).<br/>
 Links to human ancestral genomes and recombination maps can be found [here](https://myersgroup.github.io/relate/input_data.html#Data).
 
 ## Step 1
@@ -77,8 +78,8 @@ ${PATH_TO_BINARY}/Colate \
 	-o example_out
 ````
 
-**bams**:
-- bams should be sorted by chromosome name (same order as in chr.txt), and by position.
+**bam**:
+- bam should be sorted by chromosome name (same order as in chr.txt), and by position.
 - ref_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
 - chr.txt: Chromosome names, one per line (can be any strings but consistent with file names)
 
@@ -118,7 +119,7 @@ ${PATH_TO_BINARY}/Colate \
 	-o example_out
 ````
 
-### Run directory on bcfs or bams 
+### Run directory on bcfs or bams
 
 #### bcfs
 
@@ -152,7 +153,7 @@ ${PATH_TO_BINARY}/Colate \
 	-o example_out
 ````
 
-#### bams
+#### bam
 
 - bams should be sorted by chromosome name (same order as in chr.txt), and by position.
 - ref_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
@@ -192,6 +193,9 @@ coal <- read.coal("example_out.coal") #group2 indexes bootstrap iterations
 Summarize bootstrap iterations:
 ```` R
 library(dplyr)
-coal %>% group_by()
+coal %>% group_by(epoch.start) %>% 
+         summarize(mean = mean(haploid.coalescence.rate), 
+	           lower = quantile(haploid.coalescence.rate, prob = 0.025), 
+		   upper = quantile(haploid.coalescence.rate, prob = 0.975)) -> coal
 ````
 
