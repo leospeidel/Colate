@@ -21,6 +21,8 @@ cmake ..
 make
 ````
 
+Colate uses a modifed version of [htslib](https://github.com/samtools/htslib), which has been copied to ./include/vcf/.
+
 # Documentation
 
 ## Files required:
