@@ -30,9 +30,17 @@ else()
 endif()
 endif()
 
-add_definitions(-static)
-add_definitions(-static-libgcc)
-set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
+find_package( LibLZMA REQUIRED )
+if ( LibLZMA_FOUND )
+	message(STATUS "zlib Found: ${LibLZMA_VERSION}")
+	message(STATUS "zlib Include: ${LibLZMA_INCLUDE_DIR}")
+	message(STATUS "zlib Libraries: ${LibLZMA_LibRARIES}")
+	include_directories( ${LibLZMA_INCLUDE_DIRS} ) 
+endif( LibLZMA_FOUND )
+
+#add_definitions(-static)
+#add_definitions(-static-libgcc)
+#set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
 
 # Set dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)

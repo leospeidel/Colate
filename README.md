@@ -50,8 +50,6 @@ We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https:
 
 ## Step 2: Run Colate
 
-- chr.txt: Chromosome names, one per line (can be any strings)
-
 You can either directly run Colate on vcfs or bams, or precompute an input file, which is beneficial when running Colate repeatedly on the same samples.
 
 ### Precompute Colate input files and then run Colate
@@ -60,6 +58,8 @@ You can either directly run Colate on vcfs or bams, or precompute an input file,
 **bcfs**:
 - If chromosome names are "1", "2", etc, then input files are *\_chr1.bcf, *\_chr2.bcf etc.
 - If --chr is not specified, full file names are required (e.g., --target example.bcf), however these should only contain a single chromosome.
+- chr.txt: Chromosome names, one per line (can be any strings)
+
 
 ```` bash
 mut="example_fixed"
@@ -75,6 +75,8 @@ ${PATH_TO_BINARY}/Colate \
 **bams**:
 - bams should be sorted by chromosome name (same order as in chr.txt), and by position.
 - ref_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
+- chr.txt: Chromosome names, one per line (can be any strings)
+
 
 ```` bash
 mut="example_fixed"
@@ -118,6 +120,7 @@ ${PATH_TO_BINARY}/Colate \
 
 - If chromosome names are "1", "2", etc, then input files are *\_chr1.bcf, *\_chr2.bcf etc.
 - If --chr is not specified, full file names are required (e.g., --target example.bcf), however these should only contain a single chromosome.
+- chr.txt: Chromosome names, one per line (can be any strings)
 
 ```` bash
 #--target_mask, --reference_mask, 
@@ -149,6 +152,7 @@ ${PATH_TO_BINARY}/Colate \
 
 - bams should be sorted by chromosome name (same order as in chr.txt), and by position.
 - ref_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
+- chr.txt: Chromosome names, one per line (can be any strings)
 
 ```` bash
 #--target_age, --reference_age, 
