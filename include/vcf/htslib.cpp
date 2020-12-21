@@ -59,11 +59,11 @@ vcf_parser::extract_GT(){
 void 
 bam_parser::count_alleles_for_read(){
 
-  if(mapq > 30 && len >= 30){
+  if(mapq > 20 && len >= 30){
 
     //calculate how many bp match reference at this read
     int num_matching = 0, total = 0;
-    int start = std::max(5, (int)(len*0.05)), end = len - std::max(5, (int)(len*0.05));
+    int start = 2, end = len - 2;
 
     for(int i = start; i < end; i++){
 

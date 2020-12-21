@@ -2,5 +2,4 @@
 *~
 .DS_Store
 .Rhistory
-bin/*
 build/*
