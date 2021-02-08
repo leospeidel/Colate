@@ -94,6 +94,9 @@ class AncMutIterators{
     int NumTrees(){
       return(num_trees);
     }
+    int NumPos(){
+      return(mut.info[mut.info.size()-1].pos);
+    }
 
     Muts::iterator mut_begin(){
       return(mut.info.begin());

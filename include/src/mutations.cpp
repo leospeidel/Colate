@@ -349,7 +349,7 @@ AncMutIterators::AncMutIterators(const std::string& filename_anc, const std::str
 
   std::istringstream is_header;
 
-  std::string line, tmp;
+  std::string tmp;
   //read num_haplotypes
   getline(is, line);
   is_header.str(line);
@@ -406,7 +406,7 @@ AncMutIterators::AncMutIterators(const std::string& filename_anc, const std::str
 
   std::istringstream is_header;
 
-  std::string line, tmp;
+  std::string tmp;
   //read num_haplotypes
   getline(is, line);
   is_header.str(line);
@@ -470,10 +470,15 @@ AncMutIterators::OpenFiles(const std::string& i_filename_anc, const std::string&
   filename_anc = i_filename_anc;
   filename_mut = i_filename_mut;
 
-  if(is.rdbuf() -> is_open()) is.close(); //close if stream is still open
+  if(is.rdbuf() -> is_open()){
+    is.close(); //close if stream is still open
+    is.clear();
+  }
 
   is.open(filename_anc);
-  if(is.fail()) is.open(filename_anc + ".gz");
+  if(is.fail()){
+    is.open(filename_anc + ".gz");
+  }
   if(is.fail()){
     std::cerr << "Failed to open file " << filename_anc << "(.gz)" << std::endl;
     exit(1);
@@ -481,7 +486,7 @@ AncMutIterators::OpenFiles(const std::string& i_filename_anc, const std::string&
 
   std::istringstream is_header;
 
-  std::string line, tmp;
+  std::string tmp;
   //read num_haplotypes
   getline(is, line);
   is_header.str(line);
@@ -538,7 +543,9 @@ AncMutIterators::OpenFiles(const std::string& i_filename_anc, const std::string&
   if(is.rdbuf() -> is_open()) is.close(); //close if stream is still open
 
   is.open(filename_anc);
-  if(is.fail()) is.open(filename_anc + ".gz");
+  if(is.fail()){
+    is.open(filename_anc + ".gz");
+  }
   if(is.fail()){
     std::cerr << "Failed to open file " << filename_anc << "(.gz)" << std::endl;
     exit(1);
@@ -546,7 +553,7 @@ AncMutIterators::OpenFiles(const std::string& i_filename_anc, const std::string&
 
   std::istringstream is_header;
 
-  std::string line, tmp;
+  std::string tmp;
   //read num_haplotypes
   getline(is, line);
   is_header.str(line);

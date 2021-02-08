@@ -37,6 +37,8 @@ int main(int argc, char* argv[]){
 		("haps", "Filename of haps file (Output file format of Shapeit).", cxxopts::value<std::string>())
 		("sample", "Filename of sample file (Output file format of Shapeit).", cxxopts::value<std::string>())
 		("num_bootstraps", "Optional: Number of bootstraps.", cxxopts::value<int>())
+    ("groups", "Names of groups of interest for conditional coalescence rates", cxxopts::value<std::string>()) 
+    ("poplabels", "Optional: Filename of file containing population labels. If ='hap', each haplotype is in its own group.", cxxopts::value<std::string>()) 
     ("i,input", "Filename of input.", cxxopts::value<std::string>())
     ("o,output", "Filename of output.", cxxopts::value<std::string>());
 
@@ -92,6 +94,11 @@ int main(int argc, char* argv[]){
 
 		//make mut
 		calc_depth(options);
+
+	}else if(!mode.compare("CondCoalRates")){
+
+		//make mut
+		CondCoalRates(options);
 
 	}else{
 

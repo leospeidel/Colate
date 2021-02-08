@@ -451,7 +451,7 @@ parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& file
                       skip = false;
                       double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
                       //if(sampled_age < age) skip = true;
-											if(sampled_age < age) sampled_age = age;
+                      if(sampled_age < age) sampled_age = age;
                       int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                       bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -777,7 +777,7 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
                   skip = false;
                   double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
                   //if(sampled_age < age) skip = true;
-									if(sampled_age < age) sampled_age = age;
+                  if(sampled_age < age) sampled_age = age;
                   int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                   bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1055,7 +1055,7 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
                       skip = false;
                       double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
                       //if(sampled_age < age) skip = true;
-											if(sampled_age < age) sampled_age = age;
+                      if(sampled_age < age) sampled_age = age;
                       int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                       bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1338,7 +1338,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
                       skip = false;
                       double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
                       //if(sampled_age < age) skip = true;
-											if(sampled_age < age) sampled_age = age;
+                      if(sampled_age < age) sampled_age = age;
                       int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                       bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -1609,7 +1609,7 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
                     skip = false;
                     double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
                     //if(sampled_age < age) skip = true;
-										if(sampled_age < age) sampled_age = age;
+                    if(sampled_age < age) sampled_age = age;
                     int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                     bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -2143,7 +2143,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
                     skip = false;
                     double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
                     //if(sampled_age < age) skip = true;
-										if(sampled_age < age) sampled_age = age;
+                    if(sampled_age < age) sampled_age = age;
                     int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
                     bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
@@ -2389,7 +2389,7 @@ mut(cxxopts::Options& options){
   }
 
   age = std::max(target_age, ref_age)/years_per_gen;
-	ref_age /= years_per_gen;
+  ref_age /= years_per_gen;
   std::cerr << age << std::endl; 
   if(age > 0.0) is_ancient = true;
 
@@ -2436,7 +2436,7 @@ mut(cxxopts::Options& options){
   rng.seed(seed);
 
   int num_bootstrap = 1;
-	if(options.count("num_bootstraps") > 0) num_bootstrap = options["num_bootstraps"].as<int>();
+  if(options.count("num_bootstraps") > 0) num_bootstrap = options["num_bootstraps"].as<int>();
   std::vector<std::vector<double>> age_shared_count(num_bootstrap), age_notshared_count(num_bootstrap);
   std::vector<double> age_shared_emp(num_age_bins*num_age_bins), age_notshared_emp(num_age_bins*num_age_bins);
 
@@ -2784,35 +2784,35 @@ mut(cxxopts::Options& options){
     getline(is, line);
     getline(is, line);
     std::string tmp = "";
-		int ep = 0;
+    int ep = 0;
     for(int i = 0; i < line.size(); i++){
       if(line[i] == ' ' || line[i] == '\t'){
-				if(ep == 1 && age < stof(tmp) && age != 0.0){
-					epochs.push_back(age);
-					ep++;
-				}
+        if(ep == 1 && age < stof(tmp) && age != 0.0){
+          epochs.push_back(age);
+          ep++;
+        }
         if(ep != 1 || age == 0.0){
-					epochs.push_back(stof(tmp));
-					ep++;
-				}
+          epochs.push_back(stof(tmp));
+          ep++;
+        }
         tmp = "";
       }else{
         tmp += line[i];
       }
     }
 
-		if(tmp != ""){
-			if(ep == 1 && age < stof(tmp) && age != 0.0){
-				epochs.push_back(age);
-				ep++;
-			}
-			if(ep != 1 || age == 0.0){
-				epochs.push_back(stof(tmp));
-				ep++;
-			}
-		}
-		if(age != 0.0) assert(ep > 2);
-		if(age == 0.0) assert(ep > 1);
+    if(tmp != ""){
+      if(ep == 1 && age < stof(tmp) && age != 0.0){
+        epochs.push_back(age);
+        ep++;
+      }
+      if(ep != 1 || age == 0.0){
+        epochs.push_back(stof(tmp));
+        ep++;
+      }
+    }
+    if(age != 0.0) assert(ep > 2);
+    if(age == 0.0) assert(ep > 1);
 
     num_epochs = epochs.size();
 
@@ -3369,5 +3369,631 @@ preprocess_mut(cxxopts::Options& options){
   std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
 
 }
+
+
+
+
+
+//////////////
+
+void
+GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& leaves, float factor, std::vector<int>& focal_haps, std::vector<int>& conditional_haps, std::vector<float>& epoch, std::vector<float>& epoch_focal, std::vector<CollapsedMatrix<float>>& coalescence_rate_num, std::vector<CollapsedMatrix<float>>& coalescence_rate_denom){
+
+  for(std::vector<int>::iterator it_focal = focal_haps.begin(); it_focal != focal_haps.end(); it_focal++){
+    for(std::vector<int>::iterator it_cond = conditional_haps.begin(); it_cond != conditional_haps.end(); it_cond++){
+
+      Node node = tree.nodes[*it_focal];
+      int parent = (*tree.nodes[*it_focal].parent).label;
+      int child;
+      float coord = 0.0;
+      int ep_start = 0, ep = 0, ep_init = 0;
+      float coal_age  = 0.0;
+      float lower_age = 0.0;
+
+      bool use = false;
+      if(*it_cond == -1) use = true;
+      while(parent < tree.nodes.size()){
+
+        if(!use){
+          for(std::vector<int>::iterator it_mem = leaves[node.label].member.begin(); it_mem != leaves[node.label].member.end(); it_mem++){
+            if(*it_cond == *it_mem){
+              coal_age = coord;
+              use = true;
+              break;
+            }
+          }
+          ep_start = 0;
+          if(epoch_focal[ep_start] < coal_age){
+            while(epoch_focal[ep_start] < coal_age){
+              ep_start++;
+              if(ep_start == epoch_focal.size()) break;
+            }
+            ep_start--;
+          }
+          assert(epoch_focal[ep_start] <= coal_age);
+          assert(epoch_focal[ep_start + 1] > coal_age);
+        }
+
+        coord += node.branch_length;   
+        if(use){
+
+          ep_init = 0;
+          if(coal_age > epoch[ep_init]){
+            while(coal_age > epoch[ep_init]){
+              ep_init++; 
+            }
+            ep_init--;
+          }
+
+          child = (*tree.nodes[parent].child_left).label; 
+          if(child == node.label) child = (*tree.nodes[parent].child_right).label;
+
+          for(std::vector<int>::iterator it_other = leaves[child].member.begin(); it_other != leaves[child].member.end(); it_other++){
+
+            lower_age = coal_age;
+            ep = ep_init;
+            while(coord > epoch[ep+1]){
+              coalescence_rate_denom[ep_start][ep][sample.group_of_haplotype[*it_other]] += factor * (epoch[ep+1] - lower_age);
+              ep++;
+              if(ep == epoch.size()) break;
+              lower_age = epoch[ep]; 
+            }
+            assert(coord < epoch[ep+1]);
+            coalescence_rate_denom[ep_start][ep][sample.group_of_haplotype[*it_other]] += factor * (coord - lower_age);
+            coalescence_rate_num[ep_start][ep][sample.group_of_haplotype[*it_other]]   += factor;
+
+          }
+        }
+
+        node = (*node.parent);
+        if(node.label == tree.nodes.size()-1) break;
+        parent = (*tree.nodes[node.label].parent).label; 
+      } 
+
+    }
+  }
+
+}
+
+void
+GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& leaves, float factor, std::vector<int>& focal_haps, std::vector<int>& conditional_haps, std::vector<float>& epoch, std::vector<float>& epoch_focal, std::vector<double>& sample_ages, std::vector<CollapsedMatrix<float>>& coalescence_rate_num, std::vector<CollapsedMatrix<float>>& coalescence_rate_denom){
+
+
+  for(std::vector<int>::iterator it_focal = focal_haps.begin(); it_focal != focal_haps.end(); it_focal++){
+    for(std::vector<int>::iterator it_cond = conditional_haps.begin(); it_cond != conditional_haps.end(); it_cond++){
+
+      Node node = tree.nodes[*it_focal];
+      int parent = (*tree.nodes[*it_focal].parent).label, child;
+      double age = sample_ages[*it_focal];
+      float coal_age = age;
+      float coord = age;
+
+      int ep_coal = 0, ep_start = 0, ep = 0, ep_init = 0;
+
+      float lower_age = age;
+      bool use = false;
+      if(*it_cond == -1) use = true;
+      while(parent < tree.nodes.size()){
+
+        if(!use){
+          for(std::vector<int>::iterator it_mem = leaves[node.label].member.begin(); it_mem != leaves[node.label].member.end(); it_mem++){
+            if(*it_cond == *it_mem){
+              coal_age = coord;
+              use = true;
+              break;
+            }
+          }
+          ep_coal = 0;
+          if(epoch_focal[ep_coal] < coord){
+            while(epoch_focal[ep_coal] < coord){
+              ep_coal++;
+              if(ep_coal == epoch_focal.size()) break;
+            }
+            ep_coal--;
+          }
+        }
+        coord += node.branch_length;
+
+        if(use){
+          child = (*tree.nodes[parent].child_left).label; 
+          if(child == node.label) child = (*tree.nodes[parent].child_right).label;
+
+          ep_init = 0;
+          if(coal_age > epoch[ep_init]){
+            while(coal_age > epoch[ep_init]){
+              ep_init++; 
+            }
+            ep_init--;
+          }
+
+          for(std::vector<int>::iterator it_other = leaves[child].member.begin(); it_other != leaves[child].member.end(); it_other++){
+
+            lower_age = std::max(age, sample_ages[*it_other]);
+            lower_age = std::max(lower_age, coal_age);
+
+            if(lower_age <= coal_age){
+              ep_start = ep_coal;
+              ep = ep_init;
+            }else{
+              ep_start = ep_coal;
+              if(epoch_focal[ep_start] < lower_age){
+                while(epoch_focal[ep_start] < lower_age){
+                  ep_start++;
+                  if(ep_start == epoch_focal.size()) break;
+                }
+                ep_start--;
+              }
+              ep = ep_init;
+              if(epoch[ep] < lower_age){
+                while(epoch[ep] < lower_age){
+                  ep++;
+                  if(ep == epoch.size()) break;
+                }
+                ep--;
+              }
+            }
+
+            while(coord > epoch[ep+1]){
+              coalescence_rate_denom[ep_start][ep][sample.group_of_haplotype[*it_other]] += factor * (epoch[ep+1] - lower_age);
+              ep++;
+              if(ep == epoch.size()) break;
+              lower_age = epoch[ep]; 
+            }
+            coalescence_rate_denom[ep_start][ep][sample.group_of_haplotype[*it_other]] += factor * (coord - lower_age);
+            coalescence_rate_num[ep_start][ep][sample.group_of_haplotype[*it_other]]   += factor;
+
+          }
+        }
+
+
+        node = (*node.parent);
+        if(node.label == tree.nodes.size()-1) break;
+        parent = (*tree.nodes[node.label].parent).label; 
+      } 
+
+    }
+  }
+
+}
+
+int
+CondCoalRates(cxxopts::Options& options){
+
+  //////////////////////////////////
+  //Program options
+
+  bool help = false;
+  if(!options.count("input") || !options.count("output")){
+    std::cout << "Not enough arguments supplied." << std::endl;
+    std::cout << "Needed: input, output. Optional: years_per_gen, dist, bins." << std::endl;
+    help = true;
+  }
+  if(options.count("help") || help){
+    std::cout << options.help({""}) << std::endl;
+    std::cout << "Reads .anc file and calculates conditional pairwise coalescence rate. Output is bin file. Use SummarizeCoalesecntRate to obtain coalescence rates." << std::endl;
+    exit(0);
+  }  
+
+  std::cerr << "---------------------------------------------------------" << std::endl;
+  std::cerr << "Calculating conditional coalescence rate for " << options["input"].as<std::string>() << " ..." << std::endl;
+
+  ////////////////////////
+  //read in anc file
+
+  std::string line;
+  std::vector<std::string> filename_chr;
+  if(options.count("chr")){
+    igzstream is_chr(options["chr"].as<std::string>());
+    if(is_chr.fail()){
+      std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+    }
+    while(getline(is_chr, line)){
+      filename_chr.push_back(line);
+    }
+    is_chr.close();
+  }else{
+    filename_chr.push_back("NA");
+  }
+
+  AncMutIterators ancmut1;
+  if(options.count("dist")){
+    if(filename_chr[0] == "NA"){
+      ancmut1.OpenFiles(options["input"].as<std::string>() + ".anc", options["input"].as<std::string>() + ".mut", options["dist"].as<std::string>());
+    }else{
+      ancmut1.OpenFiles(options["input"].as<std::string>() + "_chr" + filename_chr[0] + ".anc", options["input"].as<std::string>() + "_chr" + filename_chr[0] + ".mut", options["dist"].as<std::string>() + "_chr" + filename_chr[0] + ".dist");
+    } 
+  }else{  
+    if(filename_chr[0] == "NA"){
+      ancmut1.OpenFiles(options["input"].as<std::string>() + ".anc", options["input"].as<std::string>() + ".mut");
+    }else{
+      ancmut1.OpenFiles(options["input"].as<std::string>() + "_chr" + filename_chr[0] + ".anc", options["input"].as<std::string>() + "_chr" + filename_chr[0] + ".mut");
+    } 
+  } 
+
+  int N = ancmut1.NumTips();
+  int L = ancmut1.NumSnps();
+  MarginalTree mtr;
+  Muts::iterator it_mut;
+  float num_bases_tree_persists = 0.0; 
+  Data data(N,L); 
+
+  //calculate epoch times
+
+  float years_per_gen = 28.0;
+  if(options.count("years_per_gen")){
+    years_per_gen = options["years_per_gen"].as<float>();
+  }
+
+  int num_epochs;
+  std::vector<float> epochs;
+  float log_10 = std::log(10);
+  if(options.count("bins")){
+
+    double log_age = std::log(0);
+    double age = 0;
+
+    double epoch_lower, epoch_upper, epoch_step;
+    std::string str_epochs = options["bins"].as<std::string>();
+    std::string tmp;
+    int i = 0;
+    tmp = "";
+    while(str_epochs[i] != ','){
+      tmp += str_epochs[i];
+      i++;
+      if(i == str_epochs.size()) break;
+    }
+    epoch_lower = std::stof(tmp);
+    i++;
+    if(i >= str_epochs.size()){
+      std::cerr << "Error: epochs format is wrong. Specify x,y,stepsize." << std::endl;
+      exit(1);
+    }
+    tmp = "";
+    while(str_epochs[i] != ','){
+      tmp += str_epochs[i];
+      i++;
+      if(i == str_epochs.size()) break;
+    }
+    epoch_upper = std::stof(tmp);
+    i++;
+    if(i >= str_epochs.size()){
+      std::cerr << "Error: epochs format is wrong. Specify x,y,stepsize." << std::endl;
+      exit(1);
+    }
+    tmp = "";
+    while(str_epochs[i] != ','){
+      tmp += str_epochs[i];
+      i++;
+      if(i == str_epochs.size()) break;
+    }
+    epoch_step = std::stof(tmp);
+
+    int ep = 0;
+    epochs.resize(1);
+    epochs[ep] = 0.0;
+    ep++; 
+    double epoch_boundary = 0.0;
+    if(log_age < epoch_lower && age != 0.0){
+      epochs.push_back(age);
+      ep++;
+    }
+    epoch_boundary = epoch_lower;
+    while(epoch_boundary < epoch_upper){
+      if(log_age < epoch_boundary){
+        if(ep == 1 && age != 0.0) epochs.push_back(age);
+        epochs.push_back( std::exp(log_10 * epoch_boundary)/years_per_gen );
+        ep++;
+      }
+      epoch_boundary += epoch_step;
+    }
+    epochs.push_back( std::exp(log_10 * epoch_upper)/years_per_gen );
+    epochs.push_back( std::max(1e8, 10.0*epochs[epochs.size()-1])/years_per_gen );
+    num_epochs = epochs.size();
+
+  }else{
+
+    num_epochs = 31;
+    epochs.resize(num_epochs);
+    epochs[0] = 0.0;
+    epochs[1] = 1e3/years_per_gen;
+    for(int e = 2; e < num_epochs-1; e++){
+      epochs[e] = std::exp( log_10 * ( 3.0 + 4.0 * (e-1.0)/(num_epochs-3.0) ))/years_per_gen;
+    }
+    epochs[num_epochs-1] = 1e8/years_per_gen;
+
+  }
+
+  std::vector<float> epochs_focal = {0,1e4,5e4,1e5,1e6,1e7};
+  for(std::vector<float>::iterator it_ep = epochs_focal.begin(); it_ep != epochs_focal.end(); it_ep++){
+    *it_ep /= years_per_gen;
+  }
+
+  std::mt19937 rng;
+  int seed = std::time(0) + getpid();
+  if(options.count("seed") > 0){
+    seed = options["seed"].as<int>();
+  }
+  rng.seed(seed);
+
+  Sample sample;
+  sample.Read(options["poplabels"].as<std::string>());
+
+  std::string groups = options["groups"].as<std::string>();
+  //format focal_group;conditional_group
+  std::string g1,g2;
+  int i = 0;
+  while(groups[i] != ','){
+    g1 += groups[i];
+    i++;
+    if(i == groups.size()) break;
+  }
+  i++;
+  while(i < groups.size()){
+    g2 += groups[i];
+    i++;
+  }
+
+  std::cerr << g1 << "|" << g2 << std::endl;
+
+  std::vector<int> focal_haps;
+  std::vector<int> conditional_haps;
+  for(int i = 0; i < data.N; i++){
+    if(sample.groups[sample.group_of_haplotype[i]] == g1) focal_haps.push_back(i);
+    if(sample.groups[sample.group_of_haplotype[i]] == g2) conditional_haps.push_back(i);
+  } 
+  if(conditional_haps.size() == 0) conditional_haps.push_back(-1);
+  if(focal_haps.size() == 0){
+    std::cerr << "Error: groups not found" << std::endl;
+    exit(1);
+  }
+
+
+  int bin_size = 30e6;
+  int num_blocks = (int)((ancmut1.NumPos())/bin_size)+2;
+
+  std::vector<std::vector<CollapsedMatrix<float>>> coalescence_rate_num(num_blocks), coalescence_rate_denom(num_blocks);
+  for(int bin = 0; bin < num_blocks; bin++){
+    coalescence_rate_num[bin].resize(num_epochs);
+    coalescence_rate_denom[bin].resize(num_epochs);
+    for(int e = 0; e < epochs_focal.size(); e++){
+      coalescence_rate_num[bin][e].resize(num_epochs, sample.groups.size());
+      std::fill(coalescence_rate_num[bin][e].vbegin(), coalescence_rate_num[bin][e].vend(), 0.0);
+      coalescence_rate_denom[bin][e].resize(num_epochs, sample.groups.size());
+      std::fill(coalescence_rate_denom[bin][e].vbegin(), coalescence_rate_denom[bin][e].vend(), 0.0);
+    }
+  }
+
+  int bin = 0, chr_bin = 0;
+  for(int chr = 0; chr < filename_chr.size(); chr++){
+
+    std::cerr << "CHR: " << filename_chr[chr] << std::endl;
+
+
+    AncMutIterators ancmut;
+    if(options.count("dist")){
+      if(filename_chr[0] == "NA"){
+        ancmut.OpenFiles(options["input"].as<std::string>() + ".anc", options["input"].as<std::string>() + ".mut", options["dist"].as<std::string>());
+      }else{
+        ancmut.OpenFiles(options["input"].as<std::string>() + "_chr" + filename_chr[chr] + ".anc", options["input"].as<std::string>() + "_chr" + filename_chr[chr] + ".mut", options["dist"].as<std::string>() + "_chr" + filename_chr[chr] + ".dist");
+      } 
+    }else{  
+      if(filename_chr[0] == "NA"){
+        ancmut.OpenFiles(options["input"].as<std::string>() + ".anc", options["input"].as<std::string>() + ".mut");
+      }else{
+        ancmut.OpenFiles(options["input"].as<std::string>() + "_chr" + filename_chr[chr] + ".anc", options["input"].as<std::string>() + "_chr" + filename_chr[chr] + ".mut");
+      } 
+    } 
+
+    fasta mask;
+    double cutoff = 0.9;
+    if(options.count("mask")){
+      if(filename_chr[0] == "NA"){
+        mask.Read(options["mask"].as<std::string>());
+      }else{
+        mask.Read(options["mask"].as<std::string>() + "_chr" + filename_chr[chr] + ".fa");
+      }
+    }
+
+
+    bin = chr_bin;
+
+    int extra_blocks = (int)(ancmut.NumPos()/bin_size)+2; 
+
+    if(bin + extra_blocks > num_blocks){
+      int bin_tmp = num_blocks;
+      num_blocks += extra_blocks;
+      coalescence_rate_num.resize(num_blocks);
+      coalescence_rate_denom.resize(num_blocks);
+      for(; bin_tmp < num_blocks; bin_tmp++){
+        coalescence_rate_num[bin_tmp].resize(num_epochs);
+        coalescence_rate_denom[bin_tmp].resize(num_epochs);
+        for(int e = 0; e < epochs_focal.size(); e++){
+          coalescence_rate_num[bin_tmp][e].resize(num_epochs, sample.groups.size());
+          std::fill(coalescence_rate_num[bin_tmp][e].vbegin(), coalescence_rate_num[bin_tmp][e].vend(), 0.0);
+          coalescence_rate_denom[bin_tmp][e].resize(num_epochs, sample.groups.size());
+          std::fill(coalescence_rate_denom[bin_tmp][e].vbegin(), coalescence_rate_denom[bin_tmp][e].vend(), 0.0);
+        }
+      }
+    }
+
+    ////////////////////////////////
+    //Pairwise coalescence rate
+    //In each tree, find the coalescent time. Then update count_per_epoch and coalescent_time_in_epoch. 
+
+
+    if(ancmut.sample_ages.size() > 0){
+      float factor = 0.0;
+      num_bases_tree_persists = 0.0;
+      double num_passing = 1.0;
+      while(num_bases_tree_persists >= 0.0){
+        num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
+        bin = (int)((*it_mut).pos/bin_size) + chr_bin;
+
+        num_passing = 1.0;
+        if(options.count("mask") > 0){
+
+          int tree_index = (*it_mut).tree;
+          int pos_start = (*it_mut).pos;
+          int pos_end = pos_start;
+          if(it_mut != ancmut.mut_end()){
+            while((*it_mut).tree == tree_index){
+              pos_end = (*it_mut).pos;
+              it_mut++;
+              if(it_mut == ancmut.mut_end()) break;
+            }
+          }
+          num_passing = 0.0;
+          if(pos_start < mask.seq.size() && pos_end < mask.seq.size()){
+            for(int bp = pos_start; bp < pos_end; bp++){
+              if(mask.seq[bp-1] == 'P') num_passing++; 
+            }
+          }
+
+          if(pos_end - pos_start + 1 <= 0){ 
+            num_passing = 0.0;
+          }else{
+            num_passing /= (pos_end - pos_start + 1);
+          }
+
+        }
+
+        if(num_passing >= cutoff){
+          std::vector<Leaves> leaves;
+          mtr.tree.FindAllLeaves(leaves);
+          factor = num_bases_tree_persists;
+          GetConditionalCoalescentRate(mtr.tree, sample, leaves, factor, focal_haps, conditional_haps, epochs, epochs_focal, ancmut.sample_ages, coalescence_rate_num[bin], coalescence_rate_denom[bin]);
+        }
+
+      }  
+
+    }else{
+      float factor = 0.0;
+      num_bases_tree_persists = 0.0;
+      double num_passing = 1.0;
+      while(num_bases_tree_persists >= 0.0){
+        num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
+        bin = (int)((*it_mut).pos/bin_size) + chr_bin;
+
+        num_passing = 1.0;
+        num_passing = 1.0;
+        if(options.count("mask") > 0){
+
+          int tree_index = (*it_mut).tree;
+          int pos_start = (*it_mut).pos;
+          int pos_end = pos_start;
+          if(it_mut != ancmut.mut_end()){
+            while((*it_mut).tree == tree_index){
+              pos_end = (*it_mut).pos;
+              it_mut++;
+              if(it_mut == ancmut.mut_end()) break;
+            }
+          }
+          num_passing = 0.0;
+          if(pos_start < mask.seq.size() && pos_end < mask.seq.size()){
+            for(int bp = pos_start; bp < pos_end; bp++){
+              if(mask.seq[bp-1] == 'P') num_passing++; 
+            }
+          }
+
+          if(pos_end - pos_start + 1 <= 0){ 
+            num_passing = 0.0;
+          }else{
+            num_passing /= (pos_end - pos_start + 1);
+          }
+
+        }
+
+        if(num_passing >= cutoff){
+          std::vector<Leaves> leaves;
+          mtr.tree.FindAllLeaves(leaves);
+          factor = num_bases_tree_persists;
+          GetConditionalCoalescentRate(mtr.tree, sample, leaves, factor, focal_haps, conditional_haps, epochs, epochs_focal, coalescence_rate_num[bin], coalescence_rate_denom[bin]);
+        }
+      }  
+    }
+
+    chr_bin = bin+1;
+
+  }
+
+  num_blocks = bin+1;
+  coalescence_rate_num.resize(num_blocks);
+  coalescence_rate_denom.resize(num_blocks);
+
+  int num_bootstrap = 1;
+  if(options.count("num_bootstraps") > 0) num_bootstrap = options["num_bootstraps"].as<int>();
+
+  std::uniform_int_distribution<int> dist_blocks(0,num_blocks-1);
+  std::vector<int> blocks(num_blocks);
+
+
+  //output  
+  std::ofstream os(options["output"].as<std::string>());
+  os << "boot lineage_epoch epoch.start group rate" << std::endl;
+  for(int iter = 0; iter < num_bootstrap; iter++){
+
+    if(num_bootstrap == 1){
+      std::fill(blocks.begin(), blocks.end(), 1.0);
+    }else{
+      std::fill(blocks.begin(), blocks.end(), 0.0);
+      for(int block = 0; block < num_blocks; block++){
+        blocks[dist_blocks(rng)] += 1.0;
+      }
+    }
+
+    std::vector<CollapsedMatrix<float>> res_num(num_epochs), res_denom(num_epochs);
+    for(int e = 0; e < epochs_focal.size(); e++){
+      res_num[e].resize(num_epochs, sample.groups.size());
+      std::fill(res_num[e].vbegin(), res_num[e].vend(), 0.0);
+      res_denom[e].resize(num_epochs, sample.groups.size());
+      std::fill(res_denom[e].vbegin(), res_denom[e].vend(), 0.0);
+    }
+
+    for(int block = 0; block < num_blocks; block++){
+
+      for(int e = 0; e < epochs_focal.size(); e++){
+        std::vector<float>::iterator it_coal_num = coalescence_rate_num[block][e].vbegin();
+        for(std::vector<float>::iterator it_num = res_num[e].vbegin(); it_num != res_num[e].vend(); it_num++){
+          (*it_num) += blocks[block] * (*it_coal_num);
+          it_coal_num++;
+        }
+        std::vector<float>::iterator it_coal_denom = coalescence_rate_denom[block][e].vbegin();
+        for(std::vector<float>::iterator it_denom = res_denom[e].vbegin(); it_denom != res_denom[e].vend(); it_denom++){
+          (*it_denom) += blocks[block] * (*it_coal_denom);
+          it_coal_denom++;
+        }
+      }
+
+    }
+
+    for(int ep1 = 0; ep1 < epochs_focal.size(); ep1++){
+      for(int ep2 = 0; ep2 < num_epochs; ep2++){
+        for(int i = 0; i < sample.groups.size(); i++){
+          os << iter << " " << epochs_focal[ep1] << " " << epochs[ep2] << " " << sample.groups[i] << " " << res_num[ep1][ep2][i]/res_denom[ep1][ep2][i] << std::endl;
+        }
+      }
+    }
+
+  }
+  os.close();
+
+  /////////////////////////////////////////////
+  //Resource Usage
+
+  rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+
+  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+  return 0;
+
+}
+
 
 
