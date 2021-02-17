@@ -107,9 +107,10 @@ ${PATH_TO_BINARY}/Colate \
 #### 2. Compute coalescenece rates
 
 ```` bash
+#Optional:
 #--target_mask, --reference_mask, 
-#--target_age, --reference_age, 
-#--years_per_gen, --num_bootstrap are optional
+#--target_age, --reference_age (specified in years)
+#--years_per_gen, --num_bootstrap
 
 mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 bins="3,7,0.2"
@@ -139,7 +140,7 @@ ${PATH_TO_BINARY}/Colate \
 
 ```` bash
 #--target_mask, --reference_mask, 
-#--target_age, --reference_age, 
+#--target_age, --reference_age (specified in years)
 #--years_per_gen, --num_bootstrap are optional
 #age is specified in years.
 #Assumption is any site not in the bcf is homozygous reference (unless masked out by a mask file).
@@ -170,7 +171,7 @@ ${PATH_TO_BINARY}/Colate \
 - chr.txt: Chromosome names, one per line (can be any strings)
 
 ```` bash
-#--target_age, --reference_age, 
+#--target_age, --reference_age (specified in years)
 #--years_per_gen, --num_bootstrap are optional
 
 mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
