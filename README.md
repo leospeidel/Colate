@@ -9,7 +9,7 @@ Preprint describing the method: https://www.biorxiv.org/content/10.1101/2021.02.
 
 # Installation
 
-Precompiled binaries can be found under ./binaries.
+**Precompiled binaries can be found under ./binaries.**
 
 Requirements:
 
@@ -60,6 +60,8 @@ ${PATH_TO_BINARY}/Colate --mode preprocess_mut \
 	--anc_genome human_ancestor_${chr}.fa.gz \
 	--mask example_mask_chr${chr}.fa \
 	-o example_fixed_chr${chr}
+	
+#output is example_fixed_chr${chr}.mut
 ````
 
 
@@ -86,6 +88,8 @@ ${PATH_TO_BINARY}/Colate \
 	--ref_genome GRCh37 \
         --chr chr.txt \
 	-o example_out
+	
+#output is example_out.colate.in
 ````
 
 **bam**:
@@ -102,6 +106,8 @@ ${PATH_TO_BINARY}/Colate \
 	--ref_genome GRCh37 \
         --chr chr.txt \
 	-o example_out
+	
+#output is example_out.colate.in
 ````
 
 #### 2. Compute coalescenece rates
@@ -128,6 +134,8 @@ ${PATH_TO_BINARY}/Colate \
 	--reference_age 0 \
 	--years_per_gen 28 \
 	-o example_out
+	
+#output is example_out.coal, see bottom of page for file format.
 ````
 
 ### Run directly on bcfs or bams
@@ -162,6 +170,8 @@ ${PATH_TO_BINARY}/Colate \
 	--reference_age 0 \
 	--years_per_gen 28 \
 	-o example_out
+	
+#output is example_out.coal, see bottom of page for file format.
 ````
 
 #### bam
@@ -189,6 +199,8 @@ ${PATH_TO_BINARY}/Colate \
 	--reference_age 0 \
 	--years_per_gen 28 \
 	-o example_out
+	
+#output is example_out.coal, see bottom of page for file format.
 ````
 
 
