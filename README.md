@@ -31,19 +31,25 @@ Colate uses a modifed version of [htslib](https://github.com/samtools/htslib), w
 # Documentation
 
 ## Files required:
-- reference genome
-- ancestral genome
-- genome mask file (optional)
-- a genealogy to date mutations (see below for precomputed genealogies)
+- Two sequences, in bcf or bam format, for which coalescence rates will be calculated
+- A reference genome in fasta format.
+- Genome mask file (optional), to filter out unreliable regions.
+- A genealogy to date mutations (see below for precomputed genealogies)
 
 We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).<br/>
-Links to human ancestral genomes and recombination maps can be found [here](https://myersgroup.github.io/relate/input_data.html#Data).
+Link to human ancestral genomes can be found [here](https://myersgroup.github.io/relate/input_data.html#Data).
 
 ## Step 1
 
-**(not needed if using preprocessed files from above)**
+**(not needed if using SGDP genealogy from above, you can simply download these files)**
 
 Get mutations ages from a genealogy; this step will add fixed mutations to a *.mut file (see [Relate documentation](https://myersgroup.github.io/relate/getting_started.html#Output) for file format), which is needed for Colate.
+
+- ancestral genome in fasta format
+- reference genome in fasta format
+- anc/mut files of a Relate genealogy
+- bcf of samples used to build Relate genealogy
+
 ```` bash
 chr=1
 ${PATH_TO_BINARY}/Colate --mode preprocess_mut \
@@ -68,10 +74,11 @@ You can either directly run Colate on bcfs or bams, or precompute an input file,
 - bcfs contain samples of interest (Please use e.g., bcftools view -S or -s to subset bcf files).
 - chr.txt: Chromosome names, one per line (can be any strings)
 - If chromosome names are "1", "2", etc, then input files are *\_chr1.bcf, *\_chr2.bcf etc.
+- ref_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
 - If --chr is not specified, full file names are required (e.g., --target example.bcf), however these should only contain a single chromosome.
 
 ```` bash
-mut="example_fixed"
+mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 ${PATH_TO_BINARY}/Colate \
 	--mode make_tmp \
 	--mut ${mut} \
@@ -87,7 +94,7 @@ ${PATH_TO_BINARY}/Colate \
 - chr.txt: Chromosome names, one per line (can be any strings but consistent with file names)
 
 ```` bash
-mut="example_fixed"
+mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 ${PATH_TO_BINARY}/Colate \
 	--mode make_tmp \
 	--mut ${mut} \
@@ -104,7 +111,7 @@ ${PATH_TO_BINARY}/Colate \
 #--target_age, --reference_age, 
 #--years_per_gen, --num_bootstrap are optional
 
-mut="example_fixed"
+mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 bins="3,7,0.2"
 ${PATH_TO_BINARY}/Colate \
 	--mode mut \
@@ -122,7 +129,7 @@ ${PATH_TO_BINARY}/Colate \
 	-o example_out
 ````
 
-### Run directory on bcfs or bams
+### Run directly on bcfs or bams
 
 #### bcfs
 
@@ -137,7 +144,7 @@ ${PATH_TO_BINARY}/Colate \
 #age is specified in years.
 #Assumption is any site not in the bcf is homozygous reference (unless masked out by a mask file).
 
-mut="example_fixed"
+mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 bins="3,7,0.2"
 ${PATH_TO_BINARY}/Colate \
 	--mode mut \
@@ -166,7 +173,7 @@ ${PATH_TO_BINARY}/Colate \
 #--target_age, --reference_age, 
 #--years_per_gen, --num_bootstrap are optional
 
-mut="example_fixed"
+mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 bins="3,7,0.2"
 ${PATH_TO_BINARY}/Colate \
 	--mode mut \
