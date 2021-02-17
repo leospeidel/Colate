@@ -4,8 +4,8 @@
 - Input fileformats: bcf/bam files 
 - Requires mutation ages obtained from a genealogy (e.g., using [Relate](https://myersgroup.github.io/relate/)). Precomputed mutation ages available below.
 
-Please send any comments, questions and bug reports to leo.speidel@outlook.com.
-
+Please send any comments, questions and bug reports to leo.speidel@outlook.com. <br/>
+Preprint describing the method: https://www.biorxiv.org/content/10.1101/2021.02.17.431573v1
 
 # Installation
 
