@@ -119,7 +119,7 @@ ${PATH_TO_BINARY}/Colate \
 #--years_per_gen, --num_bootstrap
 
 mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
-bins="3,7,0.2"
+bins="3,7,0.2" #epochs in log10 years (format: start,end,stepsize)
 ${PATH_TO_BINARY}/Colate \
 	--mode mut \
 	--mut ${mut} \
@@ -154,7 +154,7 @@ ${PATH_TO_BINARY}/Colate \
 #Assumption is any site not in the bcf is homozygous reference (unless masked out by a mask file).
 
 mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
-bins="3,7,0.2"
+bins="3,7,0.2" #epochs in log10 years (format: start,end,stepsize)
 ${PATH_TO_BINARY}/Colate \
 	--mode mut \
 	--mut ${mut} \
@@ -185,7 +185,7 @@ ${PATH_TO_BINARY}/Colate \
 #--years_per_gen, --num_bootstrap are optional
 
 mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
-bins="3,7,0.2"
+bins="3,7,0.2" #epochs in log10 years (format: start,end,stepsize)
 ${PATH_TO_BINARY}/Colate \
 	--mode mut \
 	--mut ${mut} \
