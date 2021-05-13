@@ -209,9 +209,9 @@ coal_localancestry(cxxopts::Options& options){
 	//Program options
 
 	bool help = false;
-	if(!options.count("input") || !options.count("output") || !options.count("bins")){
+	if(!options.count("input") || !options.count("output") || !options.count("poplabels") || !options.count("bins")){
 		std::cout << "Not enough arguments supplied." << std::endl;
-		std::cout << "Needed: input, output, bins. Optional: years_per_gen, coal" << std::endl;
+		std::cout << "Needed: input, output, poplabels, bins. Optional: years_per_gen, coal" << std::endl;
 		help = true;
 	}
 	if(options.count("help") || help){
@@ -349,9 +349,10 @@ coal_localancestry(cxxopts::Options& options){
 	std::vector<int> lbp;
 	std::vector<std::vector<int>> group;
 	
-	igzstream is_assign("./assignment.txt");
+	igzstream is_assign(options["poplabels"].as<std::string>());
 	if(is_assign.fail()){
-		is_assign.open("assignment.txt.gz");
+		std::cerr << "Error: Failed to open " << options["poplabels"].as<std::string>() << std::endl;
+		exit(1);
 	}
 	getline(is_assign, line);
 	int i = 0;
