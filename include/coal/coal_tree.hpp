@@ -41,9 +41,42 @@ class coal_tree {
 		coal_tree(std::vector<double> epochs, int num_bootstrap, int block_size, AncMutIterators& ancmut);
 
     void update_ancmut(AncMutIterators& ancmut);
-		void populate(Tree& tree);
+		void populate(Tree& tree, double num_bases_tree_persists);
     void init_bootstrap();
 		void Dump(std::string filename);
+
+};
+
+class coal_LA {
+
+	private:
+
+		std::mt19937 rng;
+
+		int N, N_total, num_trees, block_size, num_blocks, num_bootstrap, num_groups, current_block, count_trees, num_epochs;
+		std::vector<Leaves> desc;
+		std::vector<float> coords;
+		std::vector<int> sorted_indices;
+		std::vector<int>::iterator it_sorted_indices;
+		std::vector<double> epochs;
+		std::vector<double>::iterator it_epochs;
+
+		std::vector<std::vector<int>> blocks;
+		std::vector<std::vector<int>>::iterator it1_blocks;
+		std::vector<int>::iterator it2_blocks;
+
+		std::vector<std::vector<std::vector<std::vector<double>>>> num, denom, num_boot, denom_boot;
+		std::vector<std::vector<std::vector<std::vector<double>>>>::iterator it1_num, it1_denom;
+
+	public:
+
+		coal_LA(std::vector<double> epochs, int num_bootstrap, int block_size, int num_groups);
+		coal_LA(std::vector<double> epochs, int num_bootstrap, int block_size, int num_groups, AncMutIterators& ancmut);
+
+		void update_ancmut(AncMutIterators& ancmut);
+		void populate(Tree& tree, double num_bases_tree_persists, std::vector<int>& group, bool new_tree);
+		void init_bootstrap();
+		void Dump(std::string filename, std::vector<std::string>& unique_groups);
 
 };
 

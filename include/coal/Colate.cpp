@@ -50,6 +50,10 @@ int main(int argc, char* argv[]){
 
 		coal(options);
 
+	}else	if(!mode.compare("local_ancestry")){
+
+		coal_localancestry(options);
+
 	}else if(!mode.compare("mut")){
 
     mut(options);

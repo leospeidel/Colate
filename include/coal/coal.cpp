@@ -135,7 +135,8 @@ coal(cxxopts::Options& options){
 
   }
 
-  int num_bootstrap = 100;
+	int num_bootstrap = 1;
+	if(options.count("num_bootstraps")) num_bootstrap = options["num_bootstraps"].as<int>();
   int block_size = 5000;
 
   coal_tree ct(epochs, num_bootstrap, block_size);
@@ -176,7 +177,7 @@ coal(cxxopts::Options& options){
         std::cerr << "[" << perc << "%]\r";
       }
       tree_count++;
-      ct.populate(mtr.tree);	
+			ct.populate(mtr.tree, num_bases_tree_persists);	
       num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
     }
 
@@ -199,6 +200,285 @@ coal(cxxopts::Options& options){
   std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
 #endif
   std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+}
+
+void
+coal_localancestry(cxxopts::Options& options){
+
+	//Program options
+
+	bool help = false;
+	if(!options.count("input") || !options.count("output") || !options.count("bins")){
+		std::cout << "Not enough arguments supplied." << std::endl;
+		std::cout << "Needed: input, output, bins. Optional: years_per_gen, coal" << std::endl;
+		help = true;
+	}
+	if(options.count("help") || help){
+		std::cout << options.help({""}) << std::endl;
+		std::cout << "Calculate coalescence rates for sample." << std::endl;
+		exit(0);
+	}  
+
+	std::cerr << "---------------------------------------------------------" << std::endl;
+	std::cerr << "Calculating coalescence rates for (ancient) sample.." << std::endl;
+
+	/////////////////////////////////
+	//get TMRCA at each SNP
+
+	////////////////////////////////////////
+
+	//decide on epochs
+	int num_epochs = 0; 
+	std::vector<double> epochs;
+
+	std::ifstream is;
+	std::string line, tmp;
+	if(options.count("coal") > 0){
+		is.open(options["coal"].as<std::string>());
+		getline(is, line);
+		getline(is, line);
+		for(int i = 0; i < line.size(); i++){
+			if(line[i] == ' ' || line[i] == '\t'){
+				epochs.push_back(stof(tmp));
+				tmp = "";
+				num_epochs++;
+			}else{
+				tmp += line[i];
+			}
+		}
+		if(tmp != "") epochs.push_back(stof(tmp));
+
+		assert(epochs[0] == 0);
+		for(int e = 1; e < num_epochs; e++){
+			std::cerr << epochs[e] << " ";
+			assert(epochs[e] > epochs[e-1]);
+		}
+
+	}else{
+
+		double min_epoch = 0.0;
+		double epoch_lower, epoch_upper, epoch_step;
+		double log_10 = log(10);
+		double years_per_gen = 28.0;
+		if(options.count("years_per_gen")){
+			years_per_gen = options["years_per_gen"].as<float>();
+		}
+
+		std::string str_epochs = options["bins"].as<std::string>();
+		std::string tmp;
+		int i = 0;
+		tmp = "";
+		while(str_epochs[i] != ','){
+			tmp += str_epochs[i];
+			i++;
+			if(i == str_epochs.size()) break;
+		}
+		//epoch_lower = std::max(min_epoch, (double) std::stof(tmp));
+		//std::cerr << epoch_lower << std::endl;
+		epoch_lower = std::stof(tmp);
+		i++;
+		if(i >= str_epochs.size()){
+			std::cerr << "Error: epochs format is wrong. Specify x,y,stepsize." << std::endl;
+			exit(1);
+		}
+		tmp = "";
+		while(str_epochs[i] != ','){
+			tmp += str_epochs[i];
+			i++;
+			if(i == str_epochs.size()) break;
+		}
+		epoch_upper = std::stof(tmp);
+		i++;
+		if(i >= str_epochs.size()){
+			std::cerr << "Error: epochs format is wrong. Specify x,y,stepsize." << std::endl;
+			exit(1);
+		}
+		tmp = "";
+		while(str_epochs[i] != ','){
+			tmp += str_epochs[i];
+			i++;
+			if(i == str_epochs.size()) break;
+		}
+		epoch_step = std::stof(tmp);
+
+		int ep = 0;
+		epochs.resize(1);
+		epochs[ep] = 0.0;
+		ep++; 
+		double epoch_boundary = 0.0;
+		epoch_boundary = epoch_lower;
+		while(epoch_boundary < epoch_upper){
+			epochs.push_back( std::exp(log_10 * epoch_boundary)/years_per_gen );
+			ep++;
+			epoch_boundary += epoch_step;
+		}
+		epochs.push_back( std::exp(log_10 * epoch_upper)/years_per_gen );
+		epochs.push_back( std::max(1e8, 10*epochs[epochs.size()-1])/years_per_gen );
+		num_epochs = epochs.size();	
+
+	}
+
+	int num_bootstrap = 1;
+	if(options.count("num_bootstraps")) num_bootstrap = options["num_bootstraps"].as<int>();
+	int block_size = 5000;
+
+
+	MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
+	Muts::iterator it_mut; //iterator for mut file
+
+	std::vector<std::string> chromosomes;
+	if(options.count("chr") > 0){
+
+		igzstream is_chr(options["chr"].as<std::string>());
+		if(is_chr.fail()){
+			std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+		}
+		while(getline(is_chr, line)){
+			chromosomes.push_back(line);
+		}
+		is_chr.close();
+
+	}else{
+		chromosomes.resize(1);
+		chromosomes[0] = "1";
+	}
+
+  //local ancestry
+	std::vector<std::string> lchrom, unique_groups;
+	std::vector<int> lbp;
+	std::vector<std::vector<int>> group;
+	
+	igzstream is_assign("./assignment.txt");
+	if(is_assign.fail()){
+		is_assign.open("assignment.txt.gz");
+	}
+	getline(is_assign, line);
+	int i = 0;
+  while(i < line.size()){
+		tmp.clear();
+		while(line[i] != ' ' && line[i] != '\t'){
+			tmp += line[i];
+			i++;
+			if(i == line.size()) break;
+		}
+		i++;
+		unique_groups.push_back(tmp);
+	}
+  int num_groups = unique_groups.size();
+
+	std::vector<int> group_tmp;
+	int val;
+	std::string current_chr;
+	while(getline(is_assign, line)){
+
+	  std::istringstream iss(line);
+		if(group_tmp.size() == 0){
+			iss >> tmp;
+			lchrom.push_back(tmp);
+			current_chr = tmp;
+			iss >> val;
+			lbp.push_back(val);
+			if(val != 0){
+				std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
+        exit(1);
+			}
+		  while(iss >> val) group_tmp.push_back(val);
+		}else{
+			iss >> tmp;
+			lchrom.push_back(tmp);
+			iss >> val;
+			lbp.push_back(val);
+			if(current_chr != lchrom[lchrom.size()-1] && val != 0){
+				std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
+				exit(1);
+			}
+      current_chr = lchrom[lchrom.size()-1];
+      int k = 0;
+			while(iss >> group_tmp[k]) k++;
+		}
+    group.push_back(group_tmp);
+
+	}
+
+	//Calculate coal rates
+	coal_LA ct(epochs, num_bootstrap, block_size, num_groups);
+
+	int local_index = 0;
+	for(int chr = 0; chr < chromosomes.size(); chr++){
+
+		std::cerr << "CHR " << chromosomes[chr] << ":\n";
+		AncMutIterators ancmut(options["input"].as<std::string>() + "_chr" + chromosomes[chr] + ".anc", options["input"].as<std::string>() + "_chr" + chromosomes[chr] + ".mut");
+		float num_bases_tree_persists = 0.0;
+
+		assert(lchrom[local_index] == chromosomes[chr]);
+		assert(lbp[local_index] == 0);
+
+		ct.update_ancmut(ancmut);
+
+		int tree_count = 0, perc = -1;
+		num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
+		while(num_bases_tree_persists >= 0.0){
+
+			if( (int) (((double)tree_count)/ancmut.NumTrees() * 100.0) > perc ){
+				perc = (int) (((double)tree_count)/ancmut.NumTrees() * 100.0);
+				std::cerr << "[" << perc << "%]\r";
+			}
+			tree_count++;
+
+			int bp_start = (*it_mut).pos;
+			int t = (*it_mut).tree;
+			while((*it_mut).tree == t) it_mut++;
+			int bp_end = (*it_mut).pos;
+			if(bp_end == bp_start) bp_end++;
+
+			if(local_index < group.size()-1){
+				if(bp_end > lbp[local_index+1] && lchrom[local_index+1] == chromosomes[chr]){
+					double frac = (lbp[local_index+1] - bp_start)/(bp_end-bp_start);
+					assert(frac <= 1.0);
+					assert(frac >= 0.0);
+					ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], false);
+					local_index++;
+					while(bp_end > lbp[local_index+1] && lchrom[local_index+1] == chromosomes[chr]){
+						frac = (lbp[local_index+1] - lbp[local_index])/(bp_end-bp_start);
+						assert(frac <= 1.0);
+						assert(frac >= 0.0);
+						ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], true);
+						local_index++;
+					}
+					frac = (bp_end - lbp[local_index])/(bp_end-bp_start);
+					assert(frac <= 1.0);
+					assert(frac >= 0.0);
+					ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], true);
+				}else{
+					ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], false);
+				}
+			}else{
+				ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], false);
+			}
+			num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
+		}
+		local_index++;
+
+		std::cerr << std::endl;
+
+	}
+
+	ct.Dump(options["output"].as<std::string>() + ".coal", unique_groups);
+
+	/////////////////////////////////////////////
+	//Resource Usage
+
+	rusage usage;
+	getrusage(RUSAGE_SELF, &usage);
+
+	std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+	std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+	std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+	std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
 
 }
 
@@ -3151,6 +3431,7 @@ preprocess_mut(cxxopts::Options& options){
 
   bool biallelic;
   int tree_count = (*it_mut).tree;
+	int tmp = (*it_mut).pos;
   while(vcf.read_snp() == 0){
 
     if(mut_combined.info.size() - snp_comb < L_ref) mut_combined.info.resize(mut_combined.info.size() + L_ref);
@@ -3228,10 +3509,16 @@ preprocess_mut(cxxopts::Options& options){
       //check if snp exists in mut
       if(snp_ref < L_ref){
         while((*it_mut).pos < bp+1){
+					tmp = (*it_mut).pos;
           num_bases_snp_persists = ancmut.NextSNP(mtr, it_mut);
           snp_ref++;
           if(snp_ref == L_ref) break;
         }
+				if((*it_mut).pos == 2428609){
+				  std::cerr << tmp << std::endl;
+				}
+				if((*it_mut).pos == tmp) biallelic = false;
+				tmp = (*it_mut).pos;
       }
 
       if(tree_count < (*it_mut).tree){
@@ -3240,7 +3527,7 @@ preprocess_mut(cxxopts::Options& options){
         tmrca = coords[root];
       } 
 
-      if((*it_mut).pos == bp+1 && DAF > 0 && DAF < N){
+      if((*it_mut).pos == bp+1 && DAF > 0 && DAF < N && biallelic){
 
         if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
 
@@ -3351,6 +3638,7 @@ preprocess_mut(cxxopts::Options& options){
     }
   }
 
+	std::cerr << "Outputting " << snp_comb << " SNPs." << std::endl;
   mut_combined.info.resize(snp_comb);
   mut_combined.Dump(options["output"].as<std::string>());
 
