@@ -327,7 +327,7 @@ coal_localancestry(cxxopts::Options& options){
 	MarginalTree mtr; //stores marginal trees. mtr.pos is SNP position at which tree starts, mtr.tree stores the tree
 	Muts::iterator it_mut; //iterator for mut file
 
-	std::vector<std::string> chromosomes;
+	std::vector<std::string> chromosomes, filenames;
 	if(options.count("chr") > 0){
 
 		igzstream is_chr(options["chr"].as<std::string>());
@@ -336,12 +336,14 @@ coal_localancestry(cxxopts::Options& options){
 		}
 		while(getline(is_chr, line)){
 			chromosomes.push_back(line);
+      filenames.push_back(options["input"].as<std::string>() + "_chr" + line);
 		}
 		is_chr.close();
 
 	}else{
 		chromosomes.resize(1);
-		chromosomes[0] = "1";
+		chromosomes[0] = "NA";
+    filenames.push_back(options["input"].as<std::string>());
 	}
 
   //local ancestry
@@ -409,10 +411,10 @@ coal_localancestry(cxxopts::Options& options){
 	for(int chr = 0; chr < chromosomes.size(); chr++){
 
 		std::cerr << "CHR " << chromosomes[chr] << ":\n";
-		AncMutIterators ancmut(options["input"].as<std::string>() + "_chr" + chromosomes[chr] + ".anc", options["input"].as<std::string>() + "_chr" + chromosomes[chr] + ".mut");
+		AncMutIterators ancmut(filenames[chr] + ".anc", filenames[chr] + ".mut");
 		float num_bases_tree_persists = 0.0;
 
-		assert(lchrom[local_index] == chromosomes[chr]);
+		if(chromosomes.size() > 1 || chromosomes[chr] != "NA") assert(lchrom[local_index] == chromosomes[chr]);
 		assert(lbp[local_index] == 0);
 
 		ct.update_ancmut(ancmut);
@@ -434,29 +436,40 @@ coal_localancestry(cxxopts::Options& options){
 			if(bp_end == bp_start) bp_end++;
 
 			if(local_index < group.size()-1){
-				if(bp_end > lbp[local_index+1] && lchrom[local_index+1] == chromosomes[chr]){
+			
+        if(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){
+
 					double frac = (lbp[local_index+1] - bp_start)/(bp_end-bp_start);
 					assert(frac <= 1.0);
 					assert(frac >= 0.0);
-					ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], false);
+					ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], true);
 					local_index++;
-					while(bp_end > lbp[local_index+1] && lchrom[local_index+1] == chromosomes[chr]){
+          if(local_index == group.size()){
+            local_index--;
+          }
+					while(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){
 						frac = (lbp[local_index+1] - lbp[local_index])/(bp_end-bp_start);
 						assert(frac <= 1.0);
 						assert(frac >= 0.0);
-						ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], true);
+						ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], false);
 						local_index++;
+            if(local_index == group.size()){
+              local_index--;
+              break;
+            }
 					}
 					frac = (bp_end - lbp[local_index])/(bp_end-bp_start);
 					assert(frac <= 1.0);
 					assert(frac >= 0.0);
-					ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], true);
+					ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], false);
 				}else{
-					ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], false);
+					ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], true);
 				}
+
 			}else{
-				ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], false);
+				ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], true);
 			}
+
 			num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
 		}
 		local_index++;

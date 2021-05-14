@@ -487,29 +487,38 @@ coal_LA::populate(Tree& tree, double num_bases_tree_persists, std::vector<int>& 
 			lower_boundary = epochs[ep];
 			ep++;
 		}
+    assert(coords[*it_sorted_indices] >= lower_boundary);
+    assert(coords[*it_sorted_indices] <= epochs[ep]);
 
 		denom_tmpl[ep-1]      += (coords[*it_sorted_indices] - lower_boundary) * num_bases_tree_persists/1e9;
 		lower_boundary         = coords[*it_sorted_indices];
-		for(std::vector<int>::iterator it_mem1 = desc[*it_sorted_indices].member.begin(); it_mem1 != desc[*it_sorted_indices].member.end(); it_mem1++){
-			for(std::vector<int>::iterator it_mem2 = desc[*it_sorted_indices].member.begin(); it_mem2 != desc[*it_sorted_indices].member.end(); it_mem2++){
-				if(*it_mem1 != *it_mem2){
-					int group1 = group[*it_mem1];
-					int group2 = group[*it_mem2];
-					if(group2 > group1){
-            int tmp = group1;
-						group1 = group2;
-						group2 = tmp;
-					}
-					(*it1_num)[group1][group2][ep-1] += num_bases_tree_persists/1e9;
-					std::vector<double>::iterator it_denom_tmpl = denom_tmpl.begin();
-					for(std::vector<double>::iterator it = (*it1_denom)[group1][group2].begin(); it != (*it1_denom)[group1][group2].end(); it++){
-						*it += *it_denom_tmpl;
-						if(*it_denom_tmpl == 0.0) break;
-						it_denom_tmpl++;
-					}
-				}
-			}
-		}
+
+    if(desc[*it_sorted_indices].member.size() > 1){
+      int child1 = (*tree.nodes[*it_sorted_indices].child_left).label;
+      int child2 = (*tree.nodes[*it_sorted_indices].child_right).label;
+
+      for(std::vector<int>::iterator it_mem1 = desc[child1].member.begin(); it_mem1 != desc[child1].member.end(); it_mem1++){
+        for(std::vector<int>::iterator it_mem2 = desc[child2].member.begin(); it_mem2 != desc[child2].member.end(); it_mem2++){
+          if(*it_mem1 != *it_mem2){
+            int group1 = group[*it_mem1];
+            int group2 = group[*it_mem2];
+            if(group2 > group1){
+              int tmp = group1;
+              group1 = group2;
+              group2 = tmp;
+            }
+            (*it1_num)[group1][group2][ep-1] += num_bases_tree_persists/1e9;
+            std::vector<double>::iterator it_denom_tmpl = denom_tmpl.begin();
+            for(std::vector<double>::iterator it = (*it1_denom)[group1][group2].begin(); it != (*it1_denom)[group1][group2].end(); it++){
+              *it += *it_denom_tmpl;
+              if(*it_denom_tmpl == 0.0) break;
+              it_denom_tmpl++;
+            }
+          }
+        }
+      }
+
+    }
 
 	}
 	if(new_tree) count_trees++;
