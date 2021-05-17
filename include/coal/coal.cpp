@@ -435,6 +435,7 @@ coal_localancestry(cxxopts::Options& options){
 			int bp_end = (*it_mut).pos;
 			if(bp_end == bp_start) bp_end++;
 
+      assert(group[local_index].size() == ancmut.NumTips());
 			if(local_index < group.size()-1){
 			
         if(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){

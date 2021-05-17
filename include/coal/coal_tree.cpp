@@ -500,6 +500,9 @@ coal_LA::populate(Tree& tree, double num_bases_tree_persists, std::vector<int>& 
       for(std::vector<int>::iterator it_mem1 = desc[child1].member.begin(); it_mem1 != desc[child1].member.end(); it_mem1++){
         for(std::vector<int>::iterator it_mem2 = desc[child2].member.begin(); it_mem2 != desc[child2].member.end(); it_mem2++){
           if(*it_mem1 != *it_mem2){
+
+            double age = 0.0;
+            if(tree.sample_ages != NULL) age = std::max((*tree.sample_ages)[*it_mem1], (*tree.sample_ages)[*it_mem2]);
             int group1 = group[*it_mem1];
             int group2 = group[*it_mem2];
             if(group2 > group1){
@@ -509,8 +512,18 @@ coal_LA::populate(Tree& tree, double num_bases_tree_persists, std::vector<int>& 
             }
             (*it1_num)[group1][group2][ep-1] += num_bases_tree_persists/1e9;
             std::vector<double>::iterator it_denom_tmpl = denom_tmpl.begin();
+            
+            int ep_tmp = 1;
+            bool exceeded_sample_age = false;
             for(std::vector<double>::iterator it = (*it1_denom)[group1][group2].begin(); it != (*it1_denom)[group1][group2].end(); it++){
-              *it += *it_denom_tmpl;
+              if(epochs[ep_tmp] > age){
+                *it += *it_denom_tmpl;
+                if(!exceeded_sample_age){
+                  *it -= (age - epochs[ep_tmp-1]) * num_bases_tree_persists/1e9;
+                  exceeded_sample_age = true;
+                }
+              } 
+              ep_tmp++;
               if(*it_denom_tmpl == 0.0) break;
               it_denom_tmpl++;
             }
