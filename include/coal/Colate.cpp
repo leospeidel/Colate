@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
 		("num_bootstraps", "Optional: Number of bootstraps.", cxxopts::value<int>())
 		("filters", "Optional: Parameters for filtering BAMs. Format: MAPQ,LEN,MAX_MISMATCH_TO_REF. Default: 20,30,10", cxxopts::value<std::string>())
     ("groups", "Names of groups of interest for conditional coalescence rates", cxxopts::value<std::string>()) 
-    ("poplabels", "Optional: Filename of file containing population labels. If ='hap', each haplotype is in its own group.", cxxopts::value<std::string>()) 
+    ("poplabels", "Optional: Filename of file containing population labels.", cxxopts::value<std::string>()) 
     ("i,input", "Filename of input.", cxxopts::value<std::string>())
     ("o,output", "Filename of output.", cxxopts::value<std::string>());
 
