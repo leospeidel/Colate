@@ -59,7 +59,8 @@ vcf_parser::extract_GT(){
 void 
 bam_parser::count_alleles_for_read(){
 
-  if(mapq > 20 && len >= 30){
+  //if(mapq > 20 && len >= 30){
+	if(mapq >= mapq_th && len >= len_th){
 
     //calculate how many bp match reference at this read
     int num_matching = 0, total = 0;
@@ -79,7 +80,9 @@ bam_parser::count_alleles_for_read(){
 
     }
 
-    if(total - num_matching <= 3 && total > 0){
+    //if(total - num_matching <= 3 && total > 0){
+		if(total - num_matching <= mismatch_th && total > 0){
+		//if(total > 0){
 
       coverage_after_filter += len;
       for(int i = start; i < end; i++){
@@ -104,7 +107,34 @@ bam_parser::count_alleles_for_read(){
 
 }
 
-bam_parser::bam_parser(const std::string& filename){
+bam_parser::bam_parser(const std::string& filename, const std::string& params){
+
+	int i = 0;
+	std::string tmp;
+	tmp.clear();
+	while(params[i] != ',' && i < params.size()){
+	  tmp += params[i];
+		i++;
+		if(i == params.size()) break;
+	}
+	mapq_th = stoi(tmp);
+	i++;
+	tmp.clear();
+	while(params[i] != ',' && i < params.size()){
+		tmp += params[i];
+		i++;
+		if(i == params.size()) break;
+	}
+	len_th = stoi(tmp);
+	i++;
+	tmp.clear();
+	while(params[i] != ',' && i < params.size()){
+		tmp += params[i];
+		i++;
+		if(i == params.size()) break;
+	}
+	mismatch_th = stoi(tmp);
+
   fp_in = hts_open(filename.c_str(), "r");
   if (fp_in == NULL) {
     std::cerr << "Warning: Failed to open file " << filename << std::endl;
@@ -133,7 +163,34 @@ bam_parser::bam_parser(const std::string& filename){
   }
 }
 
-bam_parser::bam_parser(const std::string& filename, const std::string& filename_ref){
+bam_parser::bam_parser(const std::string& filename, const std::string& params, const std::string& filename_ref){
+
+	int i = 0;
+	std::string tmp;
+	tmp.clear();
+		while(params[i] != ',' && i < params.size()){
+			tmp += params[i];
+			i++;
+			if(i == params.size()) break;
+		}
+	mapq_th = stoi(tmp);
+	i++;
+	tmp.clear();
+	while(params[i] != ',' && i < params.size()){
+		tmp += params[i];
+		i++;
+		if(i == params.size()) break;
+	}
+	len_th = stoi(tmp);
+	i++;
+	tmp.clear();
+	while(params[i] != ',' && i < params.size()){
+		tmp += params[i];
+		i++;
+		if(i == params.size()) break;
+	}
+	mismatch_th = stoi(tmp);
+
   fp_in = hts_open(filename.c_str(), "r");
   if (fp_in == NULL) {
     std::cerr << "Warning: Failed to open file " << filename << std::endl;
@@ -161,6 +218,7 @@ bam_parser::bam_parser(const std::string& filename, const std::string& filename_
 
     ref_genome.Read(filename_ref);
     read_entry();
+		chr    = bamHdr->target_name[aln->core.tid];
     contig = chr;
   }
 }
@@ -260,7 +318,6 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
   eof = false;
   coverage = 0;
   coverage_after_filter = 0;
-
   //initialise count_alleles at any given position
   prev_pos = -1;
   pos_of_entry.resize(num_entries);
@@ -271,7 +328,6 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
     (*it_count_alleles).resize(4);
     std::fill((*it_count_alleles).begin(), (*it_count_alleles).end(), 0);
   }
-
   //read first entry
   int ret = 1;
   if(chr == NULL){
@@ -290,7 +346,6 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
     chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
     if(contig != ""){
       if(strcmp(chr, contig.c_str()) != 0){
-				std::cerr << chr << " " << contig << std::endl;
         std::cerr << "Error: contig names do not match" << std::endl;
         exit(1);
       }

@@ -796,8 +796,8 @@ parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& file
     num_blocks++;
   }
 
-  std::cerr << proportion_with_age/total_mut << std::endl;
-  std::cerr << num_used_snps << std::endl << std::endl;
+  //std::cerr << proportion_with_age/total_mut << std::endl;
+  //std::cerr << num_used_snps << std::endl << std::endl;
 
   age_shared_count.resize(num_blocks);
   age_notshared_count.resize(num_blocks);
@@ -1129,7 +1129,7 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 }
 
 int
-parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_bamvcf(std::string& params, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -1161,7 +1161,7 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 
     Mutations mut;
     mut.Read(filename_mut[chr]);
-    bam_parser target(filename_target[chr], filename_ref_genome[chr]);
+    bam_parser target(filename_target[chr], params, filename_ref_genome[chr]);
     vcf_parser ref(filename_ref[chr]);	
 
     fasta tar_mask, ref_mask;
@@ -1409,7 +1409,7 @@ parse_bamvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 }
 
 int
-parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_onebamvcf(std::string& params, std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -1429,7 +1429,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
   if(filename_ref_genome.size() > 0) has_ref_genome = true; //new
 
   assert(filename_target.size() == 1);
-  bam_parser target(filename_target[0]);
+  bam_parser target(filename_target[0], params);
 
   std::vector<std::vector<double>>::iterator it_age_shared_count    = age_shared_count.begin();
   std::vector<std::vector<double>>::iterator it_age_notshared_count = age_notshared_count.begin();
@@ -1692,7 +1692,7 @@ parse_onebamvcf(std::vector<std::string>& filename_chr, std::vector<std::string>
 }
 
 int
-parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+parse_onebambam(std::string& params, std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
   std::uniform_real_distribution<double> dist_unif(0,1);
   int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -1710,9 +1710,9 @@ parse_onebambam(std::vector<std::string>& filename_chr, std::vector<std::string>
   if(filename_reference_mask.size() > 0) has_ref_mask = true;
 
   assert(filename_target.size() == 1);
-  bam_parser target(filename_target[0]);
+  bam_parser target(filename_target[0], params);
   assert(filename_ref.size() == 1);
-  bam_parser reference(filename_ref[0]);
+  bam_parser reference(filename_ref[0], params);
 
   std::vector<std::vector<double>>::iterator it_age_shared_count    = age_shared_count.begin();
   std::vector<std::vector<double>>::iterator it_age_notshared_count = age_notshared_count.begin();
@@ -2142,7 +2142,7 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 }
 
 void
-maketmp_bam(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_bam, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
+maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_bam, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
 
   int N_target, DAF, bp_target = 0, bp_mut = 0;
   bool target_flip = false;
@@ -2152,7 +2152,7 @@ maketmp_bam(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
   int DAF_target, AAF_target;
   int bin_index;
 
-  bam_parser target(filename_bam);
+  bam_parser target(filename_bam, params);
 
   FILE* fp = fopen(filename_output.c_str(), "wb");
 
@@ -2161,7 +2161,7 @@ maketmp_bam(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
     std::cerr << "parsing CHR: " << chr + 1 << " / " << filename_mut.size() << std::endl;
 
     target.assign_contig(filename_chr[chr], filename_ref_genome[chr]);
-
+ 
     Mutations mut;
     mut.Read(filename_mut[chr]);
 
@@ -2513,6 +2513,11 @@ calc_depth(cxxopts::Options& options){
     exit(0);
   }  
 
+	std::string params = "20,30,10";
+	if(options.count("filters")){
+		params = options["filters"].as<std::string>();
+	}
+
   igzstream is_chr(options["chr"].as<std::string>());
   if(is_chr.fail()){
     std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
@@ -2525,7 +2530,7 @@ calc_depth(cxxopts::Options& options){
   }
   is_chr.close();
 
-  bam_parser target(options["target_bam"].as<std::string>());
+  bam_parser target(options["target_bam"].as<std::string>(), params);
 
   double cov = 0.0, cov_filtered = 0.0, genome_length = 0.0;
 
@@ -2552,7 +2557,7 @@ make_tmp(cxxopts::Options& options){
   bool help = false;
   if(!options.count("mut") || !options.count("output")){
     std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: mut, ref_genome, output, either of target_vcf or target_bam." << std::endl;
+    std::cout << "Needed: mut, ref_genome, output, either of target_bcf or target_bam. Optional: filters." << std::endl;
     help = true;
   }
   if(options.count("help") || help){
@@ -2564,14 +2569,17 @@ make_tmp(cxxopts::Options& options){
   std::cerr << "---------------------------------------------------------" << std::endl;
   std::cerr << "Calculating Colate tmp input file for " << options["target_tmp"].as<std::string>() << ".." << std::endl;
 
-
+	std::string params = "20,30,10";
+	if(options.count("filters")){
+		params = options["filters"].as<std::string>();
+	}
 
   std::string line;
   ////////////////////////////////////////
 
   std::vector<std::string> filename_mut, filename_target, filename_ref_genome, name_chr;
 
-  if(options.count("target_vcf") > 0){
+  if(options.count("target_bcf") > 0){
     if(options.count("chr") > 0){
 
       igzstream is_chr(options["chr"].as<std::string>());
@@ -2581,7 +2589,7 @@ make_tmp(cxxopts::Options& options){
       while(getline(is_chr, line)){
         name_chr.push_back(line);
         filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
-        filename_target.push_back(options["target_vcf"].as<std::string>() + "_chr" + line + ".bcf");
+        filename_target.push_back(options["target_bcf"].as<std::string>() + "_chr" + line + ".bcf");
         filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
       }
       is_chr.close();
@@ -2590,7 +2598,7 @@ make_tmp(cxxopts::Options& options){
 
       name_chr.push_back("");
       filename_mut.push_back(options["mut"].as<std::string>());
-      filename_target.push_back(options["target_vcf"].as<std::string>());
+      filename_target.push_back(options["target_bcf"].as<std::string>());
       filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
 
     }
@@ -2623,7 +2631,7 @@ make_tmp(cxxopts::Options& options){
 
     std::string filename_bam    = options["target_bam"].as<std::string>();
     std::string filename_output = options["output"].as<std::string>() + ".colate.in";
-    maketmp_bam(name_chr, filename_mut, filename_bam, filename_ref_genome, filename_output);
+    maketmp_bam(params, name_chr, filename_mut, filename_bam, filename_ref_genome, filename_output);
   }
 
   /////////////////////////////////////////////
@@ -2650,7 +2658,7 @@ mut(cxxopts::Options& options){
   bool help = false;
   if(!options.count("mut") || !options.count("output")){
     std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: mut, bins, output. Optional: target_tmp, reference_tmp, target_vcf, reference_vcf, target_bam, reference_bam, ref_genome, target_age, reference_age, target_mask, reference_mask, coal, num_bootstrap." << std::endl;
+    std::cout << "Needed: mut, bins, output. Optional: target_tmp, reference_tmp, target_bcf, reference_bcf, target_bam, reference_bam, ref_genome, target_age, reference_age, target_mask, reference_mask, coal, num_bootstrap, filters." << std::endl;
     help = true;
   }
   if(options.count("help") || help){
@@ -2663,9 +2671,14 @@ mut(cxxopts::Options& options){
   std::cerr << "Calculating coalescence rates for (ancient) sample.." << std::endl;
 
   int regularise = 2;
-  if(options.count("regularise") > 0){ 
-    regularise = options["regularise"].as<int>();
-  }
+  //if(options.count("regularise") > 0){ 
+  //  regularise = options["regularise"].as<int>();
+  //}
+	
+	std::string params = "20,30,10";
+	if(options.count("filters")){
+	  params = options["filters"].as<std::string>();
+	}
 
   bool is_ancient = false;
   double age;
@@ -2741,7 +2754,7 @@ mut(cxxopts::Options& options){
     ///////////
     std::vector<std::string> filename_mut, filename_target, filename_ref, filename_ref_genome, filename_target_mask, filename_reference_mask, name_chr;
 
-    if(options.count("target_vcf") && options.count("reference_vcf")){
+    if(options.count("target_bcf") && options.count("reference_bcf")){
       if(options.count("chr") > 0){
 
         igzstream is_chr(options["chr"].as<std::string>());
@@ -2750,8 +2763,8 @@ mut(cxxopts::Options& options){
         }
         while(getline(is_chr, line)){
           filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
-          filename_target.push_back(options["target_vcf"].as<std::string>() + "_chr" + line + ".bcf");
-          filename_ref.push_back(options["reference_vcf"].as<std::string>() + "_chr" + line + ".bcf");
+          filename_target.push_back(options["target_bcf"].as<std::string>() + "_chr" + line + ".bcf");
+          filename_ref.push_back(options["reference_bcf"].as<std::string>() + "_chr" + line + ".bcf");
           if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
           if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>() + "_chr" + line + ".fa");
           if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
@@ -2760,15 +2773,15 @@ mut(cxxopts::Options& options){
 
       }else{
         filename_mut.push_back(options["mut"].as<std::string>());
-        filename_target.push_back(options["target_vcf"].as<std::string>());
-        filename_ref.push_back(options["reference_vcf"].as<std::string>());
+        filename_target.push_back(options["target_bcf"].as<std::string>());
+        filename_ref.push_back(options["reference_bcf"].as<std::string>());
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());
         if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
       }
       num_blocks = parse_vcfvcf(filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
-    }else if(options.count("target_vcf")){
+    }else if(options.count("target_bcf")){
       if(options.count("chr") > 0){
 
         igzstream is_chr(options["chr"].as<std::string>());
@@ -2777,7 +2790,7 @@ mut(cxxopts::Options& options){
         }
         while(getline(is_chr, line)){
           filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
-          filename_target.push_back(options["target_vcf"].as<std::string>() + "_chr" + line + ".bcf");
+          filename_target.push_back(options["target_bcf"].as<std::string>() + "_chr" + line + ".bcf");
           if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
           if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
         }
@@ -2785,13 +2798,13 @@ mut(cxxopts::Options& options){
 
       }else{
         filename_mut.push_back(options["mut"].as<std::string>());
-        filename_target.push_back(options["target_vcf"].as<std::string>());
+        filename_target.push_back(options["target_bcf"].as<std::string>());
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("ref_genome") > 0) filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
       }
       num_blocks = parse_vcf(filename_mut, filename_target, filename_target_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
-    }else if(options.count("target_bam") && options.count("reference_vcf")){
+    }else if(options.count("target_bam") && options.count("reference_bcf")){
 
       filename_target.push_back(options["target_bam"].as<std::string>() + ".bam");
       //check order of contigs
@@ -2807,7 +2820,7 @@ mut(cxxopts::Options& options){
         while(getline(is_chr, line)){
           name_chr.push_back(line);
           filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
-          filename_ref.push_back(options["reference_vcf"].as<std::string>() + "_chr" + line + ".bcf");
+          filename_ref.push_back(options["reference_bcf"].as<std::string>() + "_chr" + line + ".bcf");
           filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
           if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
           if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>() + "_chr" + line + ".fa");
@@ -2817,12 +2830,12 @@ mut(cxxopts::Options& options){
       }else{
         name_chr.push_back("");
         filename_mut.push_back(options["mut"].as<std::string>());
-        filename_ref.push_back(options["reference_vcf"].as<std::string>());
+        filename_ref.push_back(options["reference_bcf"].as<std::string>());
         filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());
       }
-      num_blocks = parse_onebamvcf(name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
+      num_blocks = parse_onebamvcf(params, name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_bam") && options.count("reference_bam")){
 
@@ -2854,7 +2867,7 @@ mut(cxxopts::Options& options){
         if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
         if(options.count("reference_mask") > 0) filename_reference_mask.push_back(options["reference_mask"].as<std::string>());
       }
-      num_blocks = parse_onebambam(name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
+      num_blocks = parse_onebambam(params, name_chr, filename_mut, filename_target, filename_ref, filename_target_mask, filename_reference_mask, filename_ref_genome, age, ref_age, C, rng, num_bases_per_block, age_shared_count_block, age_notshared_count_block, age_shared_emp_block, age_notshared_emp_block);
 
     }else if(options.count("target_tmp") && options.count("reference_tmp")){
 
@@ -3401,9 +3414,9 @@ void
 preprocess_mut(cxxopts::Options& options){
 
   bool help = false;
-  if(!options.count("anc") || !options.count("mut") || !options.count("reference_vcf") || !options.count("ref_genome") || !options.count("anc_genome") || !options.count("output")){
+  if(!options.count("anc") || !options.count("mut") || !options.count("reference_bcf") || !options.count("ref_genome") || !options.count("anc_genome") || !options.count("mask") || !options.count("output")){
     std::cout << "Not enough arguments supplied." << std::endl;
-    std::cout << "Needed: anc, mut, reference_vcf, ref_genome, anc_genome, mask, output." << std::endl;
+    std::cout << "Needed: anc, mut, reference_bcf, ref_genome, anc_genome, mask, output. Optional: outgroup_tmrca, years_per_gen" << std::endl;
     help = true;
   }
   if(options.count("help") || help){
@@ -3415,14 +3428,22 @@ preprocess_mut(cxxopts::Options& options){
   std::cerr << "---------------------------------------------------------" << std::endl;
   std::cerr << "Adding fixed mutations to mut file.." << std::endl;
 
-  double outgroup_age = 10e6/28;
+	float years_per_gen = 28.0;
+	if(options.count("years_per_gen")){
+		years_per_gen = options["years_per_gen"].as<float>();
+	}
+
+  double outgroup_age = 10e6/years_per_gen;
+	if(options.count("outgroup_tmrca")){
+	  outgroup_age = options["outgroup_tmrca"].as<float>();
+	}
 
   fasta ref_genome, anc_genome, mask;
   ref_genome.Read(options["ref_genome"].as<std::string>());
   anc_genome.Read(options["anc_genome"].as<std::string>());
   mask.Read(options["mask"].as<std::string>());
 
-  vcf_parser vcf(options["reference_vcf"].as<std::string>());
+  vcf_parser vcf(options["reference_bcf"].as<std::string>());
 
   int bp = -1, bp_prev, DAF;
 
@@ -3529,9 +3550,6 @@ preprocess_mut(cxxopts::Options& options){
           snp_ref++;
           if(snp_ref == L_ref) break;
         }
-				if((*it_mut).pos == 2428609){
-				  std::cerr << tmp << std::endl;
-				}
 				if((*it_mut).pos == tmp) biallelic = false;
 				tmp = (*it_mut).pos;
       }

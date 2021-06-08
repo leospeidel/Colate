@@ -60,6 +60,10 @@ class bam_parser{
 
     int prev_pos;
 
+    int mapq_th = 20;
+		int len_th  = 30;
+		int mismatch_th = 3;
+
     void count_alleles_for_read();
 
   public:
@@ -71,7 +75,7 @@ class bam_parser{
     bool eof;
 
     int32_t pos; //left most position of alignment in zero-based coordinate
-    char *chr; //contif name
+    char *chr = NULL; //contig name
     uint32_t len; //length of the read
     uint32_t maxlen;
     uint8_t *q; //quality string
@@ -88,8 +92,8 @@ class bam_parser{
     std::vector<std::vector<int>> count_alleles;
 
     bam_parser();
-    bam_parser(const std::string& filename);
-    bam_parser(const std::string& filename, const std::string& filename_ref);
+    bam_parser(const std::string& filename, const std::string& params);
+    bam_parser(const std::string& filename, const std::string& params, const std::string& filename_ref);
     ~bam_parser(){
       bam_destroy1(aln);
       sam_close(fp_in);

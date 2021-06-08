@@ -55,7 +55,7 @@ chr=1
 ${PATH_TO_BINARY}/Colate --mode preprocess_mut \
 	--anc example_chr${chr}.anc.gz \
 	--mut example_chr${chr}.mut.gz \
-	--reference_vcf example_chr${chr}.bcf \
+	--reference_bcf example_chr${chr}.bcf \
 	--ref_genome GRCh37_chr${chr}.fa.gz \
 	--anc_genome human_ancestor_${chr}.fa.gz \
 	--mask example_mask_chr${chr}.fa \
@@ -84,9 +84,9 @@ mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 ${PATH_TO_BINARY}/Colate \
 	--mode make_tmp \
 	--mut ${mut} \
-	--target_vcf example_target \ 
+	--target_bcf example_target \ 
 	--ref_genome GRCh37 \
-        --chr chr.txt \
+  --chr chr.txt \
 	-o example_out
 	
 #output is example_out.colate.in
@@ -104,7 +104,7 @@ ${PATH_TO_BINARY}/Colate \
 	--mut ${mut} \
 	--target_bam example_target.bam \ 
 	--ref_genome GRCh37 \
-        --chr chr.txt \
+  --chr chr.txt \
 	-o example_out
 	
 #output is example_out.colate.in
@@ -127,7 +127,7 @@ ${PATH_TO_BINARY}/Colate \
 	--reference_tmp example_reference.colate.in \
 	--target_mask target_mask \
 	--reference_mask reference_mask \
-        --bins ${bins} \
+  --bins ${bins} \
 	--chr chr.txt \
 	--num_bootstrap 20 \
 	--target_age 1000 \
@@ -158,9 +158,9 @@ bins="3,7,0.2" #epochs in log10 years (format: start,end,stepsize)
 ${PATH_TO_BINARY}/Colate \
 	--mode mut \
 	--mut ${mut} \
-	--target_vcf example_target \
-	--reference_vcf example_reference \
-        --ref_genome GRCh37_chr${chr}.fa.gz \
+	--target_bcf example_target \
+	--reference_bcf example_reference \
+  --ref_genome GRCh37_chr${chr}.fa.gz \
 	--target_mask target_mask \
 	--reference_mask reference_mask \
 	--bins ${bins} \
@@ -191,7 +191,7 @@ ${PATH_TO_BINARY}/Colate \
 	--mut ${mut} \
 	--target_bam example_target.bam \
 	--reference_bam example_reference.bam \
-        --ref_genome GRCh37 \
+  --ref_genome GRCh37 \
 	--bins ${bins} \
 	--chr chr.txt \
 	--num_bootstrap 20 \
