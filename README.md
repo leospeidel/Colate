@@ -11,6 +11,8 @@ Preprint describing the method: https://www.biorxiv.org/content/10.1101/2021.02.
 
 A working example using two ancient human genomes (LBK and Loschbour; [Lazaridis et al., Nature 2014](https://www.nature.com/articles/nature13673)) can be downloaded from [here](https://www.dropbox.com/s/171r0mgdtpx1tz2/colate_example.tgz?dl=0) (512Mb).
 
+![alt text](https://github.com/leospeidel/Colate/blob/master/plot_LBK_Loschbour.png)
+
 # Installation
 
 **Precompiled binaries for several platforms can be found under ./binaries.**
@@ -121,6 +123,7 @@ ${PATH_TO_BINARY}/Colate \
 #--target_mask, --reference_mask, 
 #--target_age, --reference_age (specified in years)
 #--years_per_gen, --num_bootstrap
+#--coal is used to specify arbitrary epoch boundaries and initial coalescence rates (file format .coal).
 
 mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 bins="3,7,0.2" #epochs in log10 years (format: start,end,stepsize)
@@ -154,6 +157,8 @@ ${PATH_TO_BINARY}/Colate \
 #--target_mask, --reference_mask, 
 #--target_age, --reference_age (specified in years)
 #--years_per_gen, --num_bootstrap are optional
+#--coal is used to specify arbitrary epoch boundaries and initial coalescence rates (file format .coal).
+
 #age is specified in years.
 #Assumption is any site not in the bcf is homozygous reference (unless masked out by a mask file).
 
@@ -187,6 +192,8 @@ ${PATH_TO_BINARY}/Colate \
 ```` bash
 #--target_age, --reference_age (specified in years)
 #--years_per_gen, --num_bootstrap are optional
+#--coal is used to specify arbitrary epoch boundaries and initial coalescence rates (file format .coal).
+
 
 mut="example_fixed" #name of .mut files obtained from step 1 (or downloaded)
 bins="3,7,0.2" #epochs in log10 years (format: start,end,stepsize)
