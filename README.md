@@ -7,9 +7,13 @@
 Please send any comments, questions and bug reports to leo.speidel@outlook.com. <br/>
 Preprint describing the method: https://www.biorxiv.org/content/10.1101/2021.02.17.431573v1
 
+# Example scripts and data
+
+A working example using two ancient human genomes (LBK and Loschbour; [Lazaridis et al., Nature 2014](https://www.nature.com/articles/nature13673)) can be downloaded from [here](https://www.dropbox.com/s/171r0mgdtpx1tz2/colate_example.tgz?dl=0) (512Mb).
+
 # Installation
 
-**Precompiled binaries can be found under ./binaries.**
+**Precompiled binaries for several platforms can be found under ./binaries.**
 
 Requirements:
 
@@ -86,7 +90,7 @@ ${PATH_TO_BINARY}/Colate \
 	--mut ${mut} \
 	--target_bcf example_target \ 
 	--ref_genome GRCh37 \
-  --chr chr.txt \
+        --chr chr.txt \
 	-o example_out
 	
 #output is example_out.colate.in
@@ -104,7 +108,7 @@ ${PATH_TO_BINARY}/Colate \
 	--mut ${mut} \
 	--target_bam example_target.bam \ 
 	--ref_genome GRCh37 \
-  --chr chr.txt \
+        --chr chr.txt \
 	-o example_out
 	
 #output is example_out.colate.in
@@ -127,7 +131,7 @@ ${PATH_TO_BINARY}/Colate \
 	--reference_tmp example_reference.colate.in \
 	--target_mask target_mask \
 	--reference_mask reference_mask \
-  --bins ${bins} \
+        --bins ${bins} \
 	--chr chr.txt \
 	--num_bootstrap 20 \
 	--target_age 1000 \
@@ -160,7 +164,7 @@ ${PATH_TO_BINARY}/Colate \
 	--mut ${mut} \
 	--target_bcf example_target \
 	--reference_bcf example_reference \
-  --ref_genome GRCh37_chr${chr}.fa.gz \
+        --ref_genome GRCh37_chr${chr}.fa.gz \
 	--target_mask target_mask \
 	--reference_mask reference_mask \
 	--bins ${bins} \
@@ -191,7 +195,7 @@ ${PATH_TO_BINARY}/Colate \
 	--mut ${mut} \
 	--target_bam example_target.bam \
 	--reference_bam example_reference.bam \
-  --ref_genome GRCh37 \
+        --ref_genome GRCh37 \
 	--bins ${bins} \
 	--chr chr.txt \
 	--num_bootstrap 20 \
