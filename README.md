@@ -1,7 +1,7 @@
 # Colate
 
 **Software for inferring coalescence rates for unphased, low-coverage genomes.**
-- Input fileformats: bcf/bam files 
+- Input file formats: bcf/bam files 
 - Requires mutation ages obtained from a genealogy (e.g., using [Relate](https://myersgroup.github.io/relate/)). Precomputed mutation ages available below.
 
 Please send any comments, questions and bug reports to leo.speidel@outlook.com. <br/>
