@@ -47,6 +47,10 @@ set(HTSLIB_DIR ${CMAKE_SOURCE_DIR}/include/vcf)
 set(COLATE_DIR ${CMAKE_SOURCE_DIR}/include/coal)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
 
+#add_definitions(-static)
+#add_definitions(-static-libgcc)
+#set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
+
 link_directories(${HTSLIB_DIR})
 set(HTSLIB hts)
 

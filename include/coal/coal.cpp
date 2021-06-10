@@ -3545,13 +3545,13 @@ preprocess_mut(cxxopts::Options& options){
       //check if snp exists in mut
       if(snp_ref < L_ref){
         while((*it_mut).pos < bp+1){
-					tmp = (*it_mut).pos;
+					//tmp = (*it_mut).pos;
           num_bases_snp_persists = ancmut.NextSNP(mtr, it_mut);
           snp_ref++;
           if(snp_ref == L_ref) break;
         }
-				if((*it_mut).pos == tmp) biallelic = false;
-				tmp = (*it_mut).pos;
+				//if((*it_mut).pos == tmp) biallelic = false;
+				//tmp = (*it_mut).pos;
       }
 
       if(tree_count < (*it_mut).tree){
@@ -3559,6 +3559,8 @@ preprocess_mut(cxxopts::Options& options){
         mtr.tree.GetCoordinates(coords);
         tmrca = coords[root];
       } 
+
+			//if(bp == 17071275) std::cerr << (*it_mut).pos << " " << (*it_mut).branch.size() << " " << (*it_mut).flipped << " " << DAF << " " << biallelic << std::endl;
 
       if((*it_mut).pos == bp+1 && DAF > 0 && DAF < N && biallelic){
 
