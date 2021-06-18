@@ -62,6 +62,7 @@ class bam_parser{
 
     int mapq_th = 20;
 		int len_th  = 30;
+		int bq_th   = 30;
 		int mismatch_th = 3;
 
     void count_alleles_for_read();

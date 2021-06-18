@@ -69,14 +69,17 @@ bam_parser::count_alleles_for_read(){
     for(int i = start; i < end; i++){
 
       if(pos + i >= ref_genome.seq.size()) break;
-      total++;
-      if(ref_genome.seq[pos+i] == seq[i]) num_matching++;
 
-      //reset count_alleles if necessary
-      if(pos_of_entry[(pos+i) % num_entries] != pos+i){
-        std::fill(count_alleles[(pos+i) % num_entries].begin(), count_alleles[(pos+i) % num_entries].end(), 0);
-        pos_of_entry[(pos+i) % num_entries] = pos+i;
-      }
+			if((int)q[i] >= bq_th){
+				total++;
+				if(ref_genome.seq[pos+i] == seq[i]) num_matching++;
+
+				//reset count_alleles if necessary
+				if(pos_of_entry[(pos+i) % num_entries] != pos+i){
+					std::fill(count_alleles[(pos+i) % num_entries].begin(), count_alleles[(pos+i) % num_entries].end(), 0);
+					pos_of_entry[(pos+i) % num_entries] = pos+i;
+				}
+			}
 
     }
 
@@ -87,17 +90,19 @@ bam_parser::count_alleles_for_read(){
       coverage_after_filter += len;
       for(int i = start; i < end; i++){
 
-        if(seq[i] == 'A'){
-          count_alleles[(pos+i) % num_entries][0]++;
-        }else if(seq[i] == 'C'){
-          count_alleles[(pos+i) % num_entries][1]++;
-        }else if(seq[i] == 'G'){
-          count_alleles[(pos+i) % num_entries][2]++;
-        }else if(seq[i] == 'T'){
-          count_alleles[(pos+i) % num_entries][3]++;
-        }else{
-          assert(1);
-        }
+				if((int)q[i] >= bq_th){
+					if(seq[i] == 'A'){
+						count_alleles[(pos+i) % num_entries][0]++;
+					}else if(seq[i] == 'C'){
+						count_alleles[(pos+i) % num_entries][1]++;
+					}else if(seq[i] == 'G'){
+						count_alleles[(pos+i) % num_entries][2]++;
+					}else if(seq[i] == 'T'){
+						count_alleles[(pos+i) % num_entries][3]++;
+					}else{
+						assert(1);
+					}
+				}
 
       }
 
@@ -277,6 +282,9 @@ bam_parser::read_entry(){
       for(int i=0; i< len ; i++){
         seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
       }
+
+			q = bam_get_qual(aln);
+      //std::cerr << (int) q[0] << " "  << q[0] + 33 << " " << q[1] + 33 << std::endl;
 
       count_alleles_for_read();
 

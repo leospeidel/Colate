@@ -6,6 +6,11 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 set (CMAKE_CXX_STANDARD 14)
 
+add_definitions(-static)
+add_definitions(-static-libgcc)
+set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
+
+
 find_package( ZLIB REQUIRED )
 if ( ZLIB_FOUND )
 	message(STATUS "zlib Found: ${ZLIB_VERSION}")
@@ -46,10 +51,6 @@ set(TSKIT_DIR ${CMAKE_SOURCE_DIR}/include/src/tskit)
 set(HTSLIB_DIR ${CMAKE_SOURCE_DIR}/include/vcf)
 set(COLATE_DIR ${CMAKE_SOURCE_DIR}/include/coal)
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/include/test)
-
-#add_definitions(-static)
-#add_definitions(-static-libgcc)
-#set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
 
 link_directories(${HTSLIB_DIR})
 set(HTSLIB hts)

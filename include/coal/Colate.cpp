@@ -65,6 +65,11 @@ int main(int argc, char* argv[]){
     //make mut
 	  make_tmp(options);
 
+	}else if(!mode.compare("print_tmp")){
+
+		//make mut
+		print_tmp(options);
+
 	}else if(!mode.compare("calc_depth")){
 
 		//make mut
