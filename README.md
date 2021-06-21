@@ -17,7 +17,7 @@ A working example using two ancient human genomes (LBK and Loschbour; [Lazaridis
 
 **Precompiled binaries for several platforms can be found under ./binaries.**
 
-Requirements:
+Requirements*:
 
 - C++11
 - cmake
@@ -31,6 +31,7 @@ cd build
 cmake ..
 make
 ````
+*On my cluster, I have to load modules CMake, GCC, and BCFtools to compile.
 
 Colate uses a modifed version of [htslib](https://github.com/samtools/htslib), which has been copied to ./include/vcf/.
 
