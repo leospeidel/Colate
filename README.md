@@ -10,7 +10,7 @@ Preprint describing the method: https://www.biorxiv.org/content/10.1101/2021.02.
 
 # Example scripts and data
 
-A working example using two ancient human genomes (LBK and Loschbour; [Lazaridis et al., Nature 2014](https://www.nature.com/articles/nature13673)) can be downloaded from [here](https://www.dropbox.com/s/171r0mgdtpx1tz2/colate_example.tgz?dl=0) (512Mb).
+A working example using chromosome 1 of two ancient human genomes (LBK and Loschbour; [Lazaridis et al., Nature 2014](https://www.nature.com/articles/nature13673)) can be downloaded from [here](https://www.dropbox.com/s/171r0mgdtpx1tz2/colate_example.tgz?dl=0) (512Mb).
 
 ![alt text](https://github.com/leospeidel/Colate/blob/master/plot_LBK_Loschbour.png)
 
