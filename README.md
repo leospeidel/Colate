@@ -26,13 +26,16 @@ Requirements*:
 - OpenSSL
 - lzma
 
+*On my cluster, I have to load modules CMake, GCC, and BCFtools to compile.<br/>
+*On a Mac, I installed CMake and openssl@1.1 using homebrew and updated paths in lines 24-29 of CMakeLists.txt.
+
+
 To compile from source use
 ```` bash
 cd build
 cmake ..
 make
 ````
-*On my cluster, I have to load modules CMake, GCC, and BCFtools to compile.
 
 Colate uses a modifed version of [htslib](https://github.com/samtools/htslib), which has been copied to ./include/vcf/.
 
