@@ -8,8 +8,8 @@ set (CMAKE_CXX_STANDARD 14)
 
 #add_definitions(-static)
 #add_definitions(-static-libgcc)
+#set(OPENSSL_ROOT_DIR /users/myers/speidel/Documents/genomics/openssl/)
 #set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
-
 
 find_package( ZLIB REQUIRED )
 if ( ZLIB_FOUND )
@@ -28,9 +28,9 @@ if(APPLE)
 	list(APPEND LIB_LIST /opt/homebrew/Cellar/openssl@1.1/1.1.1k/lib/libcrypto.dylib)
 	message(STATUS "OpenSSL Version: ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES}")
 else()
-	find_package(OpenSSL REQUIRED) 
-	include_directories(${OPENSSL_INCLUDE_DIR})
-	list(APPEND LIB_LIST ${OPENSSL_LIBRARIES})
+  find_package(OpenSSL REQUIRED) 
+  include_directories(${OPENSSL_INCLUDE_DIR})
+  list(APPEND LIB_LIST ${OPENSSL_LIBRARIES})
 	message(STATUS "OpenSSL Version: ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES}")
 endif()
 

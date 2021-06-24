@@ -4,12 +4,12 @@ add_library(hts STATIC
 bcf_sr_sort.h          header.h               hts_internal.h         textutils_internal.h   version.h
 config.h               hfile_internal.h       sam_internal.h         thread_pool_internal.h
 
-bcf_sr_sort.c          errmod.c               hfile_gcs.c            hfile_s3_write.c    kfunc.c             
+bcf_sr_sort.c          errmod.c               hfile_gcs.c            kfunc.c             
 multipart.c            regidx.c               vcf.c                  bgzf.c              faidx.c             
-hfile_libcurl.c        hts.c                  knetfile.c             region.c            tbx.c               
+hts.c                  knetfile.c             region.c            tbx.c               
 vcf_sweep.c            header.c               hfile_net.c            hts_os.c            kstring.c           
 probaln.c              sam.c                  textutils.c            vcfutils.c          hfile.c             
-hfile_s3.c             md5.c                  realn.c                synced_bcf_reader.c thread_pool.c
+md5.c                  realn.c                synced_bcf_reader.c thread_pool.c
 
 cram/cram.h            cram/cram_encode.h     cram/cram_samtools.h   cram/mFILE.h           cram/os.h              cram/rANS_static.h
 cram/cram_codecs.h     cram/cram_index.h      cram/cram_stats.h      cram/misc.h            cram/pooled_alloc.h    cram/string_alloc.h
@@ -25,5 +25,5 @@ htslib/hfile.h             htslib/hts_log.h           htslib/khash.h            
 os/lzma_stub.h
 htslib.hpp htslib.cpp
 )
-target_link_libraries(hts relateStatic OpenSSL::Crypto z m bz2 curl lzma pthread)
+target_link_libraries(hts relateStatic OpenSSL::Crypto z m bz2 lzma pthread)
 

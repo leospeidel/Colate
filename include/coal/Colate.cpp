@@ -70,6 +70,11 @@ int main(int argc, char* argv[]){
 		//make mut
 		print_tmp(options);
 
+	}else if(!mode.compare("compare_tmp")){
+
+		//make mut
+		compare_tmp(options);
+
 	}else if(!mode.compare("calc_depth")){
 
 		//make mut
@@ -85,7 +90,7 @@ int main(int argc, char* argv[]){
     std::cout << "####### error #######" << std::endl;
     std::cout << "Invalid or missing mode." << std::endl;
     std::cout << "Options for --mode are:" << std::endl;
-    std::cout << "preprocess_mut, make_tmp, mut, calc_depth." << std::endl;
+    std::cout << "preprocess_mut, make_tmp, mut, calc_depth, print_tmp." << std::endl;
 
   }
 
