@@ -12,7 +12,8 @@ Preprint describing the method: https://www.biorxiv.org/content/10.1101/2021.02.
 
 # Example scripts and data
 
-A working example using chromosome 1 of two ancient human genomes (LBK and Loschbour; [Lazaridis et al., Nature 2014](https://www.nature.com/articles/nature13673)) can be downloaded from [here](https://www.dropbox.com/s/171r0mgdtpx1tz2/colate_example.tgz?dl=0) (512Mb).
+A working example using chromosome 1 of two ancient human genomes (LBK and Loschbour; [Lazaridis et al., Nature 2014](https://www.nature.com/articles/nature13673)) can be downloaded from [here](https://www.dropbox.com/s/dhwzjrv0qxprx8b/colate_example.tgz?dl=0) (512Mb).
+
 
 # Installation
 
@@ -47,8 +48,8 @@ Colate uses a modifed version of [htslib](https://github.com/samtools/htslib), w
 - Genome mask file (optional), to filter out unreliable regions.
 - Mutation ages obtained from a genealogy (see below for precomputed mutation ages)
 
-We provide a preprocessed file for the SGDP data (aligned to GRCh37) here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).<br/>
-A human reference genome (GRCh37) in the required format (i.e., separated by chromosome): [GRCh37.tgz](https://www.dropbox.com/s/b73zmfcjkx34dxs/GRCh37.tgz?dl=0) (512Mb)
+We provide a preprocessed file for the SGDP data (aligned to GRCh37) here: [SGDP_mutages.tar](https://www.dropbox.com/s/pysvzyx68553wxx/SGDP_mutages.tar?dl=0) (654Mb).<br/>
+A human reference genome (GRCh37) in the required format (i.e., separated by chromosome): [GRCh37.tgz](https://www.dropbox.com/s/mazsr64cndlblo3/GRCh37.tgz?dl=0) (512Mb)
 
 ## Step 1
 
