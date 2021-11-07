@@ -131,6 +131,7 @@ haps::DumpSNP(std::vector<char>& sequence, int bp, FILE* fp_out){
 }
 
 ////////////////////////////
+
 map::map(const char* filename){
 
   mgzip g;
@@ -166,6 +167,47 @@ map::map(const char* filename){
   g.close(fp);
 
 }
+
+void
+map::load(const char* filename){
+
+	mgzip g;
+
+	fp = g.open(filename, "r");
+	assert(fp);
+	int lines = 0;
+	while(!feof(fp)){
+		if(fgetc(fp) == '\n'){
+			lines++;
+		}
+	}
+	lines--;//don't count the header
+	g.close(fp);
+
+	fp = g.open(filename, "r");
+	assert(fp);
+	//skip header
+	fscanf(fp, "%s", buffer); 
+	fscanf(fp, "%s", buffer); 
+	fscanf(fp, "%s", buffer); 
+
+	bp.resize(lines);
+	gen_pos.resize(lines);
+
+	float dummy;
+	double fbp;
+	for(int snp = 0; snp < lines; snp++){
+		fscanf(fp, "%lf %f %lf", &fbp, &dummy, &gen_pos[snp]);
+		bp[snp] = fbp;
+	}
+
+	g.close(fp);
+
+}
+
+
+
+
 
 ////////////////////////////
 void

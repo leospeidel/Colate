@@ -127,7 +127,9 @@ class map{
  
     std::vector<int> bp;
     std::vector<double> gen_pos;
+		map(){};
     map(const char* filename);
+		void load(const char* filename);
 
 };
 

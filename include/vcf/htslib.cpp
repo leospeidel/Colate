@@ -64,7 +64,30 @@ bam_parser::count_alleles_for_read(){
 
     //calculate how many bp match reference at this read
     int num_matching = 0, total = 0;
-    int start = 2, end = len - 2;
+    int start = 3, end = len - 3;
+
+    bool deam_use = true;
+    if(0){
+    //TODO: use option to deactivate this filter
+    start = 3, end = len - 3;
+    deam_use = false;
+    for(int i = 0; i < start; i++){
+      if(pos + i >= ref_genome.seq.size()) break;
+      //if((int)q[i] >= bq_th){
+      if(ref_genome.seq[pos+i] == 'C' && seq[i] == 'T') deam_use = true;
+      if(ref_genome.seq[pos+i] == 'G' && seq[i] == 'A') deam_use = true;
+      break;
+      //}
+    }
+    for(int i = end; i < len; i++){
+      if(pos + i >= ref_genome.seq.size()) break;
+      //if((int)q[i] >= bq_th){
+      if(ref_genome.seq[pos+i] == 'C' && seq[i] == 'T') deam_use = true;
+      if(ref_genome.seq[pos+i] == 'G' && seq[i] == 'A') deam_use = true;
+      break;
+      //}
+    }
+    }
 
     for(int i = start; i < end; i++){
 
@@ -81,38 +104,71 @@ bam_parser::count_alleles_for_read(){
 				}
 			}
 
-    }
+    } 
+
+    //get two alleles at this position (e.g., through chimp & humans), if one of them is a 'C' and read maps to forward strand, then exclude.
+    //if it is a C/T
 
     //if(total - num_matching <= 3 && total > 0){
-		if(total - num_matching <= mismatch_th && total > 0){
-		//if(total > 0){
+    if(strandfilter){
+      if(total - num_matching <= mismatch_th && total > 0 && deam_use){
+      //if(total > 0){
 
-      coverage_after_filter += len;
-      for(int i = start; i < end; i++){
+        coverage_after_filter += len;
+        for(int i = start; i < end; i++){
 
-				if((int)q[i] >= bq_th){
-					if(seq[i] == 'A'){
-						count_alleles[(pos+i) % num_entries][0]++;
-					}else if(seq[i] == 'C'){
-						count_alleles[(pos+i) % num_entries][1]++;
-					}else if(seq[i] == 'G'){
-						count_alleles[(pos+i) % num_entries][2]++;
-					}else if(seq[i] == 'T'){
-						count_alleles[(pos+i) % num_entries][3]++;
-					}else{
-						assert(1);
-					}
-				}
+          if( (is_reverse || (ref_genome.seq[pos + i] != 'C' && anc_genome.seq[pos + i] != 'C')) && (!is_reverse || (ref_genome.seq[pos+i] != 'G' && anc_genome.seq[pos+i] != 'G')) ){
+
+            if((int)q[i] >= bq_th){
+              if(seq[i] == 'A'){
+                count_alleles[(pos+i) % num_entries][0]++;
+              }else if(seq[i] == 'C'){
+                count_alleles[(pos+i) % num_entries][1]++;
+              }else if(seq[i] == 'G'){
+                count_alleles[(pos+i) % num_entries][2]++;
+              }else if(seq[i] == 'T'){
+                count_alleles[(pos+i) % num_entries][3]++;
+              }else{
+                assert(1);
+              }
+            }
+
+          }
+
+        }
 
       }
+    }else{
+      if(total - num_matching <= mismatch_th && total > 0 && deam_use){
+        //if(total > 0){
 
+        coverage_after_filter += len;
+        for(int i = start; i < end; i++){
+
+          if((int)q[i] >= bq_th){
+            if(seq[i] == 'A'){
+              count_alleles[(pos+i) % num_entries][0]++;
+            }else if(seq[i] == 'C'){
+              count_alleles[(pos+i) % num_entries][1]++;
+            }else if(seq[i] == 'G'){
+              count_alleles[(pos+i) % num_entries][2]++;
+            }else if(seq[i] == 'T'){
+              count_alleles[(pos+i) % num_entries][3]++;
+            }else{
+              assert(1);
+            }
+          }
+
+        }
+
+      }
     }
 
   }
 
 }
 
-bam_parser::bam_parser(const std::string& filename, const std::string& params){
+bam_parser::bam_parser(const std::string& filename, const std::string& params, const bool strandfilter): strandfilter(strandfilter){
 
 	int i = 0;
 	std::string tmp;
@@ -228,6 +284,68 @@ bam_parser::bam_parser(const std::string& filename, const std::string& params, c
   }
 }
 
+bam_parser::bam_parser(const std::string& filename, const std::string& params, const std::string& filename_ref, const std::string& filename_anc, const bool strandfilter): strandfilter(strandfilter){
+
+  int i = 0;
+  std::string tmp;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  mapq_th = stoi(tmp);
+  i++;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  len_th = stoi(tmp);
+  i++;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  mismatch_th = stoi(tmp);
+
+  fp_in = hts_open(filename.c_str(), "r");
+  if (fp_in == NULL) {
+    std::cerr << "Warning: Failed to open file " << filename << std::endl;
+  }else{
+    bamHdr = sam_hdr_read(fp_in); //read header
+    aln = bam_init1(); //initialize an alignment
+
+    eof = false;
+    coverage = 0;
+    coverage_after_filter = 0;
+
+    //initialise count_alleles at any given position
+    prev_pos = -1;
+    pos = 0;
+    pos_of_entry.resize(num_entries);
+    std::fill(pos_of_entry.begin(), pos_of_entry.end(), -1);
+    count_alleles.resize(num_entries);
+    std::vector<std::vector<int>>::iterator it_count_alleles;
+    for(it_count_alleles = count_alleles.begin(); it_count_alleles != count_alleles.end(); it_count_alleles++){
+      (*it_count_alleles).resize(4);
+    }
+
+    maxlen = 1e4;
+    seq = (char *) malloc(maxlen);
+
+    ref_genome.Read(filename_ref);
+    anc_genome.Read(filename_anc);
+    read_entry();
+    chr    = bamHdr->target_name[aln->core.tid];
+    contig = chr;
+  }
+}
+
+
 int 
 bam_parser::open(std::string& filename, std::string& filename_ref){
   fp_in = hts_open(filename.c_str(), "r");
@@ -268,11 +386,13 @@ bam_parser::read_entry(){
 		//TODO:
 		//check here whether read is paired and decide whether to use it
 
-    if(strcmp(chr, contig.c_str()) == 0){
+    if(strcmp(chr, contig.c_str()) == 0 || strcmp(chr, ("chr" + contig).c_str()) == 0){
       len = aln->core.l_qseq; //length of the read.
 
       q = bam_get_seq(aln); //quality string
       mapq = aln->core.qual ; //mapping quality
+
+      is_reverse = bam_is_rev(aln);
 
       //seq = (char *)malloc(len);
       if(len > maxlen){ 
@@ -304,25 +424,87 @@ bam_parser::read_entry(){
 
 bool 
 bam_parser::read_to_pos(int current_pos){
-  if(strcmp(contig.c_str(), chr) == 0){
+  if(strcmp(contig.c_str(), chr) == 0 || strcmp(chr, ("chr" + contig).c_str()) == 0){
     if( !eof && pos - current_pos < num_entries/2.0){
       while(read_entry() > 0){
         if(pos - current_pos >= num_entries/2.0) break;
-        if(strcmp(contig.c_str(), chr) != 0) break;
+        if(strcmp(contig.c_str(), chr) != 0 && strcmp(chr, ("chr" + contig).c_str()) != 0) break;
       }
     }
   }
   return(eof);
 }
 
+
+bool 
+bam_parser::read_deam(int current_pos, std::vector<int>& v_isC1, std::vector<int>& v_isC2, std::vector<int>& v_isCT1, std::vector<int>& v_isCT2, std::vector<int>& v_isCpG1, std::vector<int>& v_isCpG2, std::vector<int>& v_isCpGt1, std::vector<int>& v_isCpGt2){
+  if(strcmp(contig.c_str(), chr) == 0 || strcmp(chr, ("chr" + contig).c_str()) == 0){
+    if( !eof && pos - current_pos < num_entries/2.0){
+      while(read_entry() > 0){
+        if(pos - current_pos >= num_entries/2.0) break;
+        if(strcmp(contig.c_str(), chr) != 0 && strcmp(chr, ("chr" + contig).c_str()) != 0) break;
+
+        if(mapq >= mapq_th && len >= len_th){
+
+          bool deam = false, isC = false, isCpG = false;
+          for(int i = 0; i < len; i++){
+            if(pos + i >= ref_genome.seq.size()) break;
+            
+            isC = false;
+            isCpG = false;
+            deam = false;
+
+            if(ref_genome.seq[pos+i] == 'C' || ref_genome.seq[pos+i] == 'G') isC = true; 
+            if(ref_genome.seq[pos+i] == 'C' && ref_genome.seq[pos+i+1] == 'G') isCpG = true;  
+            if(ref_genome.seq[pos+i] == 'G' && ref_genome.seq[pos+i-1] == 'C') isCpG = true;  
+            if(ref_genome.seq[pos+i] == 'C' && seq[i] == 'T') deam = true;
+            if(ref_genome.seq[pos+i] == 'G' && seq[i] == 'A') deam = true;
+
+            if(isC && i < 15){
+              v_isC1[i]++;
+              if(deam) v_isCT1[i]++;
+              if(isCpG) v_isCpG1[i]++;
+              if(isCpG && deam) v_isCpGt1[i]++;
+              //os << len << " " << i << " " << len-1-i << " " << deam << " " << isCpG << "\n";
+              //std::cerr << len << " " << i << " " << len-1-i << " " << deam << " " << isCpG << "\n";
+            }
+            if(isC && len-1-i < 15){
+              v_isC2[len-1-i]++;
+              if(deam) v_isCT2[len-1-i]++;
+              if(isCpG) v_isCpG2[len-1-i]++;
+              if(isCpG && deam) v_isCpGt2[len-1-i]++;
+            }
+
+          }
+
+        }
+      
+      }
+    }
+  }
+  return(eof);
+}
+
+
 void
-bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
+bam_parser::assign_contig(const std::string& icontig, const std::string& filename_ref, const std::string& filename_anc){
 
   if(icontig != ""){
     contig = icontig;
   }
 	ref_genome.seq.clear();
   ref_genome.Read(filename_ref);
+
+  anc_genome.seq.clear();
+  if(filename_anc != ""){
+    anc_genome.Read(filename_anc);
+  }
+  if(strandfilter){
+    if(filename_anc == ""){
+      std::cerr << "If strandfilter = true, need to specify anc genome" << std::endl;
+    }
+  }
+
   eof = false;
   coverage = 0;
   coverage_after_filter = 0;
@@ -342,8 +524,8 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
 		ret = sam_read1(fp_in, bamHdr, aln);
 		chr = bamHdr->target_name[aln->core.tid];
 	}
-	if(strcmp(chr, contig.c_str()) != 0){
-		while(strcmp(chr, contig.c_str()) != 0 && ret > 0){
+  if(strcmp(chr, contig.c_str()) != 0 && strcmp(chr, ("chr" + contig).c_str()) != 0){
+    while(strcmp(chr, contig.c_str()) != 0 && strcmp(chr, ("chr" + contig).c_str()) != 0 && ret > 0){
 			ret = sam_read1(fp_in, bamHdr, aln);
 			chr = bamHdr->target_name[aln->core.tid];
 		}
@@ -353,7 +535,7 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
     pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
     chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
     if(contig != ""){
-      if(strcmp(chr, contig.c_str()) != 0){
+      if(strcmp(chr, contig.c_str()) != 0 && strcmp(chr, ("chr" + contig).c_str()) != 0){
         std::cerr << "Error: contig names do not match" << std::endl;
         exit(1);
       }
@@ -361,6 +543,8 @@ bam_parser::assign_contig(std::string& icontig, std::string& filename_ref){
       contig = chr;
     }
     len = aln->core.l_qseq; //length of the read.
+
+    is_reverse = bam_is_rev(aln);
 
     q = bam_get_seq(aln); //quality string
     mapq = aln->core.qual ; //mapping quality

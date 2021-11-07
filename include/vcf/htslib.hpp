@@ -63,7 +63,9 @@ class bam_parser{
     int mapq_th = 20;
 		int len_th  = 30;
 		int bq_th   = 30;
+    bool strandfilter = false;
 		int mismatch_th = 3;
+    bool is_reverse;
 
     void count_alleles_for_read();
 
@@ -84,7 +86,7 @@ class bam_parser{
     char* seq; //seq
 
     std::string contig = "";
-    fasta ref_genome;
+    fasta ref_genome, anc_genome;
 
     double coverage = 0, coverage_after_filter = 0;
 
@@ -93,8 +95,9 @@ class bam_parser{
     std::vector<std::vector<int>> count_alleles;
 
     bam_parser();
-    bam_parser(const std::string& filename, const std::string& params);
+    bam_parser(const std::string& filename, const std::string& params, const bool strandfilter = false);
     bam_parser(const std::string& filename, const std::string& params, const std::string& filename_ref);
+    bam_parser(const std::string& filename, const std::string& params, const std::string& filename_ref, const std::string& filename_anc, const bool strandfilter = false);
     ~bam_parser(){
       bam_destroy1(aln);
       sam_close(fp_in);
@@ -104,7 +107,8 @@ class bam_parser{
     int read_entry();
     //read all reads covering current_pos
     bool read_to_pos(int current_pos);
-    void assign_contig(std::string& icontig, std::string& filename_ref);
+    bool read_deam(int current_pos, std::vector<int>& v_isC1, std::vector<int>& v_isC2, std::vector<int>& v_isCT1, std::vector<int>& v_isCT2, std::vector<int>& v_isCpG1, std::vector<int>& v_isCpG2, std::vector<int>& v_isCpGt1, std::vector<int>& v_isCpGt2);
+    void assign_contig(const std::string& icontig, const std::string& filename_ref, const std::string& filename_anc = "");
 
 };
 

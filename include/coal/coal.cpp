@@ -435,21 +435,30 @@ coal_localancestry(cxxopts::Options& options){
 			int bp_end = (*it_mut).pos;
 			if(bp_end == bp_start) bp_end++;
 
+      while(bp_start >= lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA")){
+        local_index++;
+      }
+
 			assert(group[local_index].size() == ancmut.NumTips());
 			if(local_index < group.size()-1){
 
 				if(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){
 
 					double frac = (lbp[local_index+1] - bp_start)/(bp_end-bp_start);
+          if(frac < 0.0) std::cerr << frac << " " << bp_start << " " << bp_end << " " << lbp[local_index+1] << std::endl;
 					assert(frac <= 1.0);
 					assert(frac >= 0.0);
 					ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], true);
 					local_index++;
-					if(local_index == group.size()){
+					if(local_index+1 == group.size()){
+						break;
 						local_index--;
 					}
 					while(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){
 						frac = (lbp[local_index+1] - lbp[local_index])/(bp_end-bp_start);
+						if(frac > 1.0 || frac < 0.0){
+							std::cerr << frac << " " << local_index << " " << lbp[local_index] << " " << lbp[local_index+1] << " " << bp_end << " " << bp_start << std::endl;
+						}
 						assert(frac <= 1.0);
 						assert(frac >= 0.0);
 						ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], false);
@@ -1964,7 +1973,10 @@ parse_onebambam(std::string& params, std::vector<std::string>& filename_chr, std
 
 ///////////////////////
 void
-maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
+maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
+
+  bool has_tar_mask = false;
+  if(filename_target_mask.size() > 0) has_tar_mask = true;
 
 	int N_target, DAF, bp_target = 0, bp_mut = 0, num_used_snps = 0;
 	bool target_flip = false;
@@ -1980,6 +1992,9 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 	for(int chr = 0; chr < filename_mut.size(); chr++){
 
 		std::cerr << "parsing CHR: " << chr+1 << " / " << filename_mut.size() << std::endl;
+
+    fasta tar_mask;
+    if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
 
 		Mutations mut;
 		mut.Read(filename_mut[chr]);
@@ -2018,6 +2033,14 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 					if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
 					if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
 
+          if(has_tar_mask){
+            if(bp_mut >= tar_mask.seq.size()){
+              use = false;
+            }else if(tar_mask.seq[bp_mut-1] != 'P'){
+              use = false;
+            }
+          }
+
 					if(use){
 
 						//check if mutation exists in ref
@@ -2039,7 +2062,6 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 							target_flip = false;
 							if(ancestral_target == derived && derived_target == ""){
 
-								std::cerr << "debug" << std::endl;
 								//possibility of sharing
 								target.extract_GT();
 
@@ -2119,10 +2141,13 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 
 						}
 
+            //std::cerr << use << " " << bp_mut << " " << N_target - DAF_target << " " << DAF_target << std::endl;
+
 						if(use){        
 							//fprintf(fp, "%s %d %c %c %d %d", filename_chr[chr].c_str(), bp_mut, ancestral[0], derived[0], N_target-DAF_target, DAF_target);          
 							int lchrom = strlen(filename_chr[chr].c_str());
 							AAF_target = N_target - DAF_target;
+              assert(AAF_target >= 0.0);
 							fwrite(&lchrom, sizeof(int), 1, fp);
 							fwrite(filename_chr[chr].c_str(), sizeof(char), lchrom, fp);
 							fwrite(&bp_mut, sizeof(int), 1, fp);
@@ -2142,7 +2167,10 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 }
 
 void
-maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_bam, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
+maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_bam, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_ref_genome, std::vector<std::string>& filename_anc_genome, std::string& filename_output, bool strandfilter = false){
+
+  bool has_tar_mask = false;
+  if(filename_target_mask.size() > 0) has_tar_mask = true;
 
 	int N_target, DAF, bp_target = 0, bp_mut = 0;
 	bool target_flip = false;
@@ -2152,7 +2180,7 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
 	int DAF_target, AAF_target;
 	int bin_index;
 
-	bam_parser target(filename_bam, params);
+	bam_parser target(filename_bam, params, strandfilter);
 
 	FILE* fp = fopen(filename_output.c_str(), "wb");
 
@@ -2160,7 +2188,14 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
 
 		std::cerr << "parsing CHR: " << chr + 1 << " / " << filename_mut.size() << std::endl;
 
-		target.assign_contig(filename_chr[chr], filename_ref_genome[chr]);
+    fasta tar_mask;
+    if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
+
+		if(strandfilter){
+      target.assign_contig(filename_chr[chr], filename_ref_genome[chr], filename_anc_genome[chr]);
+    }else{
+      target.assign_contig(filename_chr[chr], filename_ref_genome[chr]);
+    }
 
 		Mutations mut;
 		mut.Read(filename_mut[chr]);
@@ -2188,7 +2223,16 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
 
 					bool use = true;
 					if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
-					if(use){
+					
+          if(has_tar_mask){
+            if(bp_mut >= tar_mask.seq.size()){
+              use = false;
+            }else if(tar_mask.seq[bp_mut-1] != 'P'){
+              use = false;
+            }
+          }
+          
+          if(use){
 
 						DAF_target = 0;
 						AAF_target = 0;
@@ -2204,7 +2248,8 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
 								num_alleles += (target.count_alleles[bp_target % target.num_entries][i] > 0);
 							}
 
-							if(num_reads > 0){
+						if(num_reads > 0){
+            //if(num_reads > 10 & num_reads < 100){
 
 								if(ancestral == "A"){
 									AAF_target = target.count_alleles[bp_target % target.num_entries][0];
@@ -2224,6 +2269,12 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
 								}else if(derived == "T"){
 									DAF_target = target.count_alleles[bp_target % target.num_entries][3];
 								}
+
+                //if( (DAF_target + AAF_target)/((double) num_reads) < 0.9 ) use = false;
+
+                //simple genotype caller
+                //DAF_target = std::round(2*((double)DAF_target)/(DAF_target + AAF_target));
+                //AAF_target = 2-DAF_target;
 
 								if( (AAF_target > 0 || DAF_target > 0)){
 									//if(!(num_alleles <= 2)) use = false;
@@ -2266,8 +2317,142 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
 
 }
 
+void
+maketmp_table(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_target, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_ref_genome, std::string& filename_output){
+
+  bool has_tar_mask = false;
+  if(filename_target_mask.size() > 0) has_tar_mask = true;
+
+  int N_target, DAF, bp_target = -1, bp_mut = 0, num_used_snps = 0;
+  bool target_flip = false;
+  std::string ancestral, derived, ancestral_target, derived_target;
+  Muts::iterator it_mut;
+
+  int DAF_target, AAF_target;
+  bool has_ref_genome = false; //new
+  if(filename_ref_genome.size() > 0) has_ref_genome = true; //new
+
+  FILE* fp = fopen(filename_output.c_str(), "wb");
+  igzstream is(filename_target);
+  if(is.fail()){
+    std::cerr << "Error while opening file " << filename_target << std::endl;
+    exit(1);
+  }
+  std::string chr_table, allele;
+
+  N_target    = 1;
+  for(int chr = 0; chr < filename_mut.size(); chr++){
+
+    std::cerr << "parsing CHR: " << chr+1 << " / " << filename_mut.size() << std::endl;
+
+    fasta tar_mask;
+    if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
+
+    Mutations mut;
+    mut.Read(filename_mut[chr]);
+    fasta ref_genome; //new
+    if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
+
+    bp_mut = 0;
+    if(bp_target == -1){
+      is >> chr_table >> bp_target >> allele; 
+    }
+    while(chr_table != filename_chr[chr]){
+      if(! (is >> chr_table >> bp_target >> allele) ) break;
+    }
+
+    for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
+
+      if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1){
+
+        int i = 0;
+        ancestral.clear();
+        derived.clear();
+        while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+          ancestral.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        i++;
+        while(i < (*it_mut).mutation_type.size()){
+          derived.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        bp_mut = (*it_mut).pos;
+
+        if(ancestral.size() > 0 && derived.size() > 0){
+
+          bool use = true;          
+          if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
+          if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
+
+          if(has_tar_mask){
+            if(bp_mut >= tar_mask.seq.size()){
+              use = false;
+            }else if(tar_mask.seq[bp_mut-1] != 'P'){
+              use = false;
+            }
+          }
+
+          if(use){
+
+            //check if mutation exists in ref
+            if(chr_table == filename_chr[chr] && bp_target < bp_mut){
+              while(!is.eof() && chr_table == filename_chr[chr] && bp_target < bp_mut){
+                is >> chr_table >> bp_target >> allele;
+              }
+            }
+
+            //std::cerr << chr_table << " " << bp_target << " " << bp_mut << std::endl;
+            DAF_target = 0;
+            if(chr_table == filename_chr[chr] && bp_target == bp_mut){ //exists
+              if(has_ref_genome){
+                if(allele == derived || allele == ancestral){
+                  if(allele == derived){
+                    DAF_target = 1;
+                  }
+                }else{
+                  use = false;
+                }
+              }else{
+                if(allele != ancestral){
+                  DAF_target = 1;
+                }
+              }
+            }else{
+              use = false;
+            }
+
+            if(use){        
+              //fprintf(fp, "%s %d %c %c %d %d", filename_chr[chr].c_str(), bp_mut, ancestral[0], derived[0], N_target-DAF_target, DAF_target);          
+              int lchrom = strlen(filename_chr[chr].c_str());
+              AAF_target = N_target - DAF_target;
+              assert(AAF_target >= 0.0);
+              fwrite(&lchrom, sizeof(int), 1, fp);
+              fwrite(filename_chr[chr].c_str(), sizeof(char), lchrom, fp);
+              fwrite(&bp_mut, sizeof(int), 1, fp);
+              fwrite(&ancestral[0], sizeof(char), 1, fp);
+              fwrite(&derived[0], sizeof(char), 1, fp);
+              fwrite(&AAF_target, sizeof(int), 1, fp);
+              fwrite(&DAF_target, sizeof(int), 1, fp);
+            }
+          }
+
+        }
+      }
+    }
+  }
+  fclose(fp);
+
+}
+
+
+
+
 int
 parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_target, std::string& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+
+  age = 0;
+  ref_age = 0;
 
 	std::uniform_real_distribution<double> dist_unif(0,1);
 	int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -2284,6 +2469,13 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 
 	FILE* fp_target = fopen(filename_target.c_str(), "rb");
 	FILE* fp_ref    = fopen(filename_ref.c_str(), "rb");
+
+  if(fp_target == NULL){
+    std::cerr << "Failed to open " << filename_target << std::endl;
+  }
+  if(fp_ref == NULL){
+    std::cerr << "Failed to open " << filename_ref << std::endl;
+  }
 
 	bool has_tar_mask = false, has_ref_mask = false;
 	if(filename_target_mask.size() > 0) has_tar_mask = true;
@@ -2331,7 +2523,6 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 			fread(&AAF_target, sizeof(int), 1, fp_target);
 			fread(&DAF_target, sizeof(int), 1, fp_target);
 		}
-
 
 
 		for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
@@ -2405,6 +2596,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 						}
 					} 
 					N_target = DAF_target + AAF_target;
+          if(N_target == 0) use = false;
 
 					//populate age_shared_count and age_notshared_count
 					if(use){
@@ -2421,6 +2613,16 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 							num_blocks++;
 						}
 
+            float f_DAF_target = DAF_target, f_AAF_target = AAF_target;
+            //std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
+            f_DAF_target /= N_target/2.0;
+            f_AAF_target /= N_target/2.0;
+            //std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
+            f_DAF_target = std::round(f_DAF_target);
+            f_AAF_target = std::round(f_AAF_target);
+            //std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
+            //assert(f_DAF_target + f_AAF_target == 2);
+
 						bool skip = false;
 						if(age_begin <= age){
 
@@ -2430,8 +2632,8 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 								int bin_index1 = std::max(0, (int)std::round(log(10*age_begin2)*C)+1);
 								int bin_index2 = std::max(0, (int)std::round(log(10*(*it_mut).age_end)*C)+1);
 								bin_index  = bin_index1 * num_age_bins + bin_index2;
-								(*it_age_shared_emp)[bin_index]    += DAF_target * DAF_ref/((double)N_ref);
-								(*it_age_notshared_emp)[bin_index] += AAF_target * DAF_ref/((double)N_ref);
+                (*it_age_shared_emp)[bin_index]    += f_DAF_target * DAF_ref/((double)N_ref);
+                (*it_age_notshared_emp)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref);
 
 								if(1){
 									int j = 0;
@@ -2444,7 +2646,7 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 										bin_index = bin_index_age;// * num_age_bins + bin_index_age;
 
 										if(!skip){
-											(*it_age_notshared_count)[bin_index] += AAF_target * DAF_ref/((double)N_ref * num_samples);
+                      (*it_age_notshared_count)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref * num_samples);
 											//j++;
 										}
 										j++;
@@ -2466,8 +2668,8 @@ parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& f
 								//assert(bin_index < (*it_age_shared_count).size());
 								if(bin_index >= (*it_age_shared_count).size()) skip = true;
 								if(!skip){
-									(*it_age_shared_count)[bin_index]    += DAF_target * DAF_ref/((double)N_ref * num_samples);
-									(*it_age_notshared_count)[bin_index] += AAF_target * DAF_ref/((double)N_ref * num_samples);
+                  (*it_age_shared_count)[bin_index]    += f_DAF_target * DAF_ref/((double)N_ref * num_samples);
+                  (*it_age_notshared_count)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref * num_samples);
 									j++;
 								}
 							}
@@ -2553,6 +2755,64 @@ calc_depth(cxxopts::Options& options){
 }
 
 void
+get_deam(cxxopts::Options& options){
+
+  //Program options
+
+  bool help = false;
+  if(!options.count("target_bam") || !options.count("ref_genome") || !options.count("chr") || !options.count("output")){
+    std::cout << "Not enough arguments supplied." << std::endl;
+    std::cout << "Needed: target_bam, ref_genome, chr, output." << std::endl;
+    help = true;
+  }
+  if(options.count("help") || help){
+    std::cout << options.help({""}) << std::endl;
+    std::cout << "Calculate target bam." << std::endl;
+    exit(0);
+  }  
+
+  std::string params = "20,30,10";
+  if(options.count("filters")){
+    params = options["filters"].as<std::string>();
+  }
+
+  igzstream is_chr(options["chr"].as<std::string>());
+  if(is_chr.fail()){
+    std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+  }
+  std::string line;
+  std::vector<std::string> name_chr, filename_ref_genome;
+  while(getline(is_chr, line)){
+    name_chr.push_back(line);
+    filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+  }
+  is_chr.close();
+
+  bam_parser target(options["target_bam"].as<std::string>(), params);
+
+  std::vector<int> v_isC1(15,0), v_isCT1(15,0), v_isCpG1(15,0), v_isC2(15,0), v_isCT2(15,0), v_isCpG2(15,0), v_isCpGt1(15,0), v_isCpGt2(15,0);
+
+
+  for(int chr = 0; chr < name_chr.size(); chr++){
+    target.assign_contig(name_chr[chr], filename_ref_genome[chr]);
+    target.read_deam(target.ref_genome.seq.size(), v_isC1, v_isC2, v_isCT1, v_isCT2, v_isCpG1, v_isCpG2, v_isCpGt1, v_isCpGt2);
+  }
+
+  std::ofstream os(options["output"].as<std::string>());
+  
+  os << "pos numC numCpG numCT numCpGT\n";
+  for(int i = 0; i < v_isC1.size(); i++){
+    os << i+1 << " " << v_isC1[i] << " " << v_isCpG1[i] << " " << v_isCT1[i] << " " << v_isCpGt1[i] << "\n";
+  }
+  for(int i = 0; i < v_isC1.size(); i++){
+    os << -(i+1) << " " << v_isC2[i] << " " << v_isCpG2[i] << " " << v_isCT2[i] << " " << v_isCpGt2[i] << "\n";
+  } 
+  
+  os.close();
+
+}
+
+void
 make_tmp(cxxopts::Options& options){
 
 	//Program options
@@ -2560,7 +2820,7 @@ make_tmp(cxxopts::Options& options){
 	bool help = false;
 	if(!options.count("mut") || !options.count("output")){
 		std::cout << "Not enough arguments supplied." << std::endl;
-		std::cout << "Needed: mut, ref_genome, output, either of target_bcf or target_bam. Optional: filters." << std::endl;
+		std::cout << "Needed: mut, ref_genome, output, either of target_bcf or target_bam. Optional: filters, target_mask, strandfilter, anc_genome." << std::endl;
 		help = true;
 	}
 	if(options.count("help") || help){
@@ -2579,8 +2839,8 @@ make_tmp(cxxopts::Options& options){
 
 	std::string line;
 	////////////////////////////////////////
-
-	std::vector<std::string> filename_mut, filename_target, filename_ref_genome, name_chr;
+ 
+  std::vector<std::string> filename_mut, filename_target, filename_ref_genome, filename_anc_genome, name_chr, filename_target_mask;
 
 	if(options.count("target_bcf") > 0){
 		if(options.count("chr") > 0){
@@ -2594,6 +2854,7 @@ make_tmp(cxxopts::Options& options){
 				filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
 				filename_target.push_back(options["target_bcf"].as<std::string>() + "_chr" + line + ".bcf");
 				filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+        if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
 			}
 			is_chr.close();
 
@@ -2603,11 +2864,12 @@ make_tmp(cxxopts::Options& options){
 			filename_mut.push_back(options["mut"].as<std::string>());
 			filename_target.push_back(options["target_bcf"].as<std::string>());
 			filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
+      if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
 
 		}
 
 		std::string filename_output = options["output"].as<std::string>() + ".colate.in";
-		maketmp_vcf(name_chr, filename_mut, filename_target, filename_ref_genome, filename_output);
+    maketmp_vcf(name_chr, filename_mut, filename_target, filename_target_mask, filename_ref_genome, filename_output);
 	}
 
 	if(options.count("target_bam") > 0){
@@ -2621,6 +2883,8 @@ make_tmp(cxxopts::Options& options){
 				name_chr.push_back(line);
 				filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
 				filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+        if(options.count("anc_genome")) filename_anc_genome.push_back(options["anc_genome"].as<std::string>() + "_chr" + line + ".fa");
+        if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
 			}
 			is_chr.close();
 
@@ -2629,13 +2893,48 @@ make_tmp(cxxopts::Options& options){
 			name_chr.push_back("");
 			filename_mut.push_back(options["mut"].as<std::string>());
 			filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
+      if(options.count("anc_genome")) filename_anc_genome.push_back(options["anc_genome"].as<std::string>());
+      if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
 
 		}
 
 		std::string filename_bam    = options["target_bam"].as<std::string>();
 		std::string filename_output = options["output"].as<std::string>() + ".colate.in";
-		maketmp_bam(params, name_chr, filename_mut, filename_bam, filename_ref_genome, filename_output);
+    if(options.count("strandfilter")){
+      maketmp_bam(params, name_chr, filename_mut, filename_bam, filename_target_mask, filename_ref_genome, filename_anc_genome, filename_output, options["strandfilter"].as<bool>());
+    }else{
+      maketmp_bam(params, name_chr, filename_mut, filename_bam, filename_target_mask, filename_ref_genome, filename_anc_genome, filename_output);
+    }
 	}
+
+  if(options.count("target_table") > 0){
+    if(options.count("chr") > 0){
+
+      igzstream is_chr(options["chr"].as<std::string>());
+      if(is_chr.fail()){
+        std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+      }
+      while(getline(is_chr, line)){
+        name_chr.push_back(line);
+        filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
+        filename_ref_genome.push_back(options["ref_genome"].as<std::string>() + "_chr" + line + ".fa");
+        if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>() + "_chr" + line + ".fa");
+      }
+      is_chr.close();
+
+    }else{
+
+      name_chr.push_back("");
+      filename_mut.push_back(options["mut"].as<std::string>());
+      filename_ref_genome.push_back(options["ref_genome"].as<std::string>());
+      if(options.count("target_mask") > 0) filename_target_mask.push_back(options["target_mask"].as<std::string>());
+
+    }
+
+    std::string filename_table    = options["target_table"].as<std::string>();
+    std::string filename_output = options["output"].as<std::string>() + ".colate.in";
+    maketmp_table(name_chr, filename_mut, filename_table, filename_target_mask, filename_ref_genome, filename_output);
+  }
 
 	/////////////////////////////////////////////
 	//Resource Usage
@@ -3086,7 +3385,8 @@ mut(cxxopts::Options& options){
 	///////////////////////////////////////
 
 	//decide on epochs
-	int num_epochs = 0; 
+	int num_epochs = 0;
+  int ep_null = 0;
 	std::vector<double> epochs;
 	std::ifstream is;
 	if(options.count("coal") > 0){
@@ -3180,20 +3480,33 @@ mut(cxxopts::Options& options){
 		double epoch_boundary = 0.0;
 		if(log_age < epoch_lower && age != 0.0){
 			epochs.push_back(age);
+      log_age = -1;
 			ep++;
 		}
 		epoch_boundary = epoch_lower;
 		while(epoch_boundary < epoch_upper){
+      if(0){
 			if(log_age < epoch_boundary){
 				if(ep == 1 && age != 0.0){
 					epochs.push_back(age);
-					if(epoch_boundary - log_age < 0.1*epoch_step) epoch_boundary += epoch_step;
+					if(epoch_boundary - log_age < 0.25*epoch_step) epoch_boundary += epoch_step;
 				}
 				if(std::fabs(log_age - epoch_boundary) > 1e-3){
 					epochs.push_back( std::exp(log_10 * epoch_boundary)/years_per_gen );
 				}
 				ep++;
 			}
+      }
+
+      if( epoch_boundary > log_age && log_age != -1 ){
+        epochs.push_back(age);
+        if(epoch_boundary - log_age < 0.25*epoch_step) epoch_boundary += epoch_step;
+        log_age = -1;
+      }else{
+        if(log_age != -1) ep_null++;
+        epochs.push_back( std::exp(log_10 * epoch_boundary)/years_per_gen );
+      }
+
 			epoch_boundary += epoch_step;
 		}
 		epochs.push_back( std::exp(log_10 * epoch_upper)/years_per_gen );
@@ -3201,6 +3514,12 @@ mut(cxxopts::Options& options){
 		num_epochs = epochs.size();	
 
 	}
+
+  for(int i = 0; i < epochs.size(); i++){
+    std::cerr << epochs[i] << " ";
+  }
+  std::cerr << std::endl << std::endl;
+
 	////////////////////////
 	//read input sequence (file format? haps/sample? vcf?) and reference sequences (haps/sample? vcf?)
 	double initial_coal_rate = 1.0/20000.0;
@@ -3229,9 +3548,16 @@ mut(cxxopts::Options& options){
 	//std::ofstream os_log(options["output"].as<std::string>() + ".log");
 	std::ofstream os(options["output"].as<std::string>() + ".coal");
 	os << "0\n";
-	for(int e = 0; e < num_epochs; e++){
-		os << epochs[e] << " ";
-	}
+  if(is_ancient){
+    os << "0 ";
+    for(int e = ep_null+1; e < num_epochs; e++){
+      os << epochs[e] << " ";
+    }
+  }else{
+    for(int e = 0; e < num_epochs; e++){
+      os << epochs[e] << " ";
+    }
+  }
 	os << std::endl;
 
 	for(int i = 0; i < num_bootstrap; i++){
@@ -3255,7 +3581,7 @@ mut(cxxopts::Options& options){
 
 			//EM.UpdateCoal(coal_rates_nesterov);
 			if(is_ancient){
-				coal_rates_nesterov[0] = 0;
+				//coal_rates_nesterov[0] = 0;
 			}
 			coal_EM EM(epochs, coal_rates_nesterov);
 			prev_log_likelihood = log_likelihood;
@@ -3388,11 +3714,21 @@ mut(cxxopts::Options& options){
 		}
 		//os_log.close();
 
-		os << "0 " << i << " ";
-		for(int e = 0; e < num_epochs; e++){
-			os << coal_rates[e] << " ";
-		}
-		os << std::endl;
+    os << "0 " << i << " ";
+    if(is_ancient){
+      for(int j = 0; j <= ep_null; j++){
+        coal_rates[j] = 0;
+      }
+      for(int e = ep_null; e < num_epochs; e++){
+        os << coal_rates[e] << " ";
+      }
+      os << std::endl;
+    }else{
+      for(int e = 0; e < num_epochs; e++){
+        os << coal_rates[e] << " ";
+      }
+      os << std::endl;
+    }
 
 	}
 	os.close();
@@ -3777,7 +4113,7 @@ print_tmp(cxxopts::Options& options){
 
 		for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
 
-			if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin < (*it_mut).age_end && (*it_mut).freq.size() >= 0){
+			if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin <= (*it_mut).age_end && (*it_mut).freq.size() >= 0){
 
 				int i = 0;
 				ancestral.clear();
@@ -3845,16 +4181,505 @@ print_tmp(cxxopts::Options& options){
 
 }
 
+void
+compare_tmp(cxxopts::Options& options){
+
+	//Program options
+
+	bool help = false;
+	if(!options.count("target_tmp") || !options.count("reference_tmp") || !options.count("mut") || !options.count("output")){
+		std::cout << "Not enough arguments supplied." << std::endl;
+		std::cout << "Needed: target_tmp, reference_tmp, mut, output. Optional: chr." << std::endl;
+		help = true;
+	}
+	if(options.count("help") || help){
+		std::cout << options.help({""}) << std::endl;
+		std::cout << "Compare tmp." << std::endl;
+		exit(0);
+	}  
+
+	std::cerr << "---------------------------------------------------------" << std::endl;
+	std::cerr << "Calculating Colate tmp input file for " << options["target_tmp"].as<std::string>() << ".." << std::endl;
+
+	std::uniform_real_distribution<double> dist_unif(0,1);
+	std::mt19937 rng;
+	int seed = std::time(0) + getpid();
+	if(options.count("seed") > 0){
+		seed = options["seed"].as<int>();
+	}
+	rng.seed(seed);
+
+	std::string params = "20,30,10";
+	if(options.count("filters")){
+		params = options["filters"].as<std::string>();
+	}
+
+	std::string line;
+	////////////////////////////////////////
+
+	std::vector<std::string> name_chr, filename_mut;
+
+	if(options.count("chr") > 0){
+
+		igzstream is_chr(options["chr"].as<std::string>());
+		if(is_chr.fail()){
+			std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+		}
+		while(getline(is_chr, line)){
+			name_chr.push_back(line);
+			filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
+		}
+		is_chr.close();
+
+	}else{
+
+		name_chr.push_back("");
+		filename_mut.push_back(options["mut"].as<std::string>());
+
+	}
+
+	int N_ref, N_target, DAF, bp_ref = 0, bp_target = 0, bp_mut = 0, num_used_snps = 0, num_used_snps2 = 0;
+	std::string ancestral, derived;
+	char ancestral_ref, derived_ref, ancestral_target, derived_target;
+	Muts::iterator it_mut;
+
+	char chrom_target[1024], chrom_ref[1024];
+	int DAF_target, AAF_target, DAF_ref, AAF_ref, lchrom;
+
+	FILE* fp_target = fopen(options["target_tmp"].as<std::string>().c_str(), "rb");
+  FILE* fp_ref    = fopen(options["reference_tmp"].as<std::string>().c_str(), "rb");
+
+  int binsize = 10e6;
+	double num_mismatch = 0, num_snps = 0;
+	int current_bp = 0;
+
+	std::ofstream os(options["output"].as<std::string>());
+	for(int chr = 0; chr < name_chr.size(); chr++){
+
+		std::cerr << "parsing CHR: " << chr+1 << " / " << name_chr.size() << std::endl;
+
+		Mutations mut;
+		mut.Read(filename_mut[chr]);
+
+		num_mismatch = 0;
+		num_snps = 0;
+		current_bp = mut.info[0].pos;
+
+		while( strcmp(chrom_target, name_chr[chr].c_str()) != 0){
+			if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
+			fread(chrom_target, sizeof(char), lchrom, fp_target);
+			chrom_target[lchrom] = '\0';
+			fread(&bp_target, sizeof(int), 1, fp_target);
+			fread(&ancestral_target, sizeof(char), 1, fp_target);
+			fread(&derived_target, sizeof(char), 1, fp_target);
+			fread(&AAF_target, sizeof(int), 1, fp_target);
+			fread(&DAF_target, sizeof(int), 1, fp_target);
+		}
+
+		while( strcmp(chrom_ref, name_chr[chr].c_str()) != 0){
+			if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
+			fread(chrom_ref, sizeof(char), lchrom, fp_ref);
+			chrom_ref[lchrom] = '\0';
+			fread(&bp_ref, sizeof(int), 1, fp_ref);
+			fread(&ancestral_ref, sizeof(char), 1, fp_ref);
+			fread(&derived_ref, sizeof(char), 1, fp_ref);
+			fread(&AAF_ref, sizeof(int), 1, fp_ref);
+			fread(&DAF_ref, sizeof(int), 1, fp_ref);
+		}
+
+		for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
+
+			while((*it_mut).pos > current_bp + binsize){
+        os << name_chr[chr] << " " << current_bp << " " << num_mismatch << " " << num_snps << "\n";
+				num_mismatch = 0;
+				num_snps     = 0;
+				current_bp += binsize;
+			}
+
+			if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin < (*it_mut).age_end && (*it_mut).freq.size() >= 0){
+
+				int i = 0;
+				ancestral.clear();
+				derived.clear();
+				while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+					ancestral.push_back((*it_mut).mutation_type[i]);
+					i++;
+				}
+				i++;
+				while(i < (*it_mut).mutation_type.size()){
+					derived.push_back((*it_mut).mutation_type[i]);
+					i++;
+				}
+				bp_mut = (*it_mut).pos;
+
+				if(ancestral.size() > 0 && derived.size() > 0){
+
+					bool use = true;
+					if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
+					if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
+
+					if(use){
+						AAF_target = 0;
+						DAF_target = 0;
+
+						while( strcmp(chrom_target, name_chr[chr].c_str()) == 0 && bp_target < bp_mut){
+							if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
+							fread(chrom_target, sizeof(char), lchrom, fp_target);
+							chrom_target[lchrom] = '\0';
+							fread(&bp_target, sizeof(int), 1, fp_target);
+							fread(&ancestral_target, sizeof(char), 1, fp_target);
+							fread(&derived_target, sizeof(char), 1, fp_target);
+							fread(&AAF_target, sizeof(int), 1, fp_target);
+							fread(&DAF_target, sizeof(int), 1, fp_target);
+						}
+						N_target = DAF_target + AAF_target;
+
+						DAF_ref    = 0;
+						AAF_ref    = 0;
+						while( strcmp(chrom_ref, name_chr[chr].c_str()) == 0 && bp_ref < bp_mut){
+							if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
+							fread(chrom_ref, sizeof(char), lchrom, fp_ref);
+							chrom_ref[lchrom] = '\0';
+							fread(&bp_ref, sizeof(int), 1, fp_ref);
+							fread(&ancestral_ref, sizeof(char), 1, fp_ref);
+							fread(&derived_ref, sizeof(char), 1, fp_ref);
+							fread(&AAF_ref, sizeof(int), 1, fp_ref);
+							fread(&DAF_ref, sizeof(int), 1, fp_ref);
+						}
+						N_ref = DAF_ref + AAF_ref;
+
+						//std::cerr << bp_target << " " << bp_ref << " " << bp_mut << std::endl;
+						if( strcmp(chrom_target, name_chr[chr].c_str()) != 0 || bp_target != bp_mut || ancestral_target != ancestral[0] || derived_target != derived[0]){
+							use = false;
+						}else if(strcmp(chrom_ref, name_chr[chr].c_str()) != 0 || bp_ref != bp_mut || ancestral_ref != ancestral[0] || derived_ref != derived[0]){
+							use = false;
+						}else if(N_ref > 0 && N_target > 0){
+							assert(bp_target == bp_mut);
+              assert(bp_ref    == bp_mut);
+							//now sample a read/genotype from each and add to pairwise mismatch
+           
+							if(1){
+								int target_sampled = 0;
+								int ref_sampled    = 0;
+
+								if(dist_unif(rng) < DAF_target/(AAF_target + DAF_target)){
+									target_sampled = 1;
+								}
+								if(dist_unif(rng) < DAF_ref/(AAF_ref + DAF_ref)){
+									ref_sampled = 1;
+								}
+								num_mismatch += fabs(target_sampled - ref_sampled);
+							}
+
+							//std::cerr << N_target << " " << N_ref << std::endl;
+							//num_mismatch += (DAF_target * (N_ref - DAF_ref) + (N_target - DAF_target) * DAF_ref)/((double) N_target * N_ref);
+							//num_mismatch += fabs((((double)DAF_target)/N_target) - (((double)DAF_ref)/N_ref));
+							num_snps++;
+
+						}
+					}
+				}
+			}
+		}
+
+		//print also at end of chromosome
+		os << name_chr[chr] << " " << current_bp << " " << num_mismatch << " " << num_snps << "\n";
+		num_mismatch = 0;
+		num_snps     = 0;
+		current_bp += binsize;
+
+	}	
+	os.close();
+
+	/////////////////////////////////////////////
+	//Resource Usage
+
+	rusage usage;
+	getrusage(RUSAGE_SELF, &usage);
+
+	std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+	std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+	std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+	std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+}
+
+void
+count_topo(cxxopts::Options& options){
+
+  //Program options
+
+  bool help = false;
+  if(!options.count("target_tmp") || !options.count("reference_tmp") || !options.count("input") || !options.count("mut") || !options.count("output")){
+    std::cout << "Not enough arguments supplied." << std::endl;
+    std::cout << "Needed: target_tmp, reference_tmp, input, mut, output. Optional: chr." << std::endl;
+    help = true;
+  }
+  if(options.count("help") || help){
+    std::cout << options.help({""}) << std::endl;
+    std::cout << "Compare tmp." << std::endl;
+    exit(0);
+  }  
+
+  std::cerr << "---------------------------------------------------------" << std::endl;
+  std::cerr << "Calculating Colate tmp input file for " << options["target_tmp"].as<std::string>() << ".." << std::endl;
+
+  std::uniform_real_distribution<double> dist_unif(0,1);
+  std::mt19937 rng;
+  int seed = std::time(0) + getpid();
+  if(options.count("seed") > 0){
+    seed = options["seed"].as<int>();
+  }
+  rng.seed(seed);
+
+  std::string params = "20,30,10";
+  if(options.count("filters")){
+    params = options["filters"].as<std::string>();
+  }
+
+  std::string line;
+  ////////////////////////////////////////
+
+  std::vector<std::string> name_chr, filename_mut;
+
+  if(options.count("chr") > 0){
+
+    igzstream is_chr(options["chr"].as<std::string>());
+    if(is_chr.fail()){
+      std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
+    }
+    while(getline(is_chr, line)){
+      name_chr.push_back(line);
+      filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut"); 
+    }
+    is_chr.close();
+
+  }else{
+
+    name_chr.push_back("");
+    filename_mut.push_back(options["mut"].as<std::string>());
+
+  }
+
+  std::string ancestral, derived;
+  Muts::iterator it_mut;
+
+  int N_cond, bp_cond = 0, N_ref, N_target, DAF, bp_ref = 0, bp_target = 0, bp_mut = 0, num_used_snps = 0, num_used_snps2 = 0;
+  char ancestral_ref, derived_ref, ancestral_target, derived_target, ancestral_cond, derived_cond;
+  char chrom_target[1024], chrom_ref[1024], chrom_cond[1024];
+  int DAF_target, AAF_target, DAF_ref, AAF_ref, DAF_cond, AAF_cond, lchrom;
+
+  FILE* fp_cond   = fopen(options["input"].as<std::string>().c_str(), "rb");
+  FILE* fp_target = fopen(options["target_tmp"].as<std::string>().c_str(), "rb");
+  FILE* fp_ref    = fopen(options["reference_tmp"].as<std::string>().c_str(), "rb");
+
+  if(fp_cond == NULL){
+    std::cerr << "Error: Failed to open " << options["input"].as<std::string>() << std::endl;
+    exit(1);
+  }
+  if(fp_target == NULL){
+    std::cerr << "Error: Failed to open " << options["target_tmp"].as<std::string>() << std::endl; 
+    exit(1);
+  }
+  if(fp_ref == NULL){
+    std::cerr << "Error: Failed to open " << options["reference_tmp"].as<std::string>() << std::endl;
+    exit(1);
+  }
+
+  int binsize = 10e6;
+  double num_mismatch = 0, num_snps = 0;
+  //int current_bp = 0;
+
+  std::ofstream os(options["output"].as<std::string>());
+  for(int chr = 0; chr < name_chr.size(); chr++){
+
+    std::cerr << "parsing CHR: " << chr+1 << " / " << name_chr.size() << std::endl;
+
+    Mutations mut;
+    mut.Read(filename_mut[chr]);
+ 
+    num_mismatch = 0;
+    num_snps = 0;
+    //current_bp = mut.info[0].pos;
+
+    while( strcmp(chrom_cond, name_chr[chr].c_str()) != 0){
+      if(fread(&lchrom, sizeof(int), 1, fp_cond) != 1) break;
+      fread(chrom_cond, sizeof(char), lchrom, fp_cond);
+      chrom_cond[lchrom] = '\0';
+      fread(&bp_cond, sizeof(int), 1, fp_cond);
+      fread(&ancestral_cond, sizeof(char), 1, fp_cond);
+      fread(&derived_cond, sizeof(char), 1, fp_cond);
+      fread(&AAF_cond, sizeof(int), 1, fp_cond);
+      fread(&DAF_cond, sizeof(int), 1, fp_cond);
+    }
+
+    while( strcmp(chrom_target, name_chr[chr].c_str()) != 0){
+      if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
+      fread(chrom_target, sizeof(char), lchrom, fp_target);
+      chrom_target[lchrom] = '\0';
+      fread(&bp_target, sizeof(int), 1, fp_target);
+      fread(&ancestral_target, sizeof(char), 1, fp_target);
+      fread(&derived_target, sizeof(char), 1, fp_target);
+      fread(&AAF_target, sizeof(int), 1, fp_target);
+      fread(&DAF_target, sizeof(int), 1, fp_target);
+    }
+
+    while( strcmp(chrom_ref, name_chr[chr].c_str()) != 0){
+      if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
+      fread(chrom_ref, sizeof(char), lchrom, fp_ref);
+      chrom_ref[lchrom] = '\0';
+      fread(&bp_ref, sizeof(int), 1, fp_ref);
+      fread(&ancestral_ref, sizeof(char), 1, fp_ref);
+      fread(&derived_ref, sizeof(char), 1, fp_ref);
+      fread(&AAF_ref, sizeof(int), 1, fp_ref);
+      fread(&DAF_ref, sizeof(int), 1, fp_ref);
+    }
+
+    for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
+
+      //while((*it_mut).pos > current_bp + binsize){
+      //  num_mismatch = 0;
+      //  num_snps     = 0;
+      //  current_bp += binsize;
+      //}
+
+      if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin <= (*it_mut).age_end && (*it_mut).freq.size() >= 0){
+
+        int i = 0;
+        ancestral.clear();
+        derived.clear();
+        while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+          ancestral.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        i++;
+        while(i < (*it_mut).mutation_type.size()){
+          derived.push_back((*it_mut).mutation_type[i]);
+          i++;
+        }
+        bp_mut = (*it_mut).pos;
+
+        if(ancestral.size() > 0 && derived.size() > 0){
+
+          bool use = true;
+          if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
+          if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
+
+          if(use){
+
+            while( strcmp(chrom_cond, name_chr[chr].c_str()) == 0 && bp_cond < bp_mut){
+              if(fread(&lchrom, sizeof(int), 1, fp_cond) != 1) break;
+              fread(chrom_cond, sizeof(char), lchrom, fp_cond);
+              chrom_cond[lchrom] = '\0';
+              fread(&bp_cond, sizeof(int), 1, fp_cond);
+              fread(&ancestral_cond, sizeof(char), 1, fp_cond);
+              fread(&derived_cond, sizeof(char), 1, fp_cond);
+              fread(&AAF_cond, sizeof(int), 1, fp_cond);
+              fread(&DAF_cond, sizeof(int), 1, fp_cond);
+            }
+            N_cond = DAF_cond + AAF_cond;
+
+            while( strcmp(chrom_target, name_chr[chr].c_str()) == 0 && bp_target < bp_mut){
+              if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
+              fread(chrom_target, sizeof(char), lchrom, fp_target);
+              chrom_target[lchrom] = '\0';
+              fread(&bp_target, sizeof(int), 1, fp_target);
+              fread(&ancestral_target, sizeof(char), 1, fp_target);
+              fread(&derived_target, sizeof(char), 1, fp_target);
+              fread(&AAF_target, sizeof(int), 1, fp_target);
+              fread(&DAF_target, sizeof(int), 1, fp_target);
+            }
+            N_target = DAF_target + AAF_target;
+
+            while( strcmp(chrom_ref, name_chr[chr].c_str()) == 0 && bp_ref < bp_mut){
+              if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
+              fread(chrom_ref, sizeof(char), lchrom, fp_ref);
+              chrom_ref[lchrom] = '\0';
+              fread(&bp_ref, sizeof(int), 1, fp_ref);
+              fread(&ancestral_ref, sizeof(char), 1, fp_ref);
+              fread(&derived_ref, sizeof(char), 1, fp_ref);
+              fread(&AAF_ref, sizeof(int), 1, fp_ref);
+              fread(&DAF_ref, sizeof(int), 1, fp_ref);
+            }
+            N_ref = DAF_ref + AAF_ref;
+
+            if(bp_mut == bp_target && bp_mut == bp_ref){
+            //std::cerr << bp_target << " " << bp_ref << " " << bp_mut << " " << N_cond << " " << N_target << " " << N_ref << " " << DAF_cond << std::endl;
+            //std::cerr << chrom_target << " " << name_chr[chr] << " " << ancestral[0] << " " << ancestral_target << " " << ancestral_ref << " " << derived[0] << " " << derived_target << " " << derived_ref << std::endl;
+            }
+            if( strcmp(chrom_target, name_chr[chr].c_str()) != 0 || bp_target != bp_mut || ancestral_target != ancestral[0] || derived_target != derived[0]){
+              use = false;
+            }else if(strcmp(chrom_ref, name_chr[chr].c_str()) != 0 || bp_ref != bp_mut || ancestral_ref != ancestral[0] || derived_ref != derived[0]){
+              use = false;
+            }else if(N_cond > 0 && N_ref > 0 && N_target > 0){
+              assert(bp_target == bp_mut);
+              assert(bp_ref    == bp_mut);
+
+              //need to sample an allele for each
+             
+              //std::cerr << DAF_cond << " " << N_cond << " " << DAF_target << " " << N_target << " " << DAF_ref << " " << N_ref << std::endl;
+              //if(dist_unif(rng) <= ((double)DAF_cond)/N_cond){
+              //if(((double)DAF_cond)/N_cond > 0.05){
+              if( DAF_cond > 0 ){
+              
+                //std::cerr << "use" << std::endl;
+                float d1 = dist_unif(rng);
+                float d2 = dist_unif(rng);
+
+                if( d1 <= ((double)DAF_target)/N_target && d2 > ((double)DAF_ref)/N_ref ){
+                  os << name_chr[chr] << " " << bp_mut << " " << (*it_mut).age_begin << " " << (*it_mut).age_end << " " << 1 << " " << ((double)DAF_cond)/N_cond << "\n";
+                }else if(d1 > ((double)DAF_target)/N_target && d2 <= ((double)DAF_ref)/N_ref ){
+                  os << name_chr[chr] << " " << bp_mut << " " << (*it_mut).age_begin << " " << (*it_mut).age_end << " " << -1 << " " << -((double)DAF_cond)/N_cond << "\n";
+                }
+              
+              }
+
+            }
+          }
+        }
+      }
+    }
+
+    //print also at end of chromosome
+    num_mismatch = 0;
+    num_snps     = 0;
+    //current_bp += binsize;
+
+  }	
+  os.close();
+
+  /////////////////////////////////////////////
+  //Resource Usage
+
+  rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+
+  std::cerr << "CPU Time spent: " << usage.ru_utime.tv_sec << "." << std::setfill('0') << std::setw(6);
+#ifdef __APPLE__
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000000.0 << "Mb." << std::endl;
+#else
+  std::cerr << usage.ru_utime.tv_usec << "s; Max Memory usage: " << usage.ru_maxrss/1000.0 << "Mb." << std::endl;
+#endif
+  std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
+
+}
+
+
 
 
 
 //////////////
 
 void
-GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& leaves, float factor, std::vector<int>& focal_haps, std::vector<int>& conditional_haps, std::vector<float>& epoch, std::vector<float>& epoch_focal, std::vector<CollapsedMatrix<float>>& coalescence_rate_num, std::vector<CollapsedMatrix<float>>& coalescence_rate_denom){
+GetConditionalCoalescentRate(Tree& tree, int& BP, Sample& sample, std::vector<Leaves>& leaves, float factor, std::vector<int>& focal_haps, std::vector<int>& conditional_haps, std::vector<float>& epoch, std::vector<float>& epoch_focal, std::vector<CollapsedMatrix<float>>& coalescence_rate_num, std::vector<CollapsedMatrix<float>>& coalescence_rate_denom){
 
 	for(std::vector<int>::iterator it_focal = focal_haps.begin(); it_focal != focal_haps.end(); it_focal++){
 		for(std::vector<int>::iterator it_cond = conditional_haps.begin(); it_cond != conditional_haps.end(); it_cond++){
+
+			if(*it_focal != *it_cond){
 
 			Node node = tree.nodes[*it_focal];
 			int parent = (*tree.nodes[*it_focal].parent).label;
@@ -3864,7 +4689,7 @@ GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& le
 			float coal_age  = 0.0;
 			float lower_age = 0.0;
 
-			bool use = false;
+			bool use = false, evidenced = false;
 			if(*it_cond == -1) use = true;
 			while(parent < tree.nodes.size()){
 
@@ -3877,19 +4702,34 @@ GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& le
 						}
 					}
 					ep_start = 0;
-					if(epoch_focal[ep_start] < coal_age){
-						while(epoch_focal[ep_start] < coal_age){
+					if(epoch_focal[ep_start] <= coal_age){
+						while(epoch_focal[ep_start] <= coal_age){
 							ep_start++;
 							if(ep_start == epoch_focal.size()) break;
 						}
-						ep_start--;
+						if(ep_start > 0) ep_start--;
 					}
+					//if(epoch_focal[ep_start + 1] <= coal_age) std::cerr << coal_age << " " << epoch_focal[ep_start + 1] << " " << ep_start << std::endl;
+					//if(use && ep_start == 0) std::cerr << BP << " " << *it_focal << " " << *it_cond << " " << coal_age << " " << 5e4/28 << std::endl;
 					assert(epoch_focal[ep_start] <= coal_age);
 					assert(epoch_focal[ep_start + 1] > coal_age);
+
+				}
+
+				evidenced = true;
+				if(use && !evidenced){
+					coal_age = coord;
+					if(node.num_events >= 1.0){
+						evidenced = true;
+					}else{
+						if( (*node.parent).num_events + (*(*node.parent).child_left).num_events + (*(*node.parent).child_right).num_events >= 1.0 ){
+							evidenced = true;
+						}
+					}
 				}
 
 				coord += node.branch_length;   
-				if(use){
+				if(use && evidenced){
 
 					ep_init = 0;
 					if(coal_age > epoch[ep_init]){
@@ -3912,17 +4752,20 @@ GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& le
 							if(ep == epoch.size()) break;
 							lower_age = epoch[ep]; 
 						}
-						assert(coord < epoch[ep+1]);
+						assert(coord <= epoch[ep+1]);
 						coalescence_rate_denom[ep_start][ep][sample.group_of_haplotype[*it_other]] += factor * (coord - lower_age);
 						coalescence_rate_num[ep_start][ep][sample.group_of_haplotype[*it_other]]   += factor;
 
 					}
+
 				}
 
 				node = (*node.parent);
 				if(node.label == tree.nodes.size()-1) break;
 				parent = (*tree.nodes[node.label].parent).label; 
 			} 
+
+			}
 
 		}
 	}
@@ -3932,9 +4775,10 @@ GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& le
 void
 GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& leaves, float factor, std::vector<int>& focal_haps, std::vector<int>& conditional_haps, std::vector<float>& epoch, std::vector<float>& epoch_focal, std::vector<double>& sample_ages, std::vector<CollapsedMatrix<float>>& coalescence_rate_num, std::vector<CollapsedMatrix<float>>& coalescence_rate_denom){
 
-
 	for(std::vector<int>::iterator it_focal = focal_haps.begin(); it_focal != focal_haps.end(); it_focal++){
 		for(std::vector<int>::iterator it_cond = conditional_haps.begin(); it_cond != conditional_haps.end(); it_cond++){
+
+			if(*it_focal != *it_cond){
 
 			Node node = tree.nodes[*it_focal];
 			int parent = (*tree.nodes[*it_focal].parent).label, child;
@@ -3945,7 +4789,7 @@ GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& le
 			int ep_coal = 0, ep_start = 0, ep = 0, ep_init = 0;
 
 			float lower_age = age;
-			bool use = false;
+			bool use = false, evidenced = false;
 			if(*it_cond == -1) use = true;
 			while(parent < tree.nodes.size()){
 
@@ -3966,9 +4810,22 @@ GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& le
 						ep_coal--;
 					}
 				}
-				coord += node.branch_length;
 
-				if(use){
+				evidenced = true;
+				if(use && !evidenced){
+					coal_age = coord;
+					if(node.num_events >= 1.0){
+						evidenced = true;
+					}else{
+						if( (*node.parent).num_events + (*(*node.parent).child_left).num_events + (*(*node.parent).child_right).num_events >= 1.0 ){
+							evidenced = true;
+						}
+					}
+				}
+
+				coord += node.branch_length;   
+				if(use && evidenced){
+
 					child = (*tree.nodes[parent].child_left).label; 
 					if(child == node.label) child = (*tree.nodes[parent].child_right).label;
 
@@ -4024,6 +4881,8 @@ GetConditionalCoalescentRate(Tree& tree, Sample& sample, std::vector<Leaves>& le
 				if(node.label == tree.nodes.size()-1) break;
 				parent = (*tree.nodes[node.label].parent).label; 
 			} 
+
+			}
 
 		}
 	}
@@ -4087,7 +4946,7 @@ CondCoalRates(cxxopts::Options& options){
 	int N = ancmut1.NumTips();
 	int L = ancmut1.NumSnps();
 	MarginalTree mtr;
-	Muts::iterator it_mut;
+	Muts::iterator it_mut, it_mut_tmp;
 	float num_bases_tree_persists = 0.0; 
 	Data data(N,L); 
 
@@ -4177,7 +5036,8 @@ CondCoalRates(cxxopts::Options& options){
 
 	}
 
-	std::vector<float> epochs_focal = {0,1e4,5e4,1e5,1e6,1e7};
+  std::vector<float> epochs_focal = {0,5e4,5e5,1e6,1e8};
+	//std::vector<float> epochs_focal = {0,1e5,1e6,1e8};
 	for(std::vector<float>::iterator it_ep = epochs_focal.begin(); it_ep != epochs_focal.end(); it_ep++){
 		*it_ep /= years_per_gen;
 	}
@@ -4196,7 +5056,7 @@ CondCoalRates(cxxopts::Options& options){
 	//format focal_group;conditional_group
 	std::string g1,g2;
 	int i = 0;
-	while(groups[i] != ','){
+	while(groups[i] != ',' && i < groups.size()){
 		g1 += groups[i];
 		i++;
 		if(i == groups.size()) break;
@@ -4214,13 +5074,15 @@ CondCoalRates(cxxopts::Options& options){
 	for(int i = 0; i < data.N; i++){
 		if(sample.groups[sample.group_of_haplotype[i]] == g1) focal_haps.push_back(i);
 		if(sample.groups[sample.group_of_haplotype[i]] == g2) conditional_haps.push_back(i);
-	} 
+	}
 	if(conditional_haps.size() == 0) conditional_haps.push_back(-1);
 	if(focal_haps.size() == 0){
 		std::cerr << "Error: groups not found" << std::endl;
 		exit(1);
 	}
 
+  //std::cerr << focal_haps[0] << " " << focal_haps[1] << " " << focal_haps.size() << std::endl;
+	//std::cerr << conditional_haps[0] << " " << conditional_haps[1] << " " << conditional_haps.size() << std::endl;
 
 	int bin_size = 30e6;
 	int num_blocks = (int)((ancmut1.NumPos())/bin_size)+2;
@@ -4241,7 +5103,6 @@ CondCoalRates(cxxopts::Options& options){
 	for(int chr = 0; chr < filename_chr.size(); chr++){
 
 		std::cerr << "CHR: " << filename_chr[chr] << std::endl;
-
 
 		AncMutIterators ancmut;
 		if(options.count("dist")){
@@ -4294,6 +5155,17 @@ CondCoalRates(cxxopts::Options& options){
 		//Pairwise coalescence rate
 		//In each tree, find the coalescent time. Then update count_per_epoch and coalescent_time_in_epoch. 
 
+		map recmap;
+		bool use_genmap = false;
+		if(options.count("map")){
+			use_genmap = true;
+			if(filename_chr[0] == "NA"){
+		    recmap.load(options["map"].as<std::string>().c_str());
+			}else{
+				recmap.load((options["map"].as<std::string>() + "_chr" + filename_chr[chr] + ".txt").c_str());
+			}
+		}
+		int index = 0;
 
 		if(ancmut.sample_ages.size() > 0){
 			float factor = 0.0;
@@ -4303,32 +5175,49 @@ CondCoalRates(cxxopts::Options& options){
 				num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
 				bin = (int)((*it_mut).pos/bin_size) + chr_bin;
 
-				num_passing = 1.0;
-				if(options.count("mask") > 0){
-
+				num_passing = 1.0;	
+				if(use_genmap){
+					it_mut_tmp = it_mut;
 					int tree_index = (*it_mut).tree;
 					int pos_start = (*it_mut).pos;
-					int pos_end = pos_start;
+					int pos_end = pos_start + 1;
 					if(it_mut != ancmut.mut_end()){
 						while((*it_mut).tree == tree_index){
-							pos_end = (*it_mut).pos;
 							it_mut++;
 							if(it_mut == ancmut.mut_end()) break;
 						}
+						if(it_mut != ancmut.mut_end()) pos_end = (*it_mut).pos;
 					}
-					num_passing = 0.0;
-					if(pos_start < mask.seq.size() && pos_end < mask.seq.size()){
-						for(int bp = pos_start; bp < pos_end; bp++){
-							if(mask.seq[bp-1] == 'P') num_passing++; 
+					it_mut = it_mut_tmp;
+
+					double recrate = 1000;
+					if(index < recmap.bp.size()-1){
+						while(pos_start > recmap.bp[index+1]){
+							index++;
+							if(index+2 == recmap.bp.size()) break;
+						}
+						recrate = (recmap.gen_pos[index+1] - recmap.gen_pos[index])/(recmap.bp[index+1] - recmap.bp[index])*1e6;
+						if(index < recmap.bp.size()-1){
+							assert(pos_start <= recmap.bp[index+1]);
+
+							int lower = pos_start;
+							recrate *= (recmap.bp[index+1] - lower);
+							while(pos_end > recmap.bp[index+1]){
+								index++;
+								lower = recmap.bp[index];
+								if(pos_end > recmap.bp[index+1]){
+									recrate += (recmap.gen_pos[index+1] - recmap.gen_pos[index])*1e6;
+								}else{
+									recrate += (recmap.gen_pos[index+1] - recmap.gen_pos[index])/(recmap.bp[index+1] - recmap.bp[index])*1e6 * (pos_end - lower);
+								}
+								if(index+2 == recmap.bp.size()) break;
+							}
+							recrate /= (pos_end - pos_start);
+
 						}
 					}
-
-					if(pos_end - pos_start + 1 <= 0){ 
-						num_passing = 0.0;
-					}else{
-						num_passing /= (pos_end - pos_start + 1);
-					}
-
+					//std::cerr << recrate << std::endl;
+					//if(recrate > 0.1 || recrate < 1e-10) num_passing = 0.0;
 				}
 
 				if(num_passing >= cutoff){
@@ -4349,39 +5238,55 @@ CondCoalRates(cxxopts::Options& options){
 				bin = (int)((*it_mut).pos/bin_size) + chr_bin;
 
 				num_passing = 1.0;
-				num_passing = 1.0;
-				if(options.count("mask") > 0){
-
+	
+				if(use_genmap){
+					it_mut_tmp = it_mut;
 					int tree_index = (*it_mut).tree;
 					int pos_start = (*it_mut).pos;
-					int pos_end = pos_start;
+					int pos_end = pos_start + 1;
 					if(it_mut != ancmut.mut_end()){
 						while((*it_mut).tree == tree_index){
-							pos_end = (*it_mut).pos;
 							it_mut++;
 							if(it_mut == ancmut.mut_end()) break;
 						}
+						if(it_mut != ancmut.mut_end()) pos_end = (*it_mut).pos;
 					}
-					num_passing = 0.0;
-					if(pos_start < mask.seq.size() && pos_end < mask.seq.size()){
-						for(int bp = pos_start; bp < pos_end; bp++){
-							if(mask.seq[bp-1] == 'P') num_passing++; 
+					it_mut = it_mut_tmp;
+
+					double recrate = 1000;
+					if(index < recmap.bp.size()-1){
+						while(pos_start > recmap.bp[index+1]){
+							index++;
+							if(index+2 == recmap.bp.size()) break;
+						}
+						recrate = (recmap.gen_pos[index+1] - recmap.gen_pos[index])/(recmap.bp[index+1] - recmap.bp[index])*1e6;
+						if(index < recmap.bp.size()-1){
+							assert(pos_start <= recmap.bp[index+1]);
+						
+							int lower = pos_start;
+							recrate *= (recmap.bp[index+1] - lower);
+							while(pos_end > recmap.bp[index+1]){
+								index++;
+								lower = recmap.bp[index];
+								if(pos_end > recmap.bp[index+1]){
+									recrate += (recmap.gen_pos[index+1] - recmap.gen_pos[index])*1e6;
+								}else{
+									recrate += (recmap.gen_pos[index+1] - recmap.gen_pos[index])/(recmap.bp[index+1] - recmap.bp[index])*1e6 * (pos_end - lower);
+								}
+								if(index+2 == recmap.bp.size()) break;
+							}
+							recrate /= (pos_end - pos_start);
+						
 						}
 					}
-
-					if(pos_end - pos_start + 1 <= 0){ 
-						num_passing = 0.0;
-					}else{
-						num_passing /= (pos_end - pos_start + 1);
-					}
-
+					if(recrate > 0.1) num_passing = 0.0;
 				}
 
 				if(num_passing >= cutoff){
 					std::vector<Leaves> leaves;
 					mtr.tree.FindAllLeaves(leaves);
 					factor = num_bases_tree_persists;
-					GetConditionalCoalescentRate(mtr.tree, sample, leaves, factor, focal_haps, conditional_haps, epochs, epochs_focal, coalescence_rate_num[bin], coalescence_rate_denom[bin]);
+					GetConditionalCoalescentRate(mtr.tree, (*it_mut).pos, sample, leaves, factor, focal_haps, conditional_haps, epochs, epochs_focal, coalescence_rate_num[bin], coalescence_rate_denom[bin]);
 				}
 			}  
 		}

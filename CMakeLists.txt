@@ -6,10 +6,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 set (CMAKE_CXX_STANDARD 14)
 
-add_definitions(-static)
-add_definitions(-static-libgcc)
-set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
-
+#add_definitions(-static)
+#add_definitions(-static-libgcc)
+#set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
 
 find_package( ZLIB REQUIRED )
 if ( ZLIB_FOUND )
