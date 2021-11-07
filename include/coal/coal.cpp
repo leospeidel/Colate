@@ -1986,6 +1986,8 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 	int DAF_target, AAF_target;
 	bool has_ref_genome = false; //new
 	if(filename_ref_genome.size() > 0) has_ref_genome = true; //new
+	bool has_mask = false;
+	if(filename_mask.size() > 0) has_mask = true;
 
 	FILE* fp = fopen(filename_output.c_str(), "wb");
 
@@ -2001,6 +2003,8 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 		vcf_parser target(filename_target[chr]);
 		fasta ref_genome; //new
 		if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
+		fasta mask;
+		if(has_mask) mask.Read(filename_mask[chr]);
 
 		bp_target = 0, bp_mut = 0;
 
@@ -2032,6 +2036,9 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 					bool use = true;          
 					if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
 					if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
+					if(has_mask && bp_mut < mask.seq.size()){
+						if(mask.seq[bp_mut-1] != 'P') use = false;
+					}
 
           if(has_tar_mask){
             if(bp_mut >= tar_mask.seq.size()){
@@ -2183,6 +2190,8 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
 	bam_parser target(filename_bam, params, strandfilter);
 
 	FILE* fp = fopen(filename_output.c_str(), "wb");
+	bool has_mask = false;
+	if(filename_mask.size() > 0) has_mask = true;
 
 	for(int chr = 0; chr < filename_mut.size(); chr++){
 
@@ -2196,6 +2205,9 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
     }else{
       target.assign_contig(filename_chr[chr], filename_ref_genome[chr]);
     }
+
+		fasta mask;
+		if(has_mask) mask.Read(filename_mask[chr]);
 
 		Mutations mut;
 		mut.Read(filename_mut[chr]);
@@ -2849,6 +2861,11 @@ make_tmp(cxxopts::Options& options){
 			if(is_chr.fail()){
 				std::cerr << "Error while opening file " << options["chr"].as<std::string>() << std::endl;
 			}
+
+			if(options.count("target_mask") == 0){
+        std::cerr << "Warning: no mask file given. Will assume that all sites not in BCF are homozygous REF." << std::endl;
+			}
+
 			while(getline(is_chr, line)){
 				name_chr.push_back(line);
 				filename_mut.push_back(options["mut"].as<std::string>() + "_chr" + line + ".mut");
@@ -4666,10 +4683,6 @@ count_topo(cxxopts::Options& options){
   std::cerr << "---------------------------------------------------------" << std::endl << std::endl;
 
 }
-
-
-
-
 
 //////////////
 

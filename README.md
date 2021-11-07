@@ -1,29 +1,35 @@
 # Colate
 
 **Software for inferring coalescence rates for unphased, low-coverage genomes.**
-- Input file formats: bcf/bam files 
+- Required input: Two samples specified in bcf/bam format 
 - Requires mutation ages obtained from a genealogy (e.g., using [Relate](https://myersgroup.github.io/relate/)). Precomputed mutation ages available below.
+- That's it!
 
 Please send any comments, questions and bug reports to leo.speidel@outlook.com. <br/>
 Preprint describing the method: https://www.biorxiv.org/content/10.1101/2021.02.17.431573v1
 
+![alt text](https://github.com/leospeidel/Colate/blob/master/plot_LBK_Loschbour.png)
+
 # Example scripts and data
 
-A working example using two ancient human genomes (LBK and Loschbour; [Lazaridis et al., Nature 2014](https://www.nature.com/articles/nature13673)) can be downloaded from [here](https://www.dropbox.com/s/171r0mgdtpx1tz2/colate_example.tgz?dl=0) (512Mb).
+A working example using chromosome 1 of two ancient human genomes (LBK and Loschbour; [Lazaridis et al., Nature 2014](https://www.nature.com/articles/nature13673)) can be downloaded from [here](https://www.dropbox.com/s/dhwzjrv0qxprx8b/colate_example.tgz?dl=0) (512Mb).
 
-![alt text](https://github.com/leospeidel/Colate/blob/master/plot_LBK_Loschbour.png)
 
 # Installation
 
 **Precompiled binaries for several platforms can be found under ./binaries.**
 
-Requirements:
+Requirements*:
 
 - C++11
 - cmake
 - ZLIB
 - OpenSSL
 - lzma
+
+*On my cluster, I have to load modules CMake, GCC, and BCFtools to compile.<br/>
+*On a Mac, I installed CMake and openssl@1.1 using homebrew and updated paths in lines 24-29 of CMakeLists.txt.
+
 
 To compile from source use
 ```` bash
@@ -38,16 +44,16 @@ Colate uses a modifed version of [htslib](https://github.com/samtools/htslib), w
 
 ## Files required:
 - Two sequences, in bcf or bam format, for which coalescence rates will be calculated
-- A reference genome in fasta format.
+- A reference genome in fasta format (see below)
 - Genome mask file (optional), to filter out unreliable regions.
-- A genealogy to date mutations (see below for precomputed genealogies)
+- Mutation ages obtained from a genealogy (see below for precomputed mutation ages)
 
-We provide a preprocessed file for the SGDP data here: [SGDP_mutages.tar](https://www.dropbox.com/s/65qbk4lzg50ob34/SGDP_mutages.tar?dl=0) (654Mb).<br/>
-Link to human ancestral genomes can be found [here](https://myersgroup.github.io/relate/input_data.html#Data).
+We provide a preprocessed file for the SGDP data (aligned to GRCh37) here: [SGDP_mutages.tar](https://www.dropbox.com/s/pysvzyx68553wxx/SGDP_mutages.tar?dl=0) (654Mb).<br/>
+A human reference genome (GRCh37) in the required format (i.e., separated by chromosome): [GRCh37.tgz](https://www.dropbox.com/s/mazsr64cndlblo3/GRCh37.tgz?dl=0) (512Mb)
 
 ## Step 1
 
-**(not needed if using SGDP genealogy from above, you can simply download these files)**
+**(not needed if using SGDP genealogy from above, you can simply download these files above)**
 
 Get mutations ages from a genealogy; this step will add fixed mutations to a *.mut file (see [Relate documentation](https://myersgroup.github.io/relate/getting_started.html#Output) for file format), which is needed for Colate.
 
@@ -55,6 +61,7 @@ Get mutations ages from a genealogy; this step will add fixed mutations to a *.m
 - reference genome in fasta format
 - anc/mut files of a Relate genealogy
 - bcf of samples used to build Relate genealogy
+Link to human ancestral genomes can be found [here](https://myersgroup.github.io/relate/input_data.html#Data).
 
 ```` bash
 chr=1
@@ -82,7 +89,8 @@ You can either directly run Colate on bcfs or bams, or precompute an input file,
 - bcfs contain samples of interest (Please use e.g., bcftools view -S or -s to subset bcf files).
 - chr.txt: Chromosome names, one per line (can be any strings)
 - If chromosome names are "1", "2", etc, then input files are *\_chr1.bcf, *\_chr2.bcf etc.
-- ref_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
+- target\_masks and ref\_genome should be separated by chromosome, i.e. GRCh37\_chr1.fa.gz, GRCh37\_chr2.fa.gz etc.
+- Target masks are given as fasta files, with "P" for passing and "N" for non-passing bases (one file per chromosome). These should always be specified when input is calculated from a BCF. The mask should indicate where the sample was callable, such that we know where the sample is homozygous REF.
 - If --chr is not specified, full file names are required (e.g., --target example.bcf), however these should only contain a single chromosome.
 
 ```` bash
@@ -91,6 +99,7 @@ ${PATH_TO_BINARY}/Colate \
 	--mode make_tmp \
 	--mut ${mut} \
 	--target_bcf example_target \ 
+	--target_mask target_mask \
 	--ref_genome GRCh37 \
         --chr chr.txt \
 	-o example_out
@@ -118,6 +127,8 @@ ${PATH_TO_BINARY}/Colate \
 
 #### 2. Compute coalescenece rates
 
+- Mask files are not necessary if already specified earlier, unless you want to specifically mask out further regions of the genome.
+
 ```` bash
 #Optional:
 #--target_mask, --reference_mask, 
@@ -132,8 +143,6 @@ ${PATH_TO_BINARY}/Colate \
 	--mut ${mut} \
 	--target_tmp example_target.colate.in \
 	--reference_tmp example_reference.colate.in \
-	--target_mask target_mask \
-	--reference_mask reference_mask \
         --bins ${bins} \
 	--chr chr.txt \
 	--num_bootstrap 20 \
@@ -152,6 +161,7 @@ ${PATH_TO_BINARY}/Colate \
 - If chromosome names are "1", "2", etc, then input files are *\_chr1.bcf, *\_chr2.bcf etc.
 - If --chr is not specified, full file names are required (e.g., --target example.bcf), however these should only contain a single chromosome.
 - chr.txt: Chromosome names, one per line (can be any strings)
+- Target and reference masks are given as fasta files, with "P" for passing and "N" for non-passing bases (one file per chromosome). These should always be specified when input is calculated from a BCF. The masks should indicate, where the sample was callable, such that we know where the sample is homozygous REF.
 
 ```` bash
 #--target_mask, --reference_mask, 
