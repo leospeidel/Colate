@@ -511,6 +511,9 @@ coal_localancestry(cxxopts::Options& options){
 int
 parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
+	age = 0;
+	ref_age = 0;
+
 	std::uniform_real_distribution<double> dist_unif(0,1);
 	int num_age_bins = ((int) (log(1e8) * C))+1;
 	int N_ref, N_target, DAF, bp_ref = 0, bp_target = 0, bp_mut = 0, num_used_snps = 0;
@@ -820,6 +823,9 @@ parse_vcf(std::vector<std::string>& filename_mut, std::vector<std::string>& file
 int
 parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
+	age = 0;
+	ref_age = 0;
+
 	std::uniform_real_distribution<double> dist_unif(0,1);
 	int num_age_bins = ((int) (log(1e8) * C))+1;
 	int N_ref, N_target, DAF, bp_ref = 0, bp_target = 0, bp_mut = 0, num_used_snps = 0;
@@ -1126,7 +1132,7 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 
 	}
 
-	std::cerr << num_used_snps << std::endl << std::endl;
+	//std::cerr << num_used_snps << std::endl << std::endl;
 
 	age_shared_count.resize(num_blocks);
 	age_notshared_count.resize(num_blocks);
@@ -1139,6 +1145,9 @@ parse_vcfvcf(std::vector<std::string>& filename_mut, std::vector<std::string>& f
 
 int
 parse_bamvcf(std::string& params, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+
+	age = 0;
+	ref_age = 0;
 
 	std::uniform_real_distribution<double> dist_unif(0,1);
 	int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -1419,6 +1428,9 @@ parse_bamvcf(std::string& params, std::vector<std::string>& filename_mut, std::v
 
 int
 parse_onebamvcf(std::string& params, std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+
+	age = 0;
+	ref_age = 0;
 
 	std::uniform_real_distribution<double> dist_unif(0,1);
 	int num_age_bins = ((int) (log(1e8) * C))+1;
@@ -1703,6 +1715,9 @@ parse_onebamvcf(std::string& params, std::vector<std::string>& filename_chr, std
 int
 parse_onebambam(std::string& params, std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::vector<std::string>& filename_target, std::vector<std::string>& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, std::vector<std::string>& filename_ref_genome, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
 
+	age = 0;
+	ref_age = 0;
+
 	std::uniform_real_distribution<double> dist_unif(0,1);
 	int num_age_bins = ((int) (log(1e8) * C))+1;
 	int N_ref, N_target, DAF, bp_ref = 0, bp_target = 0, bp_mut = 0, num_used_snps = 0, num_used_snps2 = 0;
@@ -1970,6 +1985,258 @@ parse_onebambam(std::string& params, std::vector<std::string>& filename_chr, std
 
 }
 
+int
+parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_target, std::string& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
+
+	age = 0;
+	ref_age = 0;
+
+	std::uniform_real_distribution<double> dist_unif(0,1);
+	int num_age_bins = ((int) (log(1e8) * C))+1;
+	int N_ref, N_target, DAF, bp_ref = 0, bp_target = 0, bp_mut = 0, num_used_snps = 0, num_used_snps2 = 0;
+	bool ref_flip = false, target_flip = false;
+	std::string ancestral, derived;
+	char ancestral_ref, derived_ref, ancestral_target, derived_target;
+	Muts::iterator it_mut;
+
+	float num_samples = 100;
+	char chrom_target[1024], chrom_ref[1024];
+	int DAF_target, AAF_target, DAF_ref, AAF_ref, lchrom;
+	int bin_index;
+
+	FILE* fp_target = fopen(filename_target.c_str(), "rb");
+	FILE* fp_ref    = fopen(filename_ref.c_str(), "rb");
+
+	if(fp_target == NULL){
+		std::cerr << "Failed to open " << filename_target << std::endl;
+	}
+	if(fp_ref == NULL){
+		std::cerr << "Failed to open " << filename_ref << std::endl;
+	}
+
+	bool has_tar_mask = false, has_ref_mask = false;
+	if(filename_target_mask.size() > 0) has_tar_mask = true;
+	if(filename_reference_mask.size() > 0) has_ref_mask = true;
+
+	std::vector<std::vector<double>>::iterator it_age_shared_count    = age_shared_count.begin();
+	std::vector<std::vector<double>>::iterator it_age_notshared_count = age_notshared_count.begin();
+	std::vector<std::vector<double>>::iterator it_age_shared_emp      = age_shared_emp.begin();
+	std::vector<std::vector<double>>::iterator it_age_notshared_emp   = age_notshared_emp.begin();
+	int current_block_base = 0;
+	int num_blocks = 0;
+
+	for(int chr = 0; chr < filename_mut.size(); chr++){
+
+		std::cerr << "parsing CHR: " << chr+1 << " / " << filename_mut.size() << std::endl;
+
+		Mutations mut;
+		mut.Read(filename_mut[chr]);
+
+		fasta tar_mask, ref_mask;
+		if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
+		if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
+
+		current_block_base = 0;
+		bp_mut = 0;
+
+		while( strcmp(chrom_ref, filename_chr[chr].c_str()) != 0 ){
+			if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
+			fread(chrom_ref, sizeof(char), lchrom, fp_ref);
+			chrom_ref[lchrom] = '\0';
+			fread(&bp_ref, sizeof(int), 1, fp_ref);
+			fread(&ancestral_ref, sizeof(char), 1, fp_ref);
+			fread(&derived_ref, sizeof(char), 1, fp_ref);
+			fread(&AAF_ref, sizeof(int), 1, fp_ref);
+			fread(&DAF_ref, sizeof(int), 1, fp_ref);
+		}
+
+		while( strcmp(chrom_target, filename_chr[chr].c_str()) != 0 ){
+			if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
+			fread(chrom_target, sizeof(char), lchrom, fp_target);
+			chrom_target[lchrom] = '\0';
+			fread(&bp_target, sizeof(int), 1, fp_target);
+			fread(&ancestral_target, sizeof(char), 1, fp_target);
+			fread(&derived_target, sizeof(char), 1, fp_target);
+			fread(&AAF_target, sizeof(int), 1, fp_target);
+			fread(&DAF_target, sizeof(int), 1, fp_target);
+		}
+
+
+		for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
+
+			if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin < (*it_mut).age_end && (*it_mut).freq.size() >= 0 && (*it_mut).age_end >= age){
+
+				int i = 0;
+				ancestral.clear();
+				derived.clear();
+				while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
+					ancestral.push_back((*it_mut).mutation_type[i]);
+					i++;
+				}
+				i++;
+				while(i < (*it_mut).mutation_type.size()){
+					derived.push_back((*it_mut).mutation_type[i]);
+					i++;
+				}
+				bp_mut = (*it_mut).pos;
+
+				if(ancestral.size() > 0 && derived.size() > 0){
+
+					bool use = true;
+					if(has_tar_mask && bp_mut < tar_mask.seq.size()){
+						if(tar_mask.seq[bp_mut-1] != 'P') use = false;
+					}
+					if(has_ref_mask && bp_mut < ref_mask.seq.size()){
+						if(ref_mask.seq[bp_mut-1] != 'P') use = false;
+					}
+					if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
+					if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
+
+					//std::cerr << filename_chr[chr] << " " << chrom_ref << " " << chrom_target << std::endl;
+					//std::cerr << bp_mut << " " << bp_target << " " << bp_ref << std::endl;
+
+					if(use){
+						DAF_ref    = 0;
+						AAF_ref    = 0;
+						while( (strcmp(chrom_ref, filename_chr[chr].c_str()) == 0 && bp_ref < bp_mut) ){
+							if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
+							fread(chrom_ref, sizeof(char), lchrom, fp_ref);
+							chrom_ref[lchrom] = '\0';
+							fread(&bp_ref, sizeof(int), 1, fp_ref);
+							fread(&ancestral_ref, sizeof(char), 1, fp_ref);
+							fread(&derived_ref, sizeof(char), 1, fp_ref);
+							fread(&AAF_ref, sizeof(int), 1, fp_ref);
+							fread(&DAF_ref, sizeof(int), 1, fp_ref);
+						}
+						if( strcmp(chrom_ref, filename_chr[chr].c_str()) != 0 || bp_ref != bp_mut || ancestral_ref != ancestral[0] || derived_ref != derived[0]){
+							use = false;
+						}
+					} 
+					if(DAF_ref == 0) use = false;
+					N_ref = DAF_ref + AAF_ref;
+
+					if(use){
+						DAF_target = 0;
+						AAF_target = 0;
+						while( (strcmp(chrom_target, filename_chr[chr].c_str()) == 0 && bp_target < bp_mut) ){
+							if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
+							fread(chrom_target, sizeof(char), lchrom, fp_target);
+							chrom_target[lchrom] = '\0';
+							fread(&bp_target, sizeof(int), 1, fp_target);
+							fread(&ancestral_target, sizeof(char), 1, fp_target);
+							fread(&derived_target, sizeof(char), 1, fp_target);
+							fread(&AAF_target, sizeof(int), 1, fp_target);
+							fread(&DAF_target, sizeof(int), 1, fp_target);
+						}
+						if( strcmp(chrom_target, filename_chr[chr].c_str()) != 0 || bp_target != bp_mut || ancestral_target != ancestral[0] || derived_target != derived[0]){
+							use = false;
+						}
+					} 
+					N_target = DAF_target + AAF_target;
+					if(N_target == 0) use = false;
+
+					//populate age_shared_count and age_notshared_count
+					if(use){
+
+						double age_begin = (*it_mut).age_begin;
+						if(age_begin < ref_age) age_begin = ref_age;
+
+						while(current_block_base + num_bases_per_block < bp_mut){
+							current_block_base += num_bases_per_block;
+							it_age_shared_emp++;
+							it_age_notshared_emp++;
+							it_age_shared_count++;
+							it_age_notshared_count++;
+							num_blocks++;
+						}
+
+						float f_DAF_target = DAF_target, f_AAF_target = AAF_target;
+						//std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
+						f_DAF_target /= N_target/2.0;
+						f_AAF_target /= N_target/2.0;
+						//std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
+						f_DAF_target = std::round(f_DAF_target);
+						f_AAF_target = std::round(f_AAF_target);
+						//std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
+						//assert(f_DAF_target + f_AAF_target == 2);
+
+						bool skip = false;
+						if(age_begin <= age){
+
+							if(1){
+								double age_begin2 = age_begin;
+								age_begin2 = 0.0;
+								int bin_index1 = std::max(0, (int)std::round(log(10*age_begin2)*C)+1);
+								int bin_index2 = std::max(0, (int)std::round(log(10*(*it_mut).age_end)*C)+1);
+								bin_index  = bin_index1 * num_age_bins + bin_index2;
+								(*it_age_shared_emp)[bin_index]    += f_DAF_target * DAF_ref/((double)N_ref);
+								(*it_age_notshared_emp)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref);
+
+								if(1){
+									int j = 0;
+									while(j < num_samples){
+										skip = false;
+										double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
+										//if(sampled_age < age) skip = true;
+										if(sampled_age < age) sampled_age = age;
+										int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
+										bin_index = bin_index_age;// * num_age_bins + bin_index_age;
+
+										if(!skip){
+											(*it_age_notshared_count)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref * num_samples);
+											//j++;
+										}
+										j++;
+									}
+								}
+							}
+
+						}else{
+
+							int j = 0;
+							while(j < num_samples){
+								skip = false;
+								double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
+								if(sampled_age < age) skip = true;
+								int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
+								bin_index = bin_index_age;// * num_age_bins + bin_index_age;
+
+								//if(bin_index >= (*it_age_shared_count).size()) std::cerr << (*it_mut).age_begin << " " << (*it_mut).age_end << " " << sampled_age << std::endl;
+								//assert(bin_index < (*it_age_shared_count).size());
+								if(bin_index >= (*it_age_shared_count).size()) skip = true;
+								if(!skip){
+									(*it_age_shared_count)[bin_index]    += f_DAF_target * DAF_ref/((double)N_ref * num_samples);
+									(*it_age_notshared_count)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref * num_samples);
+									j++;
+								}
+							}
+
+						}
+
+
+					}
+
+				}
+			}
+		}
+
+		it_age_shared_count++;
+		it_age_notshared_count++;
+		it_age_shared_emp++;
+		it_age_notshared_emp++;
+		num_blocks++;
+	}
+	fclose(fp_target);
+	fclose(fp_ref);
+	age_shared_count.resize(num_blocks);
+	age_notshared_count.resize(num_blocks);
+	age_shared_emp.resize(num_blocks);
+	age_notshared_emp.resize(num_blocks);
+
+	return num_blocks;
+
+}
+
 
 ///////////////////////
 void
@@ -1987,7 +2254,7 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 	bool has_ref_genome = false; //new
 	if(filename_ref_genome.size() > 0) has_ref_genome = true; //new
 	bool has_mask = false;
-	if(filename_mask.size() > 0) has_mask = true;
+	if(filename_target_mask.size() > 0) has_mask = true;
 
 	FILE* fp = fopen(filename_output.c_str(), "wb");
 
@@ -2004,7 +2271,7 @@ maketmp_vcf(std::vector<std::string>& filename_chr, std::vector<std::string>& fi
 		fasta ref_genome; //new
 		if(has_ref_genome) ref_genome.Read(filename_ref_genome[chr]); //new
 		fasta mask;
-		if(has_mask) mask.Read(filename_mask[chr]);
+		if(has_mask) mask.Read(filename_target_mask[chr]);
 
 		bp_target = 0, bp_mut = 0;
 
@@ -2191,7 +2458,7 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
 
 	FILE* fp = fopen(filename_output.c_str(), "wb");
 	bool has_mask = false;
-	if(filename_mask.size() > 0) has_mask = true;
+	if(filename_target_mask.size() > 0) has_mask = true;
 
 	for(int chr = 0; chr < filename_mut.size(); chr++){
 
@@ -2207,7 +2474,7 @@ maketmp_bam(std::string& params, std::vector<std::string>& filename_chr, std::ve
     }
 
 		fasta mask;
-		if(has_mask) mask.Read(filename_mask[chr]);
+		if(has_mask) mask.Read(filename_target_mask[chr]);
 
 		Mutations mut;
 		mut.Read(filename_mut[chr]);
@@ -2458,260 +2725,6 @@ maketmp_table(std::vector<std::string>& filename_chr, std::vector<std::string>& 
 }
 
 
-
-
-int
-parse_tmptmp(std::vector<std::string>& filename_chr, std::vector<std::string>& filename_mut, std::string& filename_target, std::string& filename_ref, std::vector<std::string>& filename_target_mask, std::vector<std::string>& filename_reference_mask, double age, double ref_age, double C, std::mt19937& rng, int num_bases_per_block, std::vector<std::vector<double>>& age_shared_count, std::vector<std::vector<double>>& age_notshared_count, std::vector<std::vector<double>>& age_shared_emp, std::vector<std::vector<double>>& age_notshared_emp){
-
-  age = 0;
-  ref_age = 0;
-
-	std::uniform_real_distribution<double> dist_unif(0,1);
-	int num_age_bins = ((int) (log(1e8) * C))+1;
-	int N_ref, N_target, DAF, bp_ref = 0, bp_target = 0, bp_mut = 0, num_used_snps = 0, num_used_snps2 = 0;
-	bool ref_flip = false, target_flip = false;
-	std::string ancestral, derived;
-	char ancestral_ref, derived_ref, ancestral_target, derived_target;
-	Muts::iterator it_mut;
-
-	float num_samples = 100;
-	char chrom_target[1024], chrom_ref[1024];
-	int DAF_target, AAF_target, DAF_ref, AAF_ref, lchrom;
-	int bin_index;
-
-	FILE* fp_target = fopen(filename_target.c_str(), "rb");
-	FILE* fp_ref    = fopen(filename_ref.c_str(), "rb");
-
-  if(fp_target == NULL){
-    std::cerr << "Failed to open " << filename_target << std::endl;
-  }
-  if(fp_ref == NULL){
-    std::cerr << "Failed to open " << filename_ref << std::endl;
-  }
-
-	bool has_tar_mask = false, has_ref_mask = false;
-	if(filename_target_mask.size() > 0) has_tar_mask = true;
-	if(filename_reference_mask.size() > 0) has_ref_mask = true;
-
-	std::vector<std::vector<double>>::iterator it_age_shared_count    = age_shared_count.begin();
-	std::vector<std::vector<double>>::iterator it_age_notshared_count = age_notshared_count.begin();
-	std::vector<std::vector<double>>::iterator it_age_shared_emp      = age_shared_emp.begin();
-	std::vector<std::vector<double>>::iterator it_age_notshared_emp   = age_notshared_emp.begin();
-	int current_block_base = 0;
-	int num_blocks = 0;
-
-	for(int chr = 0; chr < filename_mut.size(); chr++){
-
-		std::cerr << "parsing CHR: " << chr+1 << " / " << filename_mut.size() << std::endl;
-
-		Mutations mut;
-		mut.Read(filename_mut[chr]);
-
-		fasta tar_mask, ref_mask;
-		if(has_tar_mask) tar_mask.Read(filename_target_mask[chr]);
-		if(has_ref_mask) ref_mask.Read(filename_reference_mask[chr]);
-
-		current_block_base = 0;
-		bp_mut = 0;
-
-		while( strcmp(chrom_ref, filename_chr[chr].c_str()) != 0 ){
-			if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
-			fread(chrom_ref, sizeof(char), lchrom, fp_ref);
-			chrom_ref[lchrom] = '\0';
-			fread(&bp_ref, sizeof(int), 1, fp_ref);
-			fread(&ancestral_ref, sizeof(char), 1, fp_ref);
-			fread(&derived_ref, sizeof(char), 1, fp_ref);
-			fread(&AAF_ref, sizeof(int), 1, fp_ref);
-			fread(&DAF_ref, sizeof(int), 1, fp_ref);
-		}
-
-		while( strcmp(chrom_target, filename_chr[chr].c_str()) != 0 ){
-			if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
-			fread(chrom_target, sizeof(char), lchrom, fp_target);
-			chrom_target[lchrom] = '\0';
-			fread(&bp_target, sizeof(int), 1, fp_target);
-			fread(&ancestral_target, sizeof(char), 1, fp_target);
-			fread(&derived_target, sizeof(char), 1, fp_target);
-			fread(&AAF_target, sizeof(int), 1, fp_target);
-			fread(&DAF_target, sizeof(int), 1, fp_target);
-		}
-
-
-		for(it_mut = mut.info.begin(); it_mut != mut.info.end(); it_mut++){
-
-			if((*it_mut).flipped == 0 && (*it_mut).branch.size() == 1 && (*it_mut).age_begin < (*it_mut).age_end && (*it_mut).freq.size() >= 0 && (*it_mut).age_end >= age){
-
-				int i = 0;
-				ancestral.clear();
-				derived.clear();
-				while((*it_mut).mutation_type[i] != '/' && i < (*it_mut).mutation_type.size()){
-					ancestral.push_back((*it_mut).mutation_type[i]);
-					i++;
-				}
-				i++;
-				while(i < (*it_mut).mutation_type.size()){
-					derived.push_back((*it_mut).mutation_type[i]);
-					i++;
-				}
-				bp_mut = (*it_mut).pos;
-
-				if(ancestral.size() > 0 && derived.size() > 0){
-
-					bool use = true;
-					if(has_tar_mask && bp_mut < tar_mask.seq.size()){
-						if(tar_mask.seq[bp_mut-1] != 'P') use = false;
-					}
-					if(has_ref_mask && bp_mut < ref_mask.seq.size()){
-						if(ref_mask.seq[bp_mut-1] != 'P') use = false;
-					}
-					if(ancestral != "A" && ancestral != "C" && ancestral != "G" && ancestral != "T" && ancestral != "0") use = false;
-					if(derived != "A" && derived != "C" && derived != "G" && derived != "T" && derived != "1") use = false;
-
-					//std::cerr << filename_chr[chr] << " " << chrom_ref << " " << chrom_target << std::endl;
-					//std::cerr << bp_mut << " " << bp_target << " " << bp_ref << std::endl;
-
-					if(use){
-						DAF_ref    = 0;
-						AAF_ref    = 0;
-						while( (strcmp(chrom_ref, filename_chr[chr].c_str()) == 0 && bp_ref < bp_mut) ){
-							if(fread(&lchrom, sizeof(int), 1, fp_ref) != 1) break;
-							fread(chrom_ref, sizeof(char), lchrom, fp_ref);
-							chrom_ref[lchrom] = '\0';
-							fread(&bp_ref, sizeof(int), 1, fp_ref);
-							fread(&ancestral_ref, sizeof(char), 1, fp_ref);
-							fread(&derived_ref, sizeof(char), 1, fp_ref);
-							fread(&AAF_ref, sizeof(int), 1, fp_ref);
-							fread(&DAF_ref, sizeof(int), 1, fp_ref);
-						}
-						if( strcmp(chrom_ref, filename_chr[chr].c_str()) != 0 || bp_ref != bp_mut || ancestral_ref != ancestral[0] || derived_ref != derived[0]){
-							use = false;
-						}
-					} 
-					if(DAF_ref == 0) use = false;
-					N_ref = DAF_ref + AAF_ref;
-
-					if(use){
-						DAF_target = 0;
-						AAF_target = 0;
-						while( (strcmp(chrom_target, filename_chr[chr].c_str()) == 0 && bp_target < bp_mut) ){
-							if(fread(&lchrom, sizeof(int), 1, fp_target) != 1) break;
-							fread(chrom_target, sizeof(char), lchrom, fp_target);
-							chrom_target[lchrom] = '\0';
-							fread(&bp_target, sizeof(int), 1, fp_target);
-							fread(&ancestral_target, sizeof(char), 1, fp_target);
-							fread(&derived_target, sizeof(char), 1, fp_target);
-							fread(&AAF_target, sizeof(int), 1, fp_target);
-							fread(&DAF_target, sizeof(int), 1, fp_target);
-						}
-						if( strcmp(chrom_target, filename_chr[chr].c_str()) != 0 || bp_target != bp_mut || ancestral_target != ancestral[0] || derived_target != derived[0]){
-							use = false;
-						}
-					} 
-					N_target = DAF_target + AAF_target;
-          if(N_target == 0) use = false;
-
-					//populate age_shared_count and age_notshared_count
-					if(use){
-
-						double age_begin = (*it_mut).age_begin;
-						if(age_begin < ref_age) age_begin = ref_age;
-
-						while(current_block_base + num_bases_per_block < bp_mut){
-							current_block_base += num_bases_per_block;
-							it_age_shared_emp++;
-							it_age_notshared_emp++;
-							it_age_shared_count++;
-							it_age_notshared_count++;
-							num_blocks++;
-						}
-
-            float f_DAF_target = DAF_target, f_AAF_target = AAF_target;
-            //std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
-            f_DAF_target /= N_target/2.0;
-            f_AAF_target /= N_target/2.0;
-            //std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
-            f_DAF_target = std::round(f_DAF_target);
-            f_AAF_target = std::round(f_AAF_target);
-            //std::cerr << f_DAF_target << " " << f_AAF_target << std::endl;
-            //assert(f_DAF_target + f_AAF_target == 2);
-
-						bool skip = false;
-						if(age_begin <= age){
-
-							if(1){
-								double age_begin2 = age_begin;
-								age_begin2 = 0.0;
-								int bin_index1 = std::max(0, (int)std::round(log(10*age_begin2)*C)+1);
-								int bin_index2 = std::max(0, (int)std::round(log(10*(*it_mut).age_end)*C)+1);
-								bin_index  = bin_index1 * num_age_bins + bin_index2;
-                (*it_age_shared_emp)[bin_index]    += f_DAF_target * DAF_ref/((double)N_ref);
-                (*it_age_notshared_emp)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref);
-
-								if(1){
-									int j = 0;
-									while(j < num_samples){
-										skip = false;
-										double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-										//if(sampled_age < age) skip = true;
-										if(sampled_age < age) sampled_age = age;
-										int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
-										bin_index = bin_index_age;// * num_age_bins + bin_index_age;
-
-										if(!skip){
-                      (*it_age_notshared_count)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref * num_samples);
-											//j++;
-										}
-										j++;
-									}
-								}
-							}
-
-						}else{
-
-							int j = 0;
-							while(j < num_samples){
-								skip = false;
-								double sampled_age = dist_unif(rng) * ((*it_mut).age_end - age_begin) + age_begin;
-								if(sampled_age < age) skip = true;
-								int bin_index_age = std::max(0, (int)std::round(log(10*sampled_age)*C)+1);
-								bin_index = bin_index_age;// * num_age_bins + bin_index_age;
-
-								//if(bin_index >= (*it_age_shared_count).size()) std::cerr << (*it_mut).age_begin << " " << (*it_mut).age_end << " " << sampled_age << std::endl;
-								//assert(bin_index < (*it_age_shared_count).size());
-								if(bin_index >= (*it_age_shared_count).size()) skip = true;
-								if(!skip){
-                  (*it_age_shared_count)[bin_index]    += f_DAF_target * DAF_ref/((double)N_ref * num_samples);
-                  (*it_age_notshared_count)[bin_index] += f_AAF_target * DAF_ref/((double)N_ref * num_samples);
-									j++;
-								}
-							}
-
-						}
-
-
-					}
-
-				}
-			}
-		}
-
-		it_age_shared_count++;
-		it_age_notshared_count++;
-		it_age_shared_emp++;
-		it_age_notshared_emp++;
-		num_blocks++;
-	}
-	fclose(fp_target);
-	fclose(fp_ref);
-	age_shared_count.resize(num_blocks);
-	age_notshared_count.resize(num_blocks);
-	age_shared_emp.resize(num_blocks);
-	age_notshared_emp.resize(num_blocks);
-
-	return num_blocks;
-
-}
-
 //////////////////////
 void
 calc_depth(cxxopts::Options& options){
@@ -2842,7 +2855,7 @@ make_tmp(cxxopts::Options& options){
 	}  
 
 	std::cerr << "---------------------------------------------------------" << std::endl;
-	std::cerr << "Calculating Colate tmp input file for " << options["target_tmp"].as<std::string>() << ".." << std::endl;
+	std::cerr << "Calculating Colate tmp input file for ";
 
 	std::string params = "20,30,10";
 	if(options.count("filters")){
@@ -2855,6 +2868,7 @@ make_tmp(cxxopts::Options& options){
   std::vector<std::string> filename_mut, filename_target, filename_ref_genome, filename_anc_genome, name_chr, filename_target_mask;
 
 	if(options.count("target_bcf") > 0){
+		std::cerr << options["target_bcf"].as<std::string>() << ".." << std::endl;
 		if(options.count("chr") > 0){
 
 			igzstream is_chr(options["chr"].as<std::string>());
@@ -2890,6 +2904,7 @@ make_tmp(cxxopts::Options& options){
 	}
 
 	if(options.count("target_bam") > 0){
+		std::cerr << options["target_bam"].as<std::string>() << ".." << std::endl;
 		if(options.count("chr") > 0){
 
 			igzstream is_chr(options["chr"].as<std::string>());
@@ -2925,6 +2940,7 @@ make_tmp(cxxopts::Options& options){
 	}
 
   if(options.count("target_table") > 0){
+		std::cerr << options["target_table"].as<std::string>() << ".." << std::endl;
     if(options.count("chr") > 0){
 
       igzstream is_chr(options["chr"].as<std::string>());
@@ -2987,7 +3003,7 @@ mut(cxxopts::Options& options){
 	}  
 
 	std::cerr << "---------------------------------------------------------" << std::endl;
-	std::cerr << "Calculating coalescence rates for (ancient) sample.." << std::endl;
+	std::cerr << "Calculating coalescence rates for (ancient) samples.." << std::endl;
 
 	int regularise = 2;
 	//if(options.count("regularise") > 0){ 
@@ -3532,11 +3548,6 @@ mut(cxxopts::Options& options){
 
 	}
 
-  for(int i = 0; i < epochs.size(); i++){
-    std::cerr << epochs[i] << " ";
-  }
-  std::cerr << std::endl << std::endl;
-
 	////////////////////////
 	//read input sequence (file format? haps/sample? vcf?) and reference sequences (haps/sample? vcf?)
 	double initial_coal_rate = 1.0/20000.0;
@@ -3593,7 +3604,7 @@ mut(cxxopts::Options& options){
 			if( (int) (((double)iter)/max_iter * 100.0) > perc ){
 				perc = (int) (((double)iter)/max_iter * 100.0);
 				//std::cerr << "[" << perc << "%]\r";
-				std::cerr << "Iteration: " << iter << "\r";
+				std::cerr << "Bootstrap " << i+1 << ": Total iterations " << iter << "\r";
 			}
 
 			//EM.UpdateCoal(coal_rates_nesterov);
@@ -3724,7 +3735,7 @@ mut(cxxopts::Options& options){
 			std::fill(coal_rates_denom.begin(), coal_rates_denom.end(), 0.0);
 
 			if(log_likelihood/prev_log_likelihood > 1.0 - 1e-10 && iter > 1000){
-				std::cerr << "Iteration: " << iter << std::endl;
+				std::cerr << "Bootstrap " << i+1 << ": Total iterations " << iter << std::endl;
 				break;
 			}
 
