@@ -3588,9 +3588,7 @@ mut(cxxopts::Options& options){
   }
 	os << std::endl;
 
-  std::ofstream os_log(options["output"].as<std::string>() + ".log");
-
-
+  //std::ofstream os_log(options["output"].as<std::string>() + ".log");
 	for(int i = 0; i < num_bootstrap; i++){
 
 		double gamma = 1;
@@ -3737,7 +3735,7 @@ mut(cxxopts::Options& options){
 			std::fill(coal_rates_num.begin(), coal_rates_num.end(), 0.0);
 			std::fill(coal_rates_denom.begin(), coal_rates_denom.end(), 0.0);
 
-      os_log << i << " " << iter << " " << log_likelihood << "\n";
+      //os_log << i << " " << iter << " " << log_likelihood << "\n";
 			if(log_likelihood/prev_log_likelihood > 1.0 - 1e-7 & iter > 1e3){
 				std::cerr << "Bootstrap " << i+1 << ": Total iterations " << iter << std::endl;
 				break;
