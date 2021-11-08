@@ -1005,7 +1005,7 @@ static void load_hfile_plugins()
     hfile_add_scheme_handler("data", &data);
     hfile_add_scheme_handler("file", &file);
     hfile_add_scheme_handler("preload", &preload);
-    init_add_plugin(NULL, hfile_plugin_init_net, "knetfile");
+    //init_add_plugin(NULL, hfile_plugin_init_net, "knetfile");
     init_add_plugin(NULL, hfile_plugin_init_mem, "mem");
 
 #ifdef ENABLE_PLUGINS
