@@ -6,10 +6,11 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 set (CMAKE_CXX_STANDARD 14)
 
-add_definitions(-static)
-add_definitions(-static-libgcc)
-set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
-set(OPENSSL_USE_STATIC_LIBS TRUE)
+#set(CMAKE_OSX_ARCHITECTURES "x86_64")
+#add_definitions(-static)
+#add_definitions(-static-libgcc)
+#set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static -static-libgcc")
+#set(OPENSSL_USE_STATIC_LIBS TRUE)
 
 find_package( ZLIB REQUIRED )
 if ( ZLIB_FOUND )
@@ -32,12 +33,6 @@ else()
   include_directories(${OPENSSL_INCLUDE_DIR})
   list(APPEND LIB_LIST ${OPENSSL_LIBRARIES})
   message(STATUS "OpenSSL Version: ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES}")
-
-  #set(OPENSSL_ROOT_DIR /camp/apps/eb/software/OpenSSL/1.1)
-  #include_directories(/camp/apps/eb/software/OpenSSL/1.1/include)
-  #list(APPEND LIB_LIST /camp/apps/eb/software/OpenSSL/1.1/lib/libssl.a)
-  #list(APPEND LIB_LIST /camp/apps/eb/software/OpenSSL/1.1/lib/libcrypto.a)
-
 endif()
 
 find_package( LibLZMA REQUIRED )
