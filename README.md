@@ -6,7 +6,8 @@
 - That's it!
 
 Please send any comments, questions and bug reports to leo.speidel@outlook.com. <br/>
-Preprint describing the method: https://www.biorxiv.org/content/10.1101/2021.02.17.431573v1
+Paper describing the method: https://academic.oup.com/mbe/article/38/9/3497/6299394 <br/>
+Preprint: https://www.biorxiv.org/content/10.1101/2021.02.17.431573v1
 
 ![alt text](https://github.com/leospeidel/Colate/blob/master/plot_LBK_Loschbour.png)
 
