@@ -414,7 +414,13 @@ coal_localancestry(cxxopts::Options& options){
 		AncMutIterators ancmut(filenames[chr] + ".anc", filenames[chr] + ".mut");
 		float num_bases_tree_persists = 0.0;
 
-		if(chromosomes.size() > 1 || chromosomes[chr] != "NA") assert(lchrom[local_index] == chromosomes[chr]);
+		if(chromosomes.size() > 1 || chromosomes[chr] != "NA"){
+			while(lchrom[local_index] != chromosomes[chr]){
+        local_index++;
+				if(local_index == lchrom.size()) exit(1); //this means chromosome not found
+			}
+			//assert(lchrom[local_index] == chromosomes[chr]);
+		}
 		assert(lbp[local_index] == 0);
 
 		ct.update_ancmut(ancmut);
