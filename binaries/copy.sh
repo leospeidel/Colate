@@ -1,9 +1,10 @@
 #!/bin/bash
 
-prev_version="0.1.2"
-next_version="0.1.3"
+prev_version="0.1.3"
+next_version="0.1.4"
 
-mkdir old_versions
+#mkdir old_versions
+tar -xvf old_versions.tar
 cp -r v${prev_version}_MacOSX_Intel/ old_versions
 cp -r v${prev_version}_MacOSX_M1/ old_versions
 cp -r v${prev_version}_x86_64_dynamic/ old_versions

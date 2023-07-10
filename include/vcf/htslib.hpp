@@ -84,6 +84,7 @@ class bam_parser{
     uint8_t *q; //quality string
     uint32_t mapq; //mapping quality
     char* seq; //seq
+    uint32_t* cigar; //cigar
 
     std::string contig = "";
     fasta ref_genome, anc_genome;

@@ -59,60 +59,54 @@ vcf_parser::extract_GT(){
 void 
 bam_parser::count_alleles_for_read(){
 
-  //if(mapq > 20 && len >= 30){
-	if(mapq >= mapq_th && len >= len_th){
+  if(mapq >= mapq_th && len >= len_th){
 
     //calculate how many bp match reference at this read
     int num_matching = 0, total = 0;
     int start = 3, end = len - 3;
 
     bool deam_use = true;
-    if(0){
-    //TODO: use option to deactivate this filter
-    start = 3, end = len - 3;
-    deam_use = false;
-    for(int i = 0; i < start; i++){
-      if(pos + i >= ref_genome.seq.size()) break;
-      //if((int)q[i] >= bq_th){
-      if(ref_genome.seq[pos+i] == 'C' && seq[i] == 'T') deam_use = true;
-      if(ref_genome.seq[pos+i] == 'G' && seq[i] == 'A') deam_use = true;
-      break;
-      //}
-    }
-    for(int i = end; i < len; i++){
-      if(pos + i >= ref_genome.seq.size()) break;
-      //if((int)q[i] >= bq_th){
-      if(ref_genome.seq[pos+i] == 'C' && seq[i] == 'T') deam_use = true;
-      if(ref_genome.seq[pos+i] == 'G' && seq[i] == 'A') deam_use = true;
-      break;
-      //}
-    }
+    if(1){
+      //TODO: use option to deactivate this filter
+      start = 3, end = len - 3;
+      deam_use = false;
+      for(int i = 0; i < start; i++){
+        if(pos + i >= ref_genome.seq.size()) break;
+        if(!is_reverse && ref_genome.seq[pos+i] == 'C' && seq[i] == 'T') deam_use = true;
+        if(is_reverse && ref_genome.seq[pos+i] == 'G' && seq[i] == 'A') deam_use = true;
+        break;
+      }
+      for(int i = end; i < len; i++){
+        if(pos + i >= ref_genome.seq.size()) break;
+        if(!is_reverse && ref_genome.seq[pos+i] == 'C' && seq[i] == 'T') deam_use = true;
+        if(is_reverse && ref_genome.seq[pos+i] == 'G' && seq[i] == 'A') deam_use = true;
+        break;
+      }
     }
 
+    if(deam_use){
     for(int i = start; i < end; i++){
 
       if(pos + i >= ref_genome.seq.size()) break;
 
-			if((int)q[i] >= bq_th){
-				total++;
-				if(ref_genome.seq[pos+i] == seq[i]) num_matching++;
+      if((int)q[i] >= bq_th){
+        total++;
+        if(ref_genome.seq[pos+i] == seq[i]) num_matching++;
 
-				//reset count_alleles if necessary
-				if(pos_of_entry[(pos+i) % num_entries] != pos+i){
-					std::fill(count_alleles[(pos+i) % num_entries].begin(), count_alleles[(pos+i) % num_entries].end(), 0);
-					pos_of_entry[(pos+i) % num_entries] = pos+i;
-				}
-			}
+        //reset count_alleles if necessary
+        if(pos_of_entry[(pos+i) % num_entries] != pos+i){
+          std::fill(count_alleles[(pos+i) % num_entries].begin(), count_alleles[(pos+i) % num_entries].end(), 0);
+          pos_of_entry[(pos+i) % num_entries] = pos+i;
+        }
+      } 
 
     } 
 
     //get two alleles at this position (e.g., through chimp & humans), if one of them is a 'C' and read maps to forward strand, then exclude.
     //if it is a C/T
 
-    //if(total - num_matching <= 3 && total > 0){
     if(strandfilter){
       if(total - num_matching <= mismatch_th && total > 0 && deam_use){
-      //if(total > 0){
 
         coverage_after_filter += len;
         for(int i = start; i < end; i++){
@@ -140,7 +134,6 @@ bam_parser::count_alleles_for_read(){
       }
     }else{
       if(total - num_matching <= mismatch_th && total > 0 && deam_use){
-        //if(total > 0){
 
         coverage_after_filter += len;
         for(int i = start; i < end; i++){
@@ -165,36 +158,37 @@ bam_parser::count_alleles_for_read(){
     }
 
   }
+  }
 
 }
 
 bam_parser::bam_parser(const std::string& filename, const std::string& params, const bool strandfilter): strandfilter(strandfilter){
 
-	int i = 0;
-	std::string tmp;
-	tmp.clear();
-	while(params[i] != ',' && i < params.size()){
-	  tmp += params[i];
-		i++;
-		if(i == params.size()) break;
-	}
-	mapq_th = stoi(tmp);
-	i++;
-	tmp.clear();
-	while(params[i] != ',' && i < params.size()){
-		tmp += params[i];
-		i++;
-		if(i == params.size()) break;
-	}
-	len_th = stoi(tmp);
-	i++;
-	tmp.clear();
-	while(params[i] != ',' && i < params.size()){
-		tmp += params[i];
-		i++;
-		if(i == params.size()) break;
-	}
-	mismatch_th = stoi(tmp);
+  int i = 0;
+  std::string tmp;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  mapq_th = stoi(tmp);
+  i++;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  len_th = stoi(tmp);
+  i++;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  mismatch_th = stoi(tmp);
 
   fp_in = hts_open(filename.c_str(), "r");
   if (fp_in == NULL) {
@@ -226,31 +220,31 @@ bam_parser::bam_parser(const std::string& filename, const std::string& params, c
 
 bam_parser::bam_parser(const std::string& filename, const std::string& params, const std::string& filename_ref){
 
-	int i = 0;
-	std::string tmp;
-	tmp.clear();
-		while(params[i] != ',' && i < params.size()){
-			tmp += params[i];
-			i++;
-			if(i == params.size()) break;
-		}
-	mapq_th = stoi(tmp);
-	i++;
-	tmp.clear();
-	while(params[i] != ',' && i < params.size()){
-		tmp += params[i];
-		i++;
-		if(i == params.size()) break;
-	}
-	len_th = stoi(tmp);
-	i++;
-	tmp.clear();
-	while(params[i] != ',' && i < params.size()){
-		tmp += params[i];
-		i++;
-		if(i == params.size()) break;
-	}
-	mismatch_th = stoi(tmp);
+  int i = 0;
+  std::string tmp;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  mapq_th = stoi(tmp);
+  i++;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  len_th = stoi(tmp);
+  i++;
+  tmp.clear();
+  while(params[i] != ',' && i < params.size()){
+    tmp += params[i];
+    i++;
+    if(i == params.size()) break;
+  }
+  mismatch_th = stoi(tmp);
 
   fp_in = hts_open(filename.c_str(), "r");
   if (fp_in == NULL) {
@@ -279,7 +273,7 @@ bam_parser::bam_parser(const std::string& filename, const std::string& params, c
 
     ref_genome.Read(filename_ref);
     read_entry();
-		chr    = bamHdr->target_name[aln->core.tid];
+    chr    = bamHdr->target_name[aln->core.tid];
     contig = chr;
   }
 }
@@ -378,43 +372,56 @@ bam_parser::open(std::string& filename, std::string& filename_ref){
 int 
 bam_parser::read_entry(){
   int ret = sam_read1(fp_in, bamHdr, aln);
+  bool skip = false;
 
   if(ret > 0){
     pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
     chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
 
-		//TODO:
-		//check here whether read is paired and decide whether to use it
+    //TODO:
+    //check here whether read is paired and decide whether to use it
 
     if(strcmp(chr, contig.c_str()) == 0 || strcmp(chr, ("chr" + contig).c_str()) == 0){
-      len = aln->core.l_qseq; //length of the read.
 
-      q = bam_get_seq(aln); //quality string
-      mapq = aln->core.qual ; //mapping quality
-
-      is_reverse = bam_is_rev(aln);
-
-      //seq = (char *)malloc(len);
-      if(len > maxlen){ 
-        seq = (char *) realloc(seq, len);
-        maxlen = len;
-      }
-      for(int i=0; i< len ; i++){
-        seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
+      cigar = bam_get_cigar(aln);
+      for (int k = 0; k < aln->core.n_cigar; k++){
+        const int op = bam_cigar_op(cigar[k]); //type
+        const int ol = bam_cigar_oplen(cigar[k]); //length
+        if(op == BAM_CINS || op == BAM_CDEL){
+          skip = true;
+        }
       }
 
-			q = bam_get_qual(aln);
-      //std::cerr << (int) q[0] << " "  << q[0] + 33 << " " << q[1] + 33 << std::endl;
+      if(!skip){
+        len = aln->core.l_qseq; //length of the read.
 
-      count_alleles_for_read();
+        q = bam_get_seq(aln); //quality string
+        mapq = aln->core.qual ; //mapping quality
 
-      if(pos < prev_pos){
-        std::cerr << "Error: BAM file not sorted by position." << std::endl;
-        exit(1);
+        is_reverse = bam_is_rev(aln);
+
+        //seq = (char *)malloc(len);
+        if(len > maxlen){ 
+          seq = (char *) realloc(seq, len);
+          maxlen = len;
+        }
+        for(int i=0; i< len ; i++){ 
+          seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
+        }
+
+        q = bam_get_qual(aln);
+        //std::cerr << (int) q[0] << " "  << q[0] + 33 << " " << q[1] + 33 << std::endl;
+
+        count_alleles_for_read();
+
+        if(pos < prev_pos){
+          std::cerr << "Error: BAM file not sorted by position." << std::endl;
+          exit(1);
+        }
+        prev_pos = pos;
+
+        coverage += len;
       }
-      prev_pos = pos;
-
-      coverage += len;
     }
   }else{
     eof = true;
@@ -449,7 +456,7 @@ bam_parser::read_deam(int current_pos, std::vector<int>& v_isC1, std::vector<int
           bool deam = false, isC = false, isCpG = false;
           for(int i = 0; i < len; i++){
             if(pos + i >= ref_genome.seq.size()) break;
-            
+
             isC = false;
             isCpG = false;
             deam = false;
@@ -478,7 +485,7 @@ bam_parser::read_deam(int current_pos, std::vector<int>& v_isC1, std::vector<int
           }
 
         }
-      
+
       }
     }
   }
@@ -492,7 +499,7 @@ bam_parser::assign_contig(const std::string& icontig, const std::string& filenam
   if(icontig != ""){
     contig = icontig;
   }
-	ref_genome.seq.clear();
+  ref_genome.seq.clear();
   ref_genome.Read(filename_ref);
 
   anc_genome.seq.clear();
@@ -521,16 +528,17 @@ bam_parser::assign_contig(const std::string& icontig, const std::string& filenam
   //read first entry
   int ret = 1;
   if(chr == NULL){
-		ret = sam_read1(fp_in, bamHdr, aln);
-		chr = bamHdr->target_name[aln->core.tid];
-	}
+    ret = sam_read1(fp_in, bamHdr, aln);
+    chr = bamHdr->target_name[aln->core.tid];
+  }
   if(strcmp(chr, contig.c_str()) != 0 && strcmp(chr, ("chr" + contig).c_str()) != 0){
     while(strcmp(chr, contig.c_str()) != 0 && strcmp(chr, ("chr" + contig).c_str()) != 0 && ret > 0){
-			ret = sam_read1(fp_in, bamHdr, aln);
-			chr = bamHdr->target_name[aln->core.tid];
-		}
-	}
+      ret = sam_read1(fp_in, bamHdr, aln);
+      chr = bamHdr->target_name[aln->core.tid];
+    }
+  }
 
+  bool skip = false;
   if(ret > 0){
     pos = aln->core.pos; //left most position of alignment in zero based coordianate (+1)
     chr = bamHdr->target_name[aln->core.tid] ; //contig name (chromosome)
@@ -542,32 +550,44 @@ bam_parser::assign_contig(const std::string& icontig, const std::string& filenam
     }else{
       contig = chr;
     }
-    len = aln->core.l_qseq; //length of the read.
 
-    is_reverse = bam_is_rev(aln);
-
-    q = bam_get_seq(aln); //quality string
-    mapq = aln->core.qual ; //mapping quality
-
-    //seq = (char *)malloc(len);
-    if(len > maxlen){ 
-      seq = (char *) realloc(seq, len);
-      maxlen = len;
+    cigar = bam_get_cigar(aln);
+    for (int k = 0; k < aln->core.n_cigar; k++){
+      const int op = bam_cigar_op(cigar[k]); //type
+      const int ol = bam_cigar_oplen(cigar[k]); //length
+      if(op == BAM_CINS || op == BAM_CDEL){
+        skip = true;
+      }
     }
 
-    for(int i=0; i< len ; i++){
-      seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
+    if(!skip){
+      len = aln->core.l_qseq; //length of the read.
+
+      is_reverse = bam_is_rev(aln);
+
+      q = bam_get_seq(aln); //quality string
+      mapq = aln->core.qual ; //mapping quality
+
+      //seq = (char *)malloc(len);
+      if(len > maxlen){ 
+        seq = (char *) realloc(seq, len);
+        maxlen = len;
+      }
+
+      for(int i=0; i< len ; i++){
+        seq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
+      }
+
+      count_alleles_for_read();
+
+      if(pos < prev_pos){
+        std::cerr << "Error: BAM file not sorted by position." << std::endl;
+        exit(1);
+      }
+      prev_pos = pos;
+
+      coverage += len;
     }
-
-    count_alleles_for_read();
-
-    if(pos < prev_pos){
-      std::cerr << "Error: BAM file not sorted by position." << std::endl;
-      exit(1);
-    }
-    prev_pos = pos;
-
-    coverage += len;
   }else{
     eof = true;
   }
