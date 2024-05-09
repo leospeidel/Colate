@@ -9,7 +9,7 @@ double
 logsumexp(double loga, double logb){
 
 	if(std::isinf(loga) || std::isnan(loga)){
-		if(std::isnan(loga)) std::cerr << loga << std::endl;
+		//if(std::isnan(loga)) std::cerr << loga << std::endl;
 		if(std::isinf(logb) || std::isnan(logb)){
 			return log(0.0);
 		}else{
@@ -17,7 +17,7 @@ logsumexp(double loga, double logb){
 		}
 	}
 	if(std::isinf(logb) || std::isnan(logb)){
-		if(std::isnan(logb)) std::cerr << logb << std::endl;
+		//if(std::isnan(logb)) std::cerr << logb << std::endl;
 		if(std::isinf(loga) || std::isnan(loga)){
 			return log(0.0);
 		}else{
