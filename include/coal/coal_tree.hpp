@@ -75,8 +75,8 @@ class coal_LA {
 
 		void update_ancmut(AncMutIterators& ancmut);
 		void populate(Tree& tree, double num_bases_tree_persists, std::vector<int>& group, bool new_tree);
-		void init_bootstrap();
-		void Dump(std::string filename, std::vector<std::string>& unique_groups);
+		void init_bootstrap(int seed = 1);
+		void Dump(std::string filename, std::vector<std::string>& unique_groups, int seed = 1);
 
 };
 

@@ -226,6 +226,13 @@ coal_localancestry(cxxopts::Options& options){
 	/////////////////////////////////
 	//get TMRCA at each SNP
 
+  int seed;
+  if(!options.count("seed")){
+    seed = std::time(0) + getpid();
+  }else{
+    seed = options["seed"].as<int>();
+  }
+
 	////////////////////////////////////////
 
 	//decide on epochs
@@ -351,59 +358,108 @@ coal_localancestry(cxxopts::Options& options){
 	std::vector<int> lbp;
 	std::vector<std::vector<int>> group;
 
-	igzstream is_assign(options["poplabels"].as<std::string>());
-	if(is_assign.fail()){
-		std::cerr << "Error: Failed to open " << options["poplabels"].as<std::string>() << std::endl;
-		exit(1);
-	}
-	getline(is_assign, line);
-	int i = 0;
-	while(i < line.size()){
-		tmp.clear();
-		while(line[i] != ' ' && line[i] != '\t'){
-			tmp += line[i];
-			i++;
-			if(i == line.size()) break;
-		}
-		i++;
-		unique_groups.push_back(tmp);
-	}
-	int num_groups = unique_groups.size();
+  ///////////////////////////////////////////////////////////////////////////////
+  //TODO:implement a version that works with 4 column poplabels file.
+  
+  igzstream is_check(options["poplabels"].as<std::string>());
+  getline(is_check, line);
+  is_check.close();
+  std::istringstream iss(line); // Create a string stream from the input string
+  std::string token;
+  int count1 = 0;
+  while (iss >> token) {
+    count1++;
+  }
+  std::istringstream iss2(line); // Create a string stream from the input string
+  int count2 = 0;
+  while (iss2 >> token) {
+    count2++;
+  }
 
-	std::vector<int> group_tmp;
-	int val;
-	std::string current_chr;
-	while(getline(is_assign, line)){
+  int num_groups;
+  if(count1 == 4 && count2 == 4){
+  
+    std::cerr << "Assuming 4 column poplabels file" << std::endl;
+  
+    //need to populate lchrom, lbp, group, unique_groups
+    Sample sample;
+    sample.Read(options["poplabels"].as<std::string>());
 
-		std::istringstream iss(line);
-		if(group_tmp.size() == 0){
-			iss >> tmp;
-			lchrom.push_back(tmp);
-			current_chr = tmp;
-			iss >> val;
-			lbp.push_back(val);
-			if(val != 0){
-				std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
-				exit(1);
-			}
-			while(iss >> val) group_tmp.push_back(val);
-		}else{
-			iss >> tmp;
-			lchrom.push_back(tmp);
-			iss >> val;
-			lbp.push_back(val);
-			if(current_chr != lchrom[lchrom.size()-1] && val != 0){
-				std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
-				exit(1);
-			}
-			current_chr = lchrom[lchrom.size()-1];
-			int k = 0;
-			while(iss >> group_tmp[k]) k++;
-		}
-		group.push_back(group_tmp);
+    unique_groups = sample.groups;
+    num_groups = unique_groups.size();
+    
+    for(int chr = 0; chr < chromosomes.size(); chr++){
+      Mutations mut;
+      mut.Read(filenames[chr] + ".mut");
+      lchrom.push_back(chromosomes[chr]);
+      lbp.push_back(0);
+      lchrom.push_back(chromosomes[chr]);
+      lbp.push_back(mut.info[mut.info.size()-1].pos + 1e6);
+      group.push_back(sample.group_of_haplotype);
+      group.push_back(sample.group_of_haplotype);
+    }
 
-	}
+  }else{
+  
+    std::cerr << "Assuming loc ancestry poplabels file" << std::endl;
+    
+    igzstream is_assign(options["poplabels"].as<std::string>());
+    if(is_assign.fail()){
+      std::cerr << "Error: Failed to open " << options["poplabels"].as<std::string>() << std::endl;
+      exit(1);
+    }
+    getline(is_assign, line);
 
+    //TODO: check number of columns here and on next line;
+    int i = 0;
+    while(i < line.size()){
+      tmp.clear();
+      while(line[i] != ' ' && line[i] != '\t'){
+        tmp += line[i];
+        i++;
+        if(i == line.size()) break;
+      }
+      i++;
+      unique_groups.push_back(tmp);
+    }
+    num_groups = unique_groups.size();
+
+    std::vector<int> group_tmp;
+    int val;
+    std::string current_chr;
+    while(getline(is_assign, line)){
+
+      std::istringstream iss(line);
+      if(group_tmp.size() == 0){
+        iss >> tmp;
+        lchrom.push_back(tmp);
+        current_chr = tmp;
+        iss >> val;
+        lbp.push_back(val);
+        if(val != 0){
+          std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
+          exit(1);
+        }
+        while(iss >> val) group_tmp.push_back(val);
+      }else{
+        iss >> tmp;
+        lchrom.push_back(tmp);
+        iss >> val;
+        lbp.push_back(val);
+        if(current_chr != lchrom[lchrom.size()-1] && val != 0){
+          std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
+          exit(1);
+        }
+        current_chr = lchrom[lchrom.size()-1];
+        int k = 0;
+        while(iss >> group_tmp[k]) k++;
+      }
+      group.push_back(group_tmp);
+
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////
 	//Calculate coal rates
 	coal_LA ct(epochs, num_bootstrap, block_size, num_groups);
 
@@ -501,7 +557,7 @@ coal_localancestry(cxxopts::Options& options){
 
 	}
 
-	ct.Dump(options["output"].as<std::string>() + ".coal", unique_groups);
+	ct.Dump(options["output"].as<std::string>() + ".coal", unique_groups, seed);
 
 	/////////////////////////////////////////////
 	//Resource Usage

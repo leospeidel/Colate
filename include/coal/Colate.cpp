@@ -37,7 +37,7 @@ int main(int argc, char* argv[]){
 		("filters", "Optional: Parameters for filtering BAMs. Format: MAPQ,LEN,MAX_MISMATCH_TO_REF. Default: 20,30,10", cxxopts::value<std::string>())
     ("strandfilter", "Optional: When parsing BAMs, filter potential deaminated sites by strand orientation.", cxxopts::value<bool>())
     ("groups", "Names of groups of interest for conditional coalescence rates", cxxopts::value<std::string>()) 
-    ("poplabels", "Optional: Filename of file containing population labels.", cxxopts::value<std::string>())
+    ("poplabels", "Optional: Filename of file containing population labels. One of two formats: Either standard 4 column Relate poplabels format, or local ancestry format. This format lists all possible labels in the first row and in subsequent rows a space-delimited string of chrom BP and integer of the local ancestry label for each haplotype.", cxxopts::value<std::string>())
 		("map", "Genetic map. (Prefix if for multiple chr)", cxxopts::value<std::string>())
     ("i,input", "Filename of input.", cxxopts::value<std::string>())
     ("o,output", "Filename of output.", cxxopts::value<std::string>());
@@ -46,15 +46,7 @@ int main(int argc, char* argv[]){
 
   std::string mode = options["mode"].as<std::string>();
 
-	if(!mode.compare("tree")){
-
-		coal(options);
-
-	}else	if(!mode.compare("local_ancestry")){
-
-		coal_localancestry(options);
-
-	}else if(!mode.compare("mut")){
+  if(!mode.compare("mut")){
 
     mut(options);
  
