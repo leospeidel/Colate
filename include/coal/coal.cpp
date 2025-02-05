@@ -226,12 +226,12 @@ coal_localancestry(cxxopts::Options& options){
 	/////////////////////////////////
 	//get TMRCA at each SNP
 
-  int seed;
-  if(!options.count("seed")){
-    seed = std::time(0) + getpid();
-  }else{
-    seed = options["seed"].as<int>();
-  }
+	int seed;
+	if(!options.count("seed")){
+		seed = std::time(0) + getpid();
+	}else{
+		seed = options["seed"].as<int>();
+	}
 
 	////////////////////////////////////////
 
@@ -358,108 +358,108 @@ coal_localancestry(cxxopts::Options& options){
 	std::vector<int> lbp;
 	std::vector<std::vector<int>> group;
 
-  ///////////////////////////////////////////////////////////////////////////////
-  //TODO:implement a version that works with 4 column poplabels file.
-  
-  igzstream is_check(options["poplabels"].as<std::string>());
-  getline(is_check, line);
-  is_check.close();
-  std::istringstream iss(line); // Create a string stream from the input string
-  std::string token;
-  int count1 = 0;
-  while (iss >> token) {
-    count1++;
-  }
-  std::istringstream iss2(line); // Create a string stream from the input string
-  int count2 = 0;
-  while (iss2 >> token) {
-    count2++;
-  }
+	///////////////////////////////////////////////////////////////////////////////
+	//TODO:implement a version that works with 4 column poplabels file.
 
-  int num_groups;
-  if(count1 == 4 && count2 == 4){
-  
-    std::cerr << "Assuming 4 column poplabels file" << std::endl;
-  
-    //need to populate lchrom, lbp, group, unique_groups
-    Sample sample;
-    sample.Read(options["poplabels"].as<std::string>());
+	igzstream is_check(options["poplabels"].as<std::string>());
+	getline(is_check, line);
+	is_check.close();
+	std::istringstream iss(line); // Create a string stream from the input string
+	std::string token;
+	int count1 = 0;
+	while (iss >> token) {
+		count1++;
+	}
+	std::istringstream iss2(line); // Create a string stream from the input string
+	int count2 = 0;
+	while (iss2 >> token) {
+		count2++;
+	}
 
-    unique_groups = sample.groups;
-    num_groups = unique_groups.size();
-    
-    for(int chr = 0; chr < chromosomes.size(); chr++){
-      Mutations mut;
-      mut.Read(filenames[chr] + ".mut");
-      lchrom.push_back(chromosomes[chr]);
-      lbp.push_back(0);
-      lchrom.push_back(chromosomes[chr]);
-      lbp.push_back(mut.info[mut.info.size()-1].pos + 1e6);
-      group.push_back(sample.group_of_haplotype);
-      group.push_back(sample.group_of_haplotype);
-    }
+	int num_groups;
+	if(count1 == 4 && count2 == 4){
 
-  }else{
-  
-    std::cerr << "Assuming loc ancestry poplabels file" << std::endl;
-    
-    igzstream is_assign(options["poplabels"].as<std::string>());
-    if(is_assign.fail()){
-      std::cerr << "Error: Failed to open " << options["poplabels"].as<std::string>() << std::endl;
-      exit(1);
-    }
-    getline(is_assign, line);
+		std::cerr << "Assuming 4 column poplabels file" << std::endl;
 
-    //TODO: check number of columns here and on next line;
-    int i = 0;
-    while(i < line.size()){
-      tmp.clear();
-      while(line[i] != ' ' && line[i] != '\t'){
-        tmp += line[i];
-        i++;
-        if(i == line.size()) break;
-      }
-      i++;
-      unique_groups.push_back(tmp);
-    }
-    num_groups = unique_groups.size();
+		//need to populate lchrom, lbp, group, unique_groups
+		Sample sample;
+		sample.Read(options["poplabels"].as<std::string>());
 
-    std::vector<int> group_tmp;
-    int val;
-    std::string current_chr;
-    while(getline(is_assign, line)){
+		unique_groups = sample.groups;
+		num_groups = unique_groups.size();
 
-      std::istringstream iss(line);
-      if(group_tmp.size() == 0){
-        iss >> tmp;
-        lchrom.push_back(tmp);
-        current_chr = tmp;
-        iss >> val;
-        lbp.push_back(val);
-        if(val != 0){
-          std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
-          exit(1);
-        }
-        while(iss >> val) group_tmp.push_back(val);
-      }else{
-        iss >> tmp;
-        lchrom.push_back(tmp);
-        iss >> val;
-        lbp.push_back(val);
-        if(current_chr != lchrom[lchrom.size()-1] && val != 0){
-          std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
-          exit(1);
-        }
-        current_chr = lchrom[lchrom.size()-1];
-        int k = 0;
-        while(iss >> group_tmp[k]) k++;
-      }
-      group.push_back(group_tmp);
+		for(int chr = 0; chr < chromosomes.size(); chr++){
+			Mutations mut;
+			mut.Read(filenames[chr] + ".mut");
+			lchrom.push_back(chromosomes[chr]);
+			lbp.push_back(0);
+			lchrom.push_back(chromosomes[chr]);
+			lbp.push_back(mut.info[mut.info.size()-1].pos + 1e6);
+			group.push_back(sample.group_of_haplotype);
+			group.push_back(sample.group_of_haplotype);
+		}
 
-    }
-  }
+	}else{
 
-  /////////////////////////////////////////////////////////////////////
+		std::cerr << "Assuming loc ancestry poplabels file" << std::endl;
+
+		igzstream is_assign(options["poplabels"].as<std::string>());
+		if(is_assign.fail()){
+			std::cerr << "Error: Failed to open " << options["poplabels"].as<std::string>() << std::endl;
+			exit(1);
+		}
+		getline(is_assign, line);
+
+		//TODO: check number of columns here and on next line;
+		int i = 0;
+		while(i < line.size()){
+			tmp.clear();
+			while(line[i] != ' ' && line[i] != '\t'){
+				tmp += line[i];
+				i++;
+				if(i == line.size()) break;
+			}
+			i++;
+			unique_groups.push_back(tmp);
+		}
+		num_groups = unique_groups.size();
+
+		std::vector<int> group_tmp;
+		int val;
+		std::string current_chr;
+		while(getline(is_assign, line)){
+
+			std::istringstream iss(line);
+			if(group_tmp.size() == 0){
+				iss >> tmp;
+				lchrom.push_back(tmp);
+				current_chr = tmp;
+				iss >> val;
+				lbp.push_back(val);
+				if(val != 0){
+					std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
+					exit(1);
+				}
+				while(iss >> val) group_tmp.push_back(val);
+			}else{
+				iss >> tmp;
+				lchrom.push_back(tmp);
+				iss >> val;
+				lbp.push_back(val);
+				if(current_chr != lchrom[lchrom.size()-1] && val != 0){
+					std::cerr << "Error: First entry for new chr has to start at BP = 0" << std::endl;
+					exit(1);
+				}
+				current_chr = lchrom[lchrom.size()-1];
+				int k = 0;
+				while(iss >> group_tmp[k]) k++;
+			}
+			group.push_back(group_tmp);
+
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////
 	//Calculate coal rates
 	coal_LA ct(epochs, num_bootstrap, block_size, num_groups);
 
@@ -474,7 +474,7 @@ coal_localancestry(cxxopts::Options& options){
 
 		if(chromosomes.size() > 1 || chromosomes[chr] != "NA"){
 			while(lchrom[local_index] != chromosomes[chr]){
-        local_index++;
+				local_index++;
 				if(local_index == lchrom.size()) exit(1); //this means chromosome not found
 			}
 			//assert(lchrom[local_index] == chromosomes[chr]);
@@ -499,54 +499,61 @@ coal_localancestry(cxxopts::Options& options){
 			int bp_end = (*it_mut).pos;
 			if(bp_end == bp_start) bp_end++;
 
+			if(bp_start < 100000 & bp_end > 100000) std::cerr << "debug" << std::endl;
+
+			int tree_span = bp_end - bp_start;
+
 			if(local_index < group.size()-1){
 				while(bp_start >= lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA")){
 					local_index++;
 				}
 
+				assert(bp_start >= lbp[local_index]);
 				assert(group[local_index].size() == ancmut.NumTips());
 
-				if(local_index < group.size()-1){
-					if(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){
+				if(local_index < group.size()-1){	
+					if(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){ //if tree extends beyond local ancestry segment
+						double frac = num_bases_tree_persists * (lbp[local_index+1] - bp_start)/((double)bp_end-bp_start); //I am assuming that bp_start > local ancestry segment start
 
-						double frac = (lbp[local_index+1] - bp_start)/(bp_end-bp_start);
-						//if(frac < 0.0) std::cerr << frac << " " << bp_start << " " << bp_end << " " << lbp[local_index+1] << std::endl;
-						assert(frac <= 1.0);
+						//if(frac < 3) std::cerr << bp_start << " " << bp_end << " " << lbp[local_index] << " " << lbp[local_index+1] << " " << frac << " " << num_bases_tree_persists << " " << frac*num_bases_tree_persists << std::endl;
+
+						assert(frac <= num_bases_tree_persists);
 						assert(frac >= 0.0);
-						ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], true);
+						ct.populate(mtr.tree, frac, group[local_index], true);
 						local_index++;
 						if(local_index+1 == group.size()){
 							break;
 							local_index--;
 						}
-						while(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){
-							frac = (lbp[local_index+1] - lbp[local_index])/(bp_end-bp_start);
-							//if(frac > 1.0 || frac < 0.0){
-							//	std::cerr << frac << " " << local_index << " " << lbp[local_index] << " " << lbp[local_index+1] << " " << bp_end << " " << bp_start << std::endl;
-							//}
-							assert(frac <= 1.0);
+						while(bp_end > lbp[local_index+1] && (lchrom[local_index+1] == chromosomes[chr] || chromosomes[chr] == "NA") ){ //if tree still extends beyond local ancestry segment
+
+							frac = num_bases_tree_persists * (lbp[local_index+1] - lbp[local_index])/((double)bp_end-bp_start); //Full local ancestry segment is within tree span
+																																																									//if(frac > 1.0 || frac < 0.0){
+																																																									//	std::cerr << frac << " " << local_index << " " << lbp[local_index] << " " << lbp[local_index+1] << " " << bp_end << " " << bp_start << std::endl;
+																																																									//}
+							assert(frac <= num_bases_tree_persists);
 							assert(frac >= 0.0);
-							ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], false);
+							ct.populate(mtr.tree, frac, group[local_index], false);
 							local_index++;
 							if(local_index == group.size()){
 								local_index--;
 								break;
 							}
 						}
-						frac = (bp_end - lbp[local_index])/(bp_end-bp_start);
-						assert(frac <= 1.0);
+						frac = (bp_end - lbp[local_index])/((double)bp_end-bp_start); //Finally bp_end is within local ancestry segmnet.
+						assert(frac <= num_bases_tree_persists);
 						assert(frac >= 0.0);
-						ct.populate(mtr.tree, num_bases_tree_persists * frac, group[local_index], false);
+						ct.populate(mtr.tree, frac, group[local_index], false);
 					}else{
-						ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], true);
+						ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], true); //tree is within local ancestry segment
 					}
 				}else{
 					assert(local_index == group.size()-1);
-					ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], true);
+					ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], true); //tree is at end of local ancestry file
 				}
 			}else{
 				assert(local_index == group.size()-1);
-				ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], true);
+				ct.populate(mtr.tree, num_bases_tree_persists, group[local_index], true); //tree is at end of local ancestry file
 			}
 
 			num_bases_tree_persists = ancmut.NextTree(mtr, it_mut);
