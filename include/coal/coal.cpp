@@ -370,6 +370,7 @@ coal_localancestry(cxxopts::Options& options){
 	while (iss >> token) {
 		count1++;
 	}
+	getline(is_check, line);
 	std::istringstream iss2(line); // Create a string stream from the input string
 	int count2 = 0;
 	while (iss2 >> token) {
@@ -5144,7 +5145,11 @@ CondCoalRates(cxxopts::Options& options){
 
 	}
 
-  std::vector<float> epochs_focal = {0,5e4,5e5,1e6,1e8};
+	float lineage_bin = 1e5;
+  if(options.count("lineage_bin")){
+		lineage_bin = options["lineage_bin"].as<float>();
+	}	
+	std::vector<float> epochs_focal = {0,std::exp( log_10 *lineage_bin),1e8};
 	//std::vector<float> epochs_focal = {0,1e5,1e6,1e8};
 	for(std::vector<float>::iterator it_ep = epochs_focal.begin(); it_ep != epochs_focal.end(); it_ep++){
 		*it_ep /= years_per_gen;
@@ -5325,7 +5330,7 @@ CondCoalRates(cxxopts::Options& options){
 						}
 					}
 					//std::cerr << recrate << std::endl;
-					//if(recrate > 0.1 || recrate < 1e-10) num_passing = 0.0;
+					if(recrate > 0.1) num_passing = 0.0;
 				}
 
 				if(num_passing >= cutoff){
