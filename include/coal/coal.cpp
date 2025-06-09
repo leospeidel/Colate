@@ -4821,7 +4821,7 @@ GetConditionalCoalescentRate(Tree& tree, int& BP, Sample& sample, std::vector<Le
 					//if(epoch_focal[ep_start + 1] <= coal_age) std::cerr << coal_age << " " << epoch_focal[ep_start + 1] << " " << ep_start << std::endl;
 					//if(use && ep_start == 0) std::cerr << BP << " " << *it_focal << " " << *it_cond << " " << coal_age << " " << 5e4/28 << std::endl;
 					assert(epoch_focal[ep_start] <= coal_age);
-					assert(epoch_focal[ep_start + 1] > coal_age);
+					if(ep_start + 1 < epoch_focal.size()) assert(epoch_focal[ep_start + 1] > coal_age);
 
 				}
 
@@ -5149,7 +5149,7 @@ CondCoalRates(cxxopts::Options& options){
   if(options.count("lineage_bin")){
 		lineage_bin = options["lineage_bin"].as<float>();
 	}	
-	std::vector<float> epochs_focal = {0,std::exp( log_10 *lineage_bin),1e8};
+	std::vector<float> epochs_focal = {0,std::exp( log_10 *lineage_bin)};
 	//std::vector<float> epochs_focal = {0,1e5,1e6,1e8};
 	for(std::vector<float>::iterator it_ep = epochs_focal.begin(); it_ep != epochs_focal.end(); it_ep++){
 		*it_ep /= years_per_gen;
