@@ -27,6 +27,7 @@ int main(int argc, char* argv[]){
 		("ref_genome", "Reference genome", cxxopts::value<std::string>())
 		("anc_genome", "Ancestral genome", cxxopts::value<std::string>())
 		("mask", "Genomic mask", cxxopts::value<std::string>())
+		("mask_cutoff", "Remove trees with average passing rate below this cutoff. Default 0.9.", cxxopts::value<float>())
 		("chr", "Optional: File specifying chromosomes to use.", cxxopts::value<std::string>()) 
     ("bins", "Optional: Epoch boundaries 10^(seq(x,y,stepsize)) [format: x,y,stepsize]. In years.", cxxopts::value<std::string>())
 		("lineage_bin", "Optional: Epoch boundary of focal lineage when using CondCoalRates. 10^lineage_bin. In years", cxxopts::value<float>())

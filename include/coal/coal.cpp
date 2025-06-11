@@ -5007,7 +5007,7 @@ CondCoalRates(cxxopts::Options& options){
 	bool help = false;
 	if(!options.count("input") || !options.count("output")){
 		std::cout << "Not enough arguments supplied." << std::endl;
-		std::cout << "Needed: input, output. Optional: years_per_gen, dist, bins." << std::endl;
+		std::cout << "Needed: input, output. Optional: years_per_gen, dist, bins, mask, mask_cutof, mask, mask_cutofff." << std::endl;
 		help = true;
 	}
 	if(options.count("help") || help){
@@ -5234,7 +5234,12 @@ CondCoalRates(cxxopts::Options& options){
 
 		fasta mask;
 		double cutoff = 0.9;
+		if(options.count("cutoff")){
+			cutoff = options["cutoff"].as<float>();
+		}
+		bool use_mask = false;
 		if(options.count("mask")){
+			use_mask = true;
 			if(filename_chr[0] == "NA"){
 				mask.Read(options["mask"].as<std::string>());
 			}else{
@@ -5289,10 +5294,15 @@ CondCoalRates(cxxopts::Options& options){
 				bin = (int)((*it_mut).pos/bin_size) + chr_bin;
 
 				num_passing = 1.0;	
-				if(use_genmap){
+				if(use_mask){
 					it_mut_tmp = it_mut;
 					int tree_index = (*it_mut).tree;
 					int pos_start = (*it_mut).pos;
+					if(it_mut != ancmut.mut_begin()){
+            pos_start += (*std::prev(it_mut,1)).pos;
+					  pos_start /= 2;
+						pos_start = std::round(pos_start);
+					}
 					int pos_end = pos_start + 1;
 					if(it_mut != ancmut.mut_end()){
 						while((*it_mut).tree == tree_index){
@@ -5300,6 +5310,46 @@ CondCoalRates(cxxopts::Options& options){
 							if(it_mut == ancmut.mut_end()) break;
 						}
 						if(it_mut != ancmut.mut_end()) pos_end = (*it_mut).pos;
+					}
+					if(it_mut != ancmut.mut_begin()){
+					  pos_end += (*std::prev(it_mut,1)).pos;
+						pos_end /= 2;
+						pos_end = std::round(pos_end);
+					}
+					it_mut = it_mut_tmp;
+
+					assert(pos_end > pos_start);
+					//compute average number of passing bases
+					num_passing = 0.0;
+					for(int pos = pos_start; pos < pos_end; pos++){
+						if(mask.seq[pos] == 'P'){
+						  num_passing += 1.0;
+						}
+					}
+					num_passing /= (pos_end - pos_start);
+				}
+
+				if(use_genmap){
+		  		it_mut_tmp = it_mut;
+					int tree_index = (*it_mut).tree;
+					int pos_start = (*it_mut).pos;
+					if(it_mut != ancmut.mut_begin()){
+            pos_start += (*std::prev(it_mut,1)).pos;
+					  pos_start /= 2;
+						pos_start = std::round(pos_start);
+					}
+					int pos_end = pos_start + 1;
+					if(it_mut != ancmut.mut_end()){
+						while((*it_mut).tree == tree_index){
+							it_mut++;
+							if(it_mut == ancmut.mut_end()) break;
+						}
+						if(it_mut != ancmut.mut_end()) pos_end = (*it_mut).pos;
+					}
+					if(it_mut != ancmut.mut_begin()){
+					  pos_end += (*std::prev(it_mut,1)).pos;
+						pos_end /= 2;
+						pos_end = std::round(pos_end);
 					}
 					it_mut = it_mut_tmp;
 
@@ -5351,11 +5401,15 @@ CondCoalRates(cxxopts::Options& options){
 				bin = (int)((*it_mut).pos/bin_size) + chr_bin;
 
 				num_passing = 1.0;
-	
-				if(use_genmap){
+				if(use_mask){
 					it_mut_tmp = it_mut;
 					int tree_index = (*it_mut).tree;
 					int pos_start = (*it_mut).pos;
+					if(it_mut != ancmut.mut_begin()){
+						pos_start += (*std::prev(it_mut,1)).pos;
+						pos_start /= 2;
+						pos_start = std::round(pos_start);
+					}
 					int pos_end = pos_start + 1;
 					if(it_mut != ancmut.mut_end()){
 						while((*it_mut).tree == tree_index){
@@ -5363,6 +5417,46 @@ CondCoalRates(cxxopts::Options& options){
 							if(it_mut == ancmut.mut_end()) break;
 						}
 						if(it_mut != ancmut.mut_end()) pos_end = (*it_mut).pos;
+					}
+					if(it_mut != ancmut.mut_begin()){
+						pos_end += (*std::prev(it_mut,1)).pos;
+						pos_end /= 2;
+						pos_end = std::round(pos_end);
+					}
+					it_mut = it_mut_tmp;
+
+   				assert(pos_end > pos_start);
+					//compute average number of passing bases
+					num_passing = 0.0;
+					for(int pos = pos_start; pos < pos_end; pos++){
+						if(mask.seq[pos] == 'P'){
+						  num_passing += 1.0;
+						}
+					}
+					num_passing /= (pos_end - pos_start);
+				}
+
+				if(use_genmap){
+		  		it_mut_tmp = it_mut;
+					int tree_index = (*it_mut).tree;
+					int pos_start = (*it_mut).pos;
+					if(it_mut != ancmut.mut_begin()){
+            pos_start += (*std::prev(it_mut,1)).pos;
+					  pos_start /= 2;
+						pos_start = std::round(pos_start);
+					}
+					int pos_end = pos_start + 1;
+					if(it_mut != ancmut.mut_end()){
+						while((*it_mut).tree == tree_index){
+							it_mut++;
+							if(it_mut == ancmut.mut_end()) break;
+						}
+						if(it_mut != ancmut.mut_end()) pos_end = (*it_mut).pos;
+					}
+					if(it_mut != ancmut.mut_begin()){
+					  pos_end += (*std::prev(it_mut,1)).pos;
+						pos_end /= 2;
+						pos_end = std::round(pos_end);
 					}
 					it_mut = it_mut_tmp;
 
